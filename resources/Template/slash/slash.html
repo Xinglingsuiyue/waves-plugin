@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>冥歌海墟</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/slash/slash.css">
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div class="dashboard">
+        <div class="header">
+            <div class="title-group">
+                <div class="logo">
+                    <img src="{{userInfo.avatar}}" alt="Logo" />
+                </div>
+
+                <div class="title-info">
+                    <h1>{{userInfo.name}}</h1>
+                    <span>UID: {{userInfo.uid}}</span>
+                </div>
+            </div>
+
+            <img src="{{pluginResources}}/Template/slash/ghostShip.png" alt="Ghost Ship" class="ghost-ship">
+        </div>
+
+        <div class="info-bar">
+            <div>剩余时间: {{leftTime}}</div>
+            <div>总积分: {{allScore}}/{{maxScore}}</div>
+        </div>
+
+        {{each challengeList challenge index}}
+        <div class="content-section">
+            <div class="challenge-item">
+                <div class="challenge-header" style="background-image: url({{challenge.detailPageBG}})">
+                    <div class="challenge-name">{{challenge.challengeId}}. {{challenge.challengeName}}</div>
+                    <div><span class="rank">{{challenge.rank}}</span> 积分: <span class="score">{{challenge.score}}</span>
+                    </div>
+                </div>
+
+                {{each challenge.halfList half idx}}
+                <div class="team-container">
+                    <div class="team-title">
+                        <div class="diamond"></div>队伍{{idx + 1}}
+                    </div>
+
+                    {{each half.roleList role}}
+                    <div class="team-roles">
+                        <div class="role" style="border: 2px solid var(--star{{role.star}}-color);">
+                            <img src="{{role.iconUrl}}" alt="角色"/>
+                        </div>
+                    </div>
+                    {{/each}}
+
+                    <img src="{{half.buffIcon}}" alt="artifact" class="artifact-icon" style="border-bottom: 3px solid var(--star{{half.buffQuality}}-color);" />
+
+                    <div class="team-score">{{half.score}}</div>
+                </div>
+                {{/each}}
+            </div>
+            {{if index === challengeList.length - 1}}
+            <div id="copyright">{{@copyright}}</div>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+</body>
+
+</html>
