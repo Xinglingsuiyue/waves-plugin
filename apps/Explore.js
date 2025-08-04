@@ -63,8 +63,8 @@ export class Explore extends plugin {
             }
 
             let [baseData, exploreData] = await Promise.all([
-                waves.getBaseData(account.serverId, account.roleId, account.token),
-                waves.getExploreData(account.serverId, account.roleId, account.token)
+                waves.getBaseData(account.serverId, account.roleId, account.token, account.did ? account.did : ''),
+                waves.getExploreData(account.serverId, account.roleId, account.token, account.did ? account.did : '')
             ]);
 
             if (!baseData.status || !exploreData.status) {
