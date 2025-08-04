@@ -4,7 +4,7 @@
 
 # WAVES-PLUGIN
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）
 
 - 支持手机验证码登录或 Token 登录，支持查询玩家、日常、数据坞、抽卡等游戏数据
 
