@@ -19,7 +19,6 @@ export class Challenge extends plugin {
     }
 
     async challenge(e) {
-
         if (e.at) e.user_id = e.at;
         let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         const waves = new Waves();
@@ -49,7 +48,12 @@ export class Challenge extends plugin {
         let deleteroleId = [];
 
         await Promise.all(accountList.map(async (account) => {
-            const usability = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token);
+            // 确保account对象有did属性，如果没有则设为空字符串
+            if (!account.hasOwnProperty('did')) {
+                account.did = '';
+            }
+            
+            const usability = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token, account.did);
 
             if (!usability) {
                 data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
@@ -63,8 +67,8 @@ export class Challenge extends plugin {
             }
 
             const [baseData, challengeData] = await Promise.all([
-                waves.getBaseData(account.serverId, account.roleId, account.token),
-                waves.getChallengeData(account.serverId, account.roleId, account.token)
+                waves.getBaseData(account.serverId, account.roleId, account.token, account.did),
+                waves.getChallengeData(account.serverId, account.roleId, account.token, account.did)
             ]);
 
             if (!baseData.status || !challengeData.status) {
@@ -108,6 +112,13 @@ export class Challenge extends plugin {
 
         if (data.length === 1) {
             await e.reply(data[0].message);
+            return true;
+        }
+
+        await e.reply(await Bot.makeForwardMsg([{ message: `用户 ${e.user_id}` }, ...data]));
+        return true;
+    }
+}
             return true;
         }
 
