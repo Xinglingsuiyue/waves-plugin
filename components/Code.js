@@ -21,6 +21,7 @@ const CONSTANTS = {
     EVENT_LIST_URL: '/forum/companyEvent/findEventList',
     SELF_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerDataDetail',
     OTHER_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerIndex',
+    HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashDetail',
 
     REQUEST_HEADERS_BASE: {
         "source": "ios",
@@ -560,6 +561,51 @@ class Waves {
         } catch (error) {
             logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取活动列表失败，疑似网络问题`), logger.red(error));
             return { status: false, msg: '获取活动列表失败，疑似网络问题，请检查控制台日志' };
+        }
+    }
+// 新增海虚数据获取方法
+    async getHaiXuData(serverId, roleId, token) {
+        await this.refreshData(serverId, roleId, token);
+
+        let data = qs.stringify({
+            'gameId': 3,
+            'serverId': serverId,
+            'roleId': roleId
+        });
+
+        try {
+            const response = await wavesApi.post(CONSTANTS.HAIXU_DATA_URL, data, {
+                headers: {
+                    ...CONSTANTS.REQUEST_HEADERS_BASE,
+                    'token': token,
+                    'b-at': this.bat
+                }
+            });
+
+            if (response.data.code === 10902 || response.data.code === 200) {
+                // 解析嵌套的JSON数据
+                const parsedData = JSON.parse(response.data.data);
+                
+                if (Config.getConfig().enable_log) {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取海虚数据成功`));
+                }
+                return {
+                    status: true,
+                    data: parsedData
+                };
+            } else {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海虚数据失败`), logger.red(response.data.msg));
+                return {
+                    status: false,
+                    msg: response.data.msg
+                };
+            }
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海虚数据异常`), logger.red(error));
+            return {
+                status: false,
+                msg: '获取海虚数据失败，疑似网络问题'
+            };
         }
     }
 }
