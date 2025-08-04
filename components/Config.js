@@ -1,6 +1,6 @@
 import YAML from 'yaml';
 import fs from 'fs';
-import { pluginRoot, _path } from '../model/path.js';
+import { pluginRoot, _path, pluginResources } from '../model/path.js';
 
 class Config {
     constructor() {
@@ -18,7 +18,38 @@ class Config {
             user_default: `${pluginRoot}/config/user_default.yaml`,
         };
 
+        this.localDataConfig = {
+            characters: `${pluginResources}/data/characters.yaml`,
+            weapons: `${pluginResources}/data/weapons.yaml`,
+            lastUpdate: `${pluginResources}/data/last_update.txt`
+        };
+
         this.watchFiles();
+        this.initLocalData();
+    }
+
+    initLocalData() {
+        const dataDir = `${pluginResources}/data`;
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        if (!fs.existsSync(this.localDataConfig.characters)) {
+            fs.writeFileSync(this.localDataConfig.characters, YAML.stringify({
+                default: {
+                    enable_wiki_fallback: true,
+                    auto_update_data: false,
+                    data_update_interval: 86400
+                },
+                characters: {}
+            }));
+        }
+        
+        if (!fs.existsSync(this.localDataConfig.weapons)) {
+            fs.writeFileSync(this.localDataConfig.weapons, YAML.stringify({
+                weapons: {}
+            }));
+        }
     }
 
     loadYAML(filePath) {
@@ -48,6 +79,56 @@ class Config {
                 this.cache[key] = this.loadYAML(filePath);
             });
         });
+    }
+
+    getLocalDataConfig() {
+        try {
+            const data = this.loadYAML(this.localDataConfig.characters);
+            return {
+                enable_wiki_fallback: data?.default?.enable_wiki_fallback ?? true,
+                auto_update_data: data?.default?.auto_update_data ?? false,
+                data_update_interval: data?.default?.data_update_interval ?? 86400
+            };
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan('读取本地数据配置失败'), logger.red(error));
+            return {
+                enable_wiki_fallback: true,
+                auto_update_data: false,
+                data_update_interval: 86400
+            };
+        }
+    }
+
+    getLocalCharacters() {
+        try {
+            const data = this.loadYAML(this.localDataConfig.characters);
+            return data?.characters || {};
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan('读取本地角色数据失败'), logger.red(error));
+            return {};
+        }
+    }
+
+    updateLocalCharacters(data) {
+        try {
+            const currentData = this.loadYAML(this.localDataConfig.characters) || {
+                default: {
+                    enable_wiki_fallback: true,
+                    auto_update_data: false,
+                    data_update_interval: 86400
+                },
+                characters: {}
+            };
+            
+            currentData.characters = { ...currentData.characters, ...data };
+            this.saveConfig(this.localDataConfig.characters, currentData);
+            
+            fs.writeFileSync(this.localDataConfig.lastUpdate, Date.now().toString());
+            return true;
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan('更新本地角色数据失败'), logger.red(error));
+            return false;
+        }
     }
 
     getConfig() {
