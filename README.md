@@ -4,7 +4,66 @@
 
 # WAVES-PLUGIN
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）后面readme已经魔改，原版请前往https://github.com/erzaozi/waves-plugin.git查看
+
+先把更新地址替换一下
+
+## 切换步骤
+
+1. **进入插件目录**
+   ```bash
+   cd plugins/waves-plugin/
+   ```
+
+2. **查看当前远程仓库信息**
+   ```bash
+   git remote -v
+   ```
+   正常情况下您会看到类似这样的输出：
+   ```
+   origin  https://github.com/erzaozi/waves-plugin.git (fetch)
+   origin  https://github.com/erzaozi/waves-plugin.git (push)
+   ```
+
+3. **修改远程仓库地址**
+   ```bash
+   git remote set-url origin https://github.com/Xinglingsuiyue/waves-plugin.git
+   ```
+
+4. **验证修改是否成功**
+   ```bash
+   git remote -v
+   ```
+   现在应该显示新的仓库地址：
+   ```
+   origin  https://github.com/Xinglingsuiyue/waves-plugin.git (fetch)
+   origin  https://github.com/Xinglingsuiyue/waves-plugin.git (push)
+   ```
+
+5. **从新仓库拉取更新**
+   ```bash
+   git pull origin main
+   ```
+
+### 后续更新
+
+之后您可以使用常规的更新命令来获取最新代码：
+```bash
+～更新
+```
+
+### 注意事项
+- 如果遇到冲突，您可能需要手动解决
+- 切换后可能需要重新安装依赖：
+  ```bash
+  pnpm install
+  ```
+- 建议在操作前备份您的插件配置
+
+### 问题排查
+
+如果遇到问题，可以尝试：
+### 摆烂重装
 
 - 支持手机验证码登录或 Token 登录，支持查询玩家、日常、数据坞、抽卡等游戏数据
 
@@ -148,6 +207,10 @@ pnpm install --filter=waves-plugin
 - [x] 活动日历查询
 - [x] 库街区签到
 - [x] 用户统计
+- [x] 海墟查看
+- [x] 十连百连本地化
+- [x] 便捷上传攻略
+- [ ] 抽卡分析图片本地化
 
 ## 功能列表
 
