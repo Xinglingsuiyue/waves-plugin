@@ -1,0 +1,88 @@
+<div class="stats-container">
+    <div class="header">
+        <h1>{{statsData.title}}</h1>
+        <div class="user-info">
+            <span>用户: {{statsData.userName}}</span>
+            <span>卡池: {{statsData.poolType}}</span>
+        </div>
+    </div>
+    
+    <div class="five-star-section">
+        <h2>★★★★★ 获得 {{statsData.fiveStarCount}} 个</h2>
+        <ul class="item-list">
+            {{each statsData.fiveStarList}}
+            <li>{{$value}}</li>
+            {{/each}}
+        </ul>
+    </div>
+    
+    <div class="four-star-section">
+        <h2>★★★★ 获得 {{statsData.fourStarCount}} 个</h2>
+        <ul class="item-list">
+            {{each statsData.fourStarList}}
+            <li>{{$value}}</li>
+            {{/each}}
+        </ul>
+    </div>
+</div>
+
+<style>
+.stats-container {
+    padding: 10px;
+    background: rgba(0, 0, 50, 0.8);
+    color: white;
+    border-radius: 10px;
+    width: 784px;
+    height: 584px;
+    margin: 0 auto;
+    font-family: 'Microsoft YaHei', sans-serif;
+}
+.header {
+    text-align: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 10px;
+}
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #ffcc00;
+}
+.user-info {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+.five-star-section h2 {
+    color: #ffcc00;
+    margin: 15px 0 10px 0;
+    font-size: 20px;
+}
+.four-star-section h2 {
+    color: #b9b9ff;
+    margin: 15px 0 10px 0;
+    font-size: 20px;
+}
+ul.item-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+li {
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    font-size: 16px;
+}
+.five-star-section li {
+    border-left: 3px solid #ffcc00;
+}
+.four-star-section li {
+    border-left: 3px solid #b9b9ff;
+}
+</style>
