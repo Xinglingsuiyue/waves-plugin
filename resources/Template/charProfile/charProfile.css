@@ -29,6 +29,8 @@
   width: 761px;
   height: auto;
   background-image: url(./imgs/rolecard.png);
+  margin-bottom: 50px; 
+  padding-bottom: 50px;
 }
 
 #weight-version {
