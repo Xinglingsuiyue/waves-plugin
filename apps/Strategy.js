@@ -7,6 +7,8 @@ import fs from 'fs';
 const AUTHORS = [
     { name: "小沐XMu", path: "/Strategy/XMu/" },
     { name: "Moealkyne", path: "/Strategy/moealkyne/" },
+    { name: "团子", path: "/Strategy/ruozi/" },
+    { name: "結星", path: "/Strategy/jiexing/" },
     { name: "金铃子攻略组", path: "/Strategy/Linn/" }
 ];
 
