@@ -27,7 +27,7 @@
 #container {
   position: relative;
   width: 761px;
-  height: 1650px;
+  height: auto;
   background-image: url(./imgs/rolecard.png);
 }
 
