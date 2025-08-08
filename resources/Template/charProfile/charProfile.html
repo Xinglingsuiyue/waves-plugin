@@ -42,7 +42,20 @@
                 <div id="role-pic-container">
                     <img src="{{data.rolePicUrl}}">
                 </div>
-
+                <!-- 新增右侧属性容器 -->
+                <div id="right-attributes-container">
+                    <div class="base-attributes">
+                        <div class="base-attributes-header">角色属性</div>
+                        <div class="base-attributes-container">
+                            {{each data.roleDetail.data.roleAttributeList attr}}
+                            <div class="attribute-item">
+                                <div class="attribute-name">{{attr.attributeName}}</div>
+                                <div class="attribute-value">{{attr.attributeValue}}</div>
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                </div>
                 <div id="chain">
                     <div id="chain-list">
                         {{each data.roleDetail.data.chainList chain}}
@@ -61,29 +74,19 @@
                 {{/if}}
                 {{/each}}
             </div>
+
         </div>
-        <!-- 角色属性已移至声骸总分和评级右侧 -->
         <div class="total-score-table">
             {{if data.roleDetail.data.phantomData.statistic}}
             <div class="total-score-table-left">
                 <div class="total-score-key">声骸总分</div>
                 <div class="total-score-value" style="color: {{data.roleDetail.data.phantomData.statistic.color}};">
-                        {{data.roleDetail.data.phantomData.statistic.totalScore.toFixed(2)}}</div>
+                    {{data.roleDetail.data.phantomData.statistic.totalScore.toFixed(2)}}</div>
                 <div class="total-score-key">声骸评级</div>
                 <div class="total-score-value" style="color: {{data.roleDetail.data.phantomData.statistic.color}};">
                     {{data.roleDetail.data.phantomData.statistic.rank}}</div>
             </div>
-            <div class="base-attributes">
-                <div class="base-attributes-header"></div>
-                <div class="base-attributes-container">
-                    {{each data.roleDetail.data.roleAttributeList attr}}
-                    <div class="attribute-item">
-                        <div class="attribute-name">{{attr.attributeName}}</div>
-                        <div class="attribute-value">{{attr.attributeValue}}</div>
-                    </div>
-                    {{/each}}
-                </div>
-            </div>
+            <div id="column" style="position: relative;left: -20px;top: -30px;width:100%;height:249px;"></div>
             {{else}}
             <div style="color: #585858;font-style: italic;font-size: 50px;margin: 30px 134px;">
                 当前角色暂无评分
@@ -205,7 +208,85 @@
         });
     </script>
     <script>
-        // 柱状图已删除
+        const handler = [
+            (i) => i / 21,
+            (i) => i / 10.5,
+            (i) => i / 11.6,
+            (i) => i / 11.6,
+            (i) => i / 14.7,
+            (i) => i / 12.4,
+            (i) => i / 11.6,
+            (i) => i / 11.6,
+            (i) => i / 11.6,
+            (i) => i / 11.6,
+            (i) => i / 60,
+            (i) => i / 580,
+            (i) => i / 60,
+        ]
+        const computedColor = []
+        const computedValue = []
+        const data = dataContent.roleDetail.data.phantomData.statistic?.dist.map((tag, i) => {
+            let name = tag.name
+            if (name.includes("百分比")) name = "大" + name;
+            name = name.replace(/(伤害加成|百分比)/, "");
+            computedColor.push(tag.color.replace("color:", "").replace(";", ""));
+            computedValue.push(handler[i](tag.value))
+            return {
+                name,
+                value: tag.value.toFixed(1),
+            }
+        });
+
+
+        const columnChart = echarts.init(document.getElementById('column'));
+
+        const option = {
+            animation: false,
+            title: {
+                text: ''
+            },
+            tooltip: {},
+            legend: {
+                data: ['成长值']
+            },
+            xAxis: {
+                data: data.map(tag => tag.name),
+                axisTick: {
+                    length: 6,
+                    lineStyle: {
+                        type: 'dashed',
+                    },
+                    boundaryGap: true
+                },
+                axisLabel: {
+                    color: "#000",
+                    fontSize: 8,
+                    rotate: 25,
+                    align: 'center'
+                },
+            },
+            yAxis: {
+                max: 5,
+            },
+            series: [
+                {
+                    type: 'bar',
+                    data: computedValue,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: (params) => computedValue[params.dataIndex].toFixed(1) + `\n(${data[params.dataIndex].value + (!/^(生命|防御|攻击)$/.test(data[params.dataIndex].name) ? '%' : '')})`
+                    },
+                    itemStyle: {
+                        normal: {
+                            color: (params) => { return computedColor[params.dataIndex] }
+                        }
+                    },
+                }
+            ]
+        };
+        columnChart.setOption(option);
+        document.getElementById('column').querySelector('canvas').style.width = '110%';
     </script>
 </body>
 

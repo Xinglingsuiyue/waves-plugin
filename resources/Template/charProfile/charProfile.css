@@ -26,11 +26,9 @@
 
 #container {
   position: relative;
-  width: 761px;
-  height: auto;
+  width: 970px;
+  height: 1584px;
   background-image: url(./imgs/rolecard.png);
-  margin-bottom: 50px; 
-  padding-bottom: 50px;
 }
 
 #weight-version {
@@ -67,11 +65,12 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 10px;
+  gap: 15px;
   z-index: 2;
   background-color: rgba(255, 255, 255, 0);
   padding: 10px;
-  border-radius: 10px;
+  max-width: 800px;
+  flex-wrap: wrap;
 }
 
 #role-info {
@@ -100,6 +99,7 @@
   flex-direction: column;
   max-width: 300px;
   text-shadow: 0 0 7px #000, 2px 2px 4px rgba(0, 0, 0, 0.7);
+  flex-shrink: 0;
 }
 
 #role-name {
@@ -127,12 +127,66 @@
   height: 100%;
 }
 
+/* 新增右侧属性容器样式 */
+#right-attributes-container {
+  position: absolute;
+  top: 68px;
+  right: 40px;
+  z-index: 10;
+}
+
+/* 原角色属性样式保持不变 */
+.base-attributes {
+  margin: 0;
+  background-color: rgba(240, 236, 240, 0.85);
+  border-radius: 10px;
+  padding: 15px;
+  width: 200px;
+  box-shadow: 0 2px 10px rgb(0,0,0,0.1);
+}
+
+.base-attributes-header {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #4e4e4e;
+}
+
+.base-attributes-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.attribute-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  background-color: #e1e1e1;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.attribute-name {
+  font-weight: bold;
+  color: #4e4e4e;
+}
+
+.attribute-value {
+  font-family: "framdit";
+  color: #9d2933;
+  font-weight: bold;
+}
+
 #role-pic-container {
   position: absolute;
   display: flex;
   flex-direction: row;
   bottom: 5px;
-  left: 50%;
+  left: 39%;
   transform: translateX(-50.5%);
   justify-content: center;
   align-items: flex-start;
@@ -164,7 +218,7 @@
   grid-template-columns: 68px 68px 68px 68px 68px 68px;
   column-gap: 40px;
   top: 245px;
-  left: 70px;
+  left: 90px;
   height: 70px;
   width: 608px;
   z-index: 2;
@@ -416,7 +470,7 @@
   display: flex;
   left: 36px;
   width: 680px;
-  height: auto;
+  height: 180px;
   background-color: #f0ecf0;
   border-radius: 15px;
   overflow: hidden;
@@ -425,10 +479,9 @@
 .total-score-table-left {
   flex-shrink: 0;
   display: grid;
-  grid-template-rows: 40px 80px 40px 80px;
+  grid-template-rows: 30px 60px 30px 60px;
   width: 170px;
   text-align: center;
-  background-color: #f0ecf0;
 }
 
 .total-score-table-left>* {
@@ -451,14 +504,14 @@
 }
 
 .total-score-key {
-  line-height: 40px;
+  line-height: 30px;
   background-color: #d8d8d8;
   color: #000;
   font-size: 20px
 }
 
 .total-score-value {
-  line-height: 80px;
+  line-height: 60px;
   font-family: "framdit";
   background-color: #f3f3f3;
   color: #e9c130;
@@ -483,46 +536,4 @@
   color: #d3bc8e;
   display: inline-block;
   padding: 0 3px;
-}
-
-.base-attributes {
-    margin: 10px 36px 20px 36px;
-    background-color: #f0ecf0;
-    border-radius: 15px;
-    padding: 10px;
-}
-
-.base-attributes-header {
-    display: none;
-}
-
-.base-attributes-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.attribute-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 6px;
-    background-color: #e1e1e1;
-    border-radius: 8px;
-}
-
-.attribute-name {
-    font-weight: bold;
-    color: #4e4e4e;
-    font-size: 14px;
-    margin-bottom: 2px;
-    text-align: center;
-}
-
-.attribute-value {
-    font-family: "framdit";
-    color: #9d2933;
-    font-weight: bold;
-    font-size: 16px;
-    text-align: center;
 }
