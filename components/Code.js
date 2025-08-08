@@ -563,10 +563,10 @@ class Waves {
         return false;
     }
     
-// 新增海虚数据获取方法
-    async getHaiXuData(serverId, roleId, token) {
-        await this.refreshData(serverId, roleId, token);
-
+    // 新增海虚数据获取方法
+    async getHaiXuData(serverId, roleId, token, did = null) {
+        await this.refreshData(serverId, roleId, token, did);
+        const headers = await this.buildHeaders('ios', token, did);
         let data = qs.stringify({
             'gameId': 3,
             'serverId': serverId,
@@ -574,14 +574,7 @@ class Waves {
         });
 
         try {
-            const response = await wavesApi.post(CONSTANTS.HAIXU_DATA_URL, data, {
-                headers: {
-                    ...CONSTANTS.REQUEST_HEADERS_BASE,
-                    'token': token,
-                    'b-at': this.bat
-                }
-            });
-
+            const response = await wavesApi.post(CONSTANTS.SELF_TOWER_DATA_URL, data, { headers });
             if (response.data.code === 10902 || response.data.code === 200) {
                 // 解析嵌套的JSON数据
                 const parsedData = JSON.parse(response.data.data);
