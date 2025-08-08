@@ -574,7 +574,7 @@ class Waves {
         });
 
         try {
-            const response = await wavesApi.post(CONSTANTS.SELF_TOWER_DATA_URL, data, { headers });
+            const response = await wavesApi.post(CONSTANTS.HAIXU_DATA_URL, data, { headers });
             if (response.data.code === 10902 || response.data.code === 200) {
                 // 解析嵌套的JSON数据
                 const parsedData = JSON.parse(response.data.data);
