@@ -53,7 +53,7 @@ export class Slash extends plugin {
             const currentRoleId = roleId || account.roleId;
             
             // 检查token可用性（添加did参数）
-            const usable = await waves.isAvailable(account.serverId, currentRoleId, account.token, account.did || '');
+            const usable = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token, account.did ? account.did : '');
             if (!usable) {
                 deleteRoleIds.push(currentRoleId);
                 data.push({ message: `账号 ${currentRoleId} 的Token已失效\n请重新使用 [~登录] 进行登录` });
