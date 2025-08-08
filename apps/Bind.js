@@ -144,11 +144,9 @@ export class Bind extends plugin {
         accountList.forEach((item) => {
             tokenList.push({ message: item.roleId })
             
-            tokenList.push({ message: `Token,did` })
-
-            if (item.serverId) {
-                tokenList.push({ message: `${item.token},${item.serverId}` })
-            } else { 
+            if (item.did) {
+                tokenList.push({ message: `${item.token},${item.did}` })
+            } else {
                 tokenList.push({ message: item.token })
             }
         })
