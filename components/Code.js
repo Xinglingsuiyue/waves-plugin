@@ -22,6 +22,11 @@ const CONSTANTS = {
     SELF_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerDataDetail',
     OTHER_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerIndex',
     HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashDetail',
+        // 新增资源简报API
+    RESOURCE_PERIOD_LIST_URL: '/aki/resource/period/list',
+    RESOURCE_WEEK_URL: '/aki/resource/week',
+    RESOURCE_MONTH_URL: '/aki/resource/month',
+    RESOURCE_VERSION_URL: '/aki/resource/version',
     KURO_VERSION: "2.5.1",
 };
 
@@ -628,6 +633,81 @@ class Waves {
         } catch (error) {
             logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取活动列表失败，疑似网络问题`), logger.red(error));
             return { status: false, msg: '获取活动列表失败' };
+        }
+    }
+    // 获取资源周期列表 - 添加参数验证
+    async getResourcePeriods(serverId, roleId, token, did = null) {
+        // 参数验证
+        if (!serverId || !roleId || !token) {
+            return { status: false, msg: '请先使用[~登录]绑定游戏账号' };
+        }
+        
+        const headers = await this.buildHeaders('ios', token, did);
+        
+        try {
+            const response = await wavesApi.get(CONSTANTS.RESOURCE_PERIOD_LIST_URL, { 
+                headers,
+                params: { serverId, roleId }
+            });
+            
+            if (response.data.code === 200) {
+                if (Config.getConfig().enable_log) {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取资源周期列表成功`));
+                }
+                return { status: true, data: response.data.data };
+            } else {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取资源周期列表失败`), logger.red(response.data.msg));
+                return { status: false, msg: response.data.msg };
+            }
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取资源周期列表异常`), logger.red(error));
+            return { status: false, msg: '获取资源周期失败，疑似网络问题' };
+        }
+    }
+
+    // 获取资源报告 - 添加参数验证
+    async getResourceReport(serverId, roleId, token, did, periodType, periodIndex) {
+        // 参数验证
+        if (!serverId || !roleId || !token || !did) {
+            return { status: false, msg: '请先使用[~登录]绑定游戏账号' };
+        }
+        
+        const endpoints = {
+            week: CONSTANTS.RESOURCE_WEEK_URL,
+            month: CONSTANTS.RESOURCE_MONTH_URL,
+            version: CONSTANTS.RESOURCE_VERSION_URL
+        };
+        
+        if (!endpoints[periodType]) {
+            return { status: false, msg: '无效的资源周期类型' };
+        }
+        
+        const headers = await this.buildHeaders('ios', token, did);
+        const data = qs.stringify({
+            period: periodIndex,
+            roleId,
+            serverId
+        });
+        
+        try {
+            const response = await wavesApi.post(endpoints[periodType], data, { headers });
+            
+            if (response.data.code === 200) {
+                if (Config.getConfig().enable_log) {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取${periodType}资源报告成功`));
+                }
+                return { 
+                    status: true, 
+                    data: response.data.data,
+                    periodType
+                };
+            } else {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取${periodType}资源报告失败`), logger.red(response.data.msg));
+                return { status: false, msg: response.data.msg };
+            }
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取${periodType}资源报告异常`), logger.red(error));
+            return { status: false, msg: '获取资源数据失败，疑似网络问题' };
         }
     }
 }
