@@ -639,7 +639,7 @@ class Waves {
     async getResourcePeriods(serverId, roleId, token, did = null) {
         // 参数验证
         if (!serverId || !roleId || !token) {
-            return { status: false, msg: '请先使用[~登录]绑定游戏账号' };
+            return { status: false, msg: '当前没有可用的Cookie，请使用[~登录]进行登录' };
         }
         
         const headers = await this.buildHeaders('ios', token, did);
@@ -669,7 +669,7 @@ class Waves {
     async getResourceReport(serverId, roleId, token, did, periodType, periodIndex) {
         // 参数验证
         if (!serverId || !roleId || !token || !did) {
-            return { status: false, msg: '请先使用[~登录]绑定游戏账号' };
+            return { status: false, msg: '当前没有可用的Cookie，请使用[~登录]进行登录' };
         }
         
         const endpoints = {
