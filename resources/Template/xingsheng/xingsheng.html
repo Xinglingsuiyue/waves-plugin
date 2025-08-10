@@ -1,0 +1,255 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/xingsheng/xingsheng.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+    <!-- 新增资源简报所需资源 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div>
+        <div class="container">
+            <div class="header">
+                <div class="user-info">
+                    <div class="avatar">
+                        <img src="http://q1.qlogo.cn/g?b=qq&nk={{qq}}&s=100" alt="">
+                    </div>
+                    <div class="user-details">
+                        <div class="username">
+                            {{baseInfo?.nickName || baseInfo?.nickname || gameData?.roleName || '漂泊者'}}
+                        </div>
+                        <div class="uid">
+                            {{baseInfo?.roleId || baseInfo?.uid || gameData?.roleId || '未知'}}
+                        </div>
+                    </div>
+                </div>
+                <!-- 新增：统计周期信息 -->
+                <div class="period-info">
+                     {{periodTitle}}
+                </div>
+            </div>
+            
+            <!-- 总星声 -->
+            <div class="stat-stellar">
+                <div class="stat-value">{{reportData?.totalStar || 0}}</div>
+            </div>
+            
+            <!-- 总贝币 -->
+            <div class="stat-coin">
+                <div class="stat-value">{{reportData?.totalCoin || 0}}</div>
+            </div>
+            
+            <!-- 星声饼图 -->
+            <div class="chart-container">
+                <div class="chart-content">
+                    <div class="pie-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 贝币饼图 - 新增 -->
+            <div class="coin-chart-container">
+                <div class="chart-content">
+                    <div class="pie-container">
+                        <canvas id="coinChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 星声百分比列表 -->
+            <div class="legend">
+                {{each reportData?.starList item index}}
+                <div class="legend-item">
+                    <div class="legend-value color{{index+1}}">
+                        {{item.num}} ({{reportData?.totalStar > 0 ? (item.num / reportData.totalStar * 100).toFixed(1) : 0}}%)
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <!-- 贝币百分比列表 - 新增 -->
+            <div class="coin-legend">
+                {{each reportData?.coinList item index}}
+                <div class="legend-item">
+                    <div class="legend-value coin-legend-value coin-color{{index+1}}">
+                        {{item.num}} ({{reportData?.totalCoin > 0 ? (item.num / reportData.totalCoin * 100).toFixed(1) : 0}}%)
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <!-- 时间信息（独立容器） -->
+            <div class="current-time-container">
+                {{currentTime}}
+            </div>
+            
+            <!-- 文案信息（独立容器） -->
+            {{if copywriting}}
+            <div class="copywriting-container">
+                {{copywriting}}
+            </div>
+            {{/if}}
+            
+            <div class="footer">
+                <!-- 原footer内容已移动到独立容器 -->
+                <div id="copyright">{{@copyright}}</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 星声饼图
+        const ctx = document.getElementById('pieChart')?.getContext('2d');
+        if (ctx) {
+            // 颜色配置
+            const colors = [
+                {color: '#FF6384'},
+                {color: '#FF9F40'},
+                {color: '#FFCE56'},
+                {color: '#66CC33'},
+                {color: '#4BC0C0'},
+                {color: '#36A2EB'}
+            ];
+            
+            // 直接使用模板数据
+            const starList = [
+                {{each reportData?.starList item}}
+                { 
+                    type: '{{item.type}}', 
+                    num: {{item.num || 0}} 
+                },
+                {{/each}}
+            ];
+            
+            const totalStar = {{reportData?.totalStar || 0}};
+            
+            // 准备饼图数据
+            const data = {
+                labels: starList.map(item => item.type || '未知类型'),
+                datasets: [{
+                    data: starList.map(item => item.num),
+                    backgroundColor: starList.map((_, index) => 
+                        (colors[index % colors.length] || {color: '#888888'}).color
+                    ),
+                    // 删除外框线 - 将borderWidth设为0
+                    borderWidth: 0,
+                    hoverOffset: 25  // 增大悬停效果
+                }]
+            };
+            
+            // 创建饼图
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // 修改圆环大小和厚度：cutout控制圆环内径比例
+                    cutout: '42%', // 保持与文档1相同的厚度
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const percentage = totalStar > 0 
+                                        ? (value / totalStar * 100).toFixed(1)
+                                        : '0.0';
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000
+                    }
+                }
+            });
+        }
+
+        // 贝币饼图 - 新增
+        const coinCtx = document.getElementById('coinChart')?.getContext('2d');
+        if (coinCtx) {
+            // 贝币颜色配置
+            const coinColors = [
+                {color: '#FF6384'},
+                {color: '#FF9F40'},
+                {color: '#FFCE56'},
+                {color: '#66CC33'},
+                {color: '#4BC0C0'},
+                {color: '#36A2EB'}
+            ];
+            
+            // 直接使用模板数据
+            const coinList = [
+                {{each reportData?.coinList item}}
+                { 
+                    type: '{{item.type}}', 
+                    num: {{item.num || 0}} 
+                },
+                {{/each}}
+            ];
+            
+            const totalCoin = {{reportData?.totalCoin || 0}};
+            
+            // 准备贝币饼图数据
+            const coinData = {
+                labels: coinList.map(item => item.type || '未知类型'),
+                datasets: [{
+                    data: coinList.map(item => item.num),
+                    backgroundColor: coinList.map((_, index) => 
+                        (coinColors[index % coinColors.length] || {color: '#888888'}).color
+                    ),
+                    borderWidth: 0, // 无边框
+                    hoverOffset: 25  // 悬停效果
+                }]
+            };
+            
+            // 创建贝币饼图
+            new Chart(coinCtx, {
+                type: 'doughnut',
+                data: coinData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '42%', // 保持与文档1相同的厚度
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const percentage = totalCoin > 0 
+                                        ? (value / totalCoin * 100).toFixed(1)
+                                        : '0.0';
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,352 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+#body {
+    transform-origin: top left;
+    width: 2032px;
+    height: 1696px;
+    font-family: "Guruwords";
+}
+
+#body>div {
+    background: url(imgs/xingsheng.png) no-repeat;
+    background-size: cover;
+    width: 100%;
+    height: 1696px;
+}
+/* 资源简报样式 */
+.container {
+    width: 2032px;
+    height: 1696px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    background-size: cover;
+}
+
+.header {
+    padding: 25px 30px;
+    text-align: center;
+    position: relative;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 15px;
+    max-width: 400px;
+    margin: 20px auto 0;
+}
+
+.avatar {
+    width: 145px;
+    height: 145px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    position: relative;
+    top: 40px;
+    left: -840px;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-details {
+    text-align: left;
+}
+
+/* 用户名绝对定位 */
+.username {
+    position: absolute;
+    top: 53px;
+    left: 300px;
+    font-size: 80px;
+    font-weight: bold;
+    color: #FFFFFF;
+    max-width: 800px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 20;
+}
+
+/* UID绝对定位 */
+.uid {
+    position: absolute;
+    top: 150px;
+    left: 399px;
+    font-size: 70px;
+    font-weight: bold;
+    color: #FFFFFF;
+    padding: 5px 0;
+    z-index: 20;
+}
+
+/* 总星声 - 绝对定位 */
+.stat-stellar {
+    position: absolute;
+    top: 500px;
+    left: 240px;
+    z-index: 10;
+}
+
+/* 总贝币 - 绝对定位 */
+.stat-coin {
+    position: absolute;
+    top: 500px;
+    left: 1180px;
+    z-index: 10;
+}
+
+.stat-value {
+    font-size: 42px;
+    font-weight: bold;
+}
+
+/* 星声百分比列表 - 绝对定位 */
+.legend {
+    position: absolute;
+    top: 950px;
+    right: 1400px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 贝币百分比列表 - 新增 */
+.coin-legend {
+    position: absolute;
+    top: 950px;
+    right: 480px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.legend-label {
+    min-width: 300px;
+    text-align: left;
+    line-height: 1.5;
+}
+
+/* 修改百分比文本样式 */
+.legend-value {
+    min-width: 250px;
+    text-align: left;
+    font-size: 28px;
+    line-height: 2;
+}
+
+/* 添加颜色类 */
+.legend-value.color1 { color: #FF6384; }
+.legend-value.color2 { color: #FF9F40; }
+.legend-value.color3 { color: #FFCE56; }
+.legend-value.color4 { color: #66CC33; }
+.legend-value.color5 { color: #4BC0C0; }
+.legend-value.color6 { color: #36A2EB; }
+
+/* 贝币颜色类 */
+.coin-legend-value.coin-color1 { color: #FF6384; }
+.coin-legend-value.coin-color2 { color: #FF9F40; }
+.coin-legend-value.coin-color3 { color: #FFCE56; }
+.coin-legend-value.coin-color4 { color: #66CC33; }
+.coin-legend-value.coin-color5 { color: #4BC0C0; }
+.coin-legend-value.coin-color6 { color: #36A2EB; }
+
+/* 星声图表容器 - 绝对定位 */
+.chart-container {
+    position: absolute;
+    top: 1185px;
+    left: 801px;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    padding: 0;
+}
+
+.chart-content {
+    display: flex;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* 修改饼图容器大小 */
+.pie-container {
+    width: 329px;
+    height: 329px;
+    position: relative;
+    margin-right: 30px;
+}
+
+/* 贝币图表容器 - 绝对定位 */
+.coin-chart-container {
+    position: absolute;
+    top: 1185px;
+    left: 1738px;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    padding: 0;
+}
+
+/* 修改页脚样式 */
+.footer {
+    text-align: center;
+    padding: 25px 20px;
+    font-size: 18px;
+    position: static;
+}
+
+/* 新增时间容器样式 - 添加换行控制 */
+.current-time-container {
+    position: absolute;
+    bottom: 40px;
+    left: 1530px;
+    font-size: 18px;
+    z-index: 10;
+    width: 800px;
+    word-wrap: break-word;
+    white-space: pre-line;
+    line-height: 1.5;
+}
+
+/* 新增文案容器样式 - 添加换行控制 */
+.copywriting-container {
+    position: absolute;
+    bottom: 100px;
+    left: 1080px;
+    font-size: 30px;
+    z-index: 10;
+    width: 700px;
+    word-wrap: break-word;
+    white-space: pre-line;
+    line-height: 1.5;
+}
+
+#copyright {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+}
+
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}
+/* 新增：周期信息样式 */
+.period-info {
+    font-size: 39px;
+    color: #FFFFFF;
+    text-align: center;
+    top: 325px;
+    left: 88%;
+    position: absolute;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .chart-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pie-container {
+        margin-right: 0;
+        margin-bottom: 30px;
+    }
+    
+    .legend {
+        width: 100%;
+    }
+    
+    .stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .header {
+        padding: 20px 15px;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .avatar {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+    
+    .username {
+        max-width: 100%;
+    }
+    
+    /* 响应式调整定位 */
+    .current-time-container, .copywriting-container {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 20px;
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        border-radius: 15px;
+    }
+    
+    .stat-value {
+        font-size: 36px;
+    }
+    
+    .avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .current-time-container, .copywriting-container {
+        width: 85%;
+    }
+}
