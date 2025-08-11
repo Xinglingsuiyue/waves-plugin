@@ -1,1 +1,252 @@
-
+{
+  "1404": {
+    "name": "忌炎",
+    "star": 5,
+    "avatar": "1001.png"
+  },
+  "1302": {
+    "name": "吟霖",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/53a5e352ef56496eb0a8a7d6eb43327420240606.png"
+  },
+  "1304": {
+    "name": "今汐",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/5e1a5b33dbb54cf9a218ce489183689720240811.png"
+  },
+  "1205": {
+    "name": "长离",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/aeff180b9bd4413ead67e9222101594120240811.png"
+  },
+  "1105": {
+    "name": "折枝",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/91471558ec4c41eb86eb6ae151ac56b620240811.png"
+  },
+  "1305": {
+    "name": "相里要",
+    "star": 5,
+    "avatar": "3001.png"
+  },
+  "1505": {
+    "name": "守岸人",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/f659feab4e494c31acf68246a172324420240811.png"
+  },
+  "1603": {
+    "name": "椿",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/574dd26f1d3e4518a59860d32dfd3f2620240912.png"
+  },
+  "1107": {
+    "name": "珂莱塔",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/0a4ef56e74564a1f986e6743c14dc29320241124.png"
+  },
+    "1606": {
+    "name": "洛可可",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/223abbd525d34a2ebabb042460e9184c20241125.png"
+  },
+    "1506": {
+    "name": "菲比",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/3cdcf320431a47098c8cf70ab52bdea220250110.png"
+  },
+    "1206": {
+    "name": "布兰特",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/e6815fe9d28b45c0b9be0af7a902a3d320241122.png"
+  },
+  "1607": {
+    "name": "坎特蕾拉",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/add8e2754a444e43a06672c2af8765fb20250221.png"
+  },
+  "1507": {
+    "name": "赞妮",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/2aa87c7266e248c1b5373675c603047920241122.png"
+  },
+  "1407": {
+    "name": "夏空",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/b15a18a438754a54bb81429831ea927020250404.png"
+  },
+  "1409": {
+    "name": "卡提希娅",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/fca963574cae4a4dbb2b6a0bd46178e220250509.png"
+  },
+  "1207": {
+    "name": "露帕",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/cdfac10b11d847fa829ba7778a2e365d20250509.png"
+  },
+  "1608": {
+    "name": "弗洛洛",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/2da68a4331e946eebac3f154ef0a0a1520250623.png"
+  },
+  "1503": {
+    "name": "维里奈",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/1ab02beb5a7043de834e2f34cffa45ec20240811.png"
+  },
+  "1301": {
+    "name": "卡卡罗",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/72c28c341efb48b187389d37fc2c2dc320240811.png"
+  },
+  "1104": {
+    "name": "凌阳",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/b70978c32d874946837c502621a9caa720240811.png"
+  },
+  "1405": {
+    "name": "鉴心",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/f2fa4561784645c684c235a19cb132cc20240811.png"
+  },
+  "1203": {
+    "name": "安可",
+    "star": 5,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/514a598770ef451e847aacf7783b7b6e20240811.png"
+  },
+  "1501": {
+    "name": "漂泊者-衍射-男",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1605": {
+    "name": "漂泊者-湮灭-男",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1406": {
+    "name": "漂泊者-气动-男",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "5002": {
+    "name": "漂泊者-热熔-男",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "5002": {
+    "name": "漂泊者-冷凝-男",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1502": {
+    "name": "漂泊者-衍射-女",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1604": {
+    "name": "漂泊者-湮灭-女",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1408": {
+    "name": "漂泊者-气动-女",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "5002": {
+    "name": "漂泊者-热熔-女",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "5002": {
+    "name": "漂泊者-冷凝-女",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1402": {
+    "name": "秧秧",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/71ccca4b6d404fa29d4b5d92b3edf9e220240811.png"
+  },
+  "1103": {
+    "name": "白芷",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/0a6c256bdd5c4865bc316b110eca7d7520240811.png"
+  },
+  "1202": {
+    "name": "炽霞",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/bfc70389677040df9bb38fe9846c2da620240811.png"
+  },
+  "1102": {
+    "name": "散华",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/76e37020ebd74c2f84ec259cebfc4cbc20240811.png"
+  },
+  "1403": {
+    "name": "秋水",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/789c311de4f64aa99b41c47e07d0aa9a20240811.png"
+  },
+  "1602": {
+    "name": "丹瑾",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/f013edb8b3f94e749c203e5fdf73d68a20240811.png"
+  },
+  "1204": {
+    "name": "莫特斐",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/f9630aec9f9b47079a886235a5ce2ab920240811.png"
+  },
+  "1303": {
+    "name": "渊武",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/f16e8882159540bab4e646b0729942d920240811.png"
+  },
+  "1601": {
+    "name": "桃祈",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/4eb3a10a888b47fdb8bff1ac3114b2e720240811.png"
+  },
+  "1106": {
+    "name": "釉瑚",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/6245a5688a724a9287b9f4648d2237ff20240811.png"
+  },
+  "1504": {
+    "name": "灯灯",
+    "star": 4,
+    "avatar": "https://prod-alicdn-community.kurobbs.com/forum/8e451789792d4b80963a4af5e562a39e20240913.png"
+  },
+  "1306": {
+    "name": "奥古斯塔",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1410": {
+    "name": "尤诺",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1208": {
+    "name": "嘉贝莉娜",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+  "1609": {
+    "name": "仇远",
+    "star": 5,
+    "avatar": "5002.png"
+  },
+    "5001": {
+    "name": "千咲",
+    "star": 5,
+    "avatar": "5001.png"
+  },
+    "5001": {
+    "name": "卜灵",
+    "star": 4,
+    "avatar": "5001.png"
+  }
+}
