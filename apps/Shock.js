@@ -10,7 +10,7 @@ export class Shock extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^～今日（梭哈|梭哈|suoha|嗦哈|shuoha）$",
+                    reg: "^(～|~|鸣潮)(梭哈|梭哈|suoha|嗦哈|shuoha)$",
                     fnc: "shockSimulate"
                 }
             ]
@@ -19,41 +19,50 @@ export class Shock extends plugin {
 
     async shockSimulate(e) {
         try {
-            // 检查用户当日使用次数
             const userID = e.user_id;
             const dateKey = moment().format('YYYYMMDD');
             const redisKey = `Shock:${userID}:${dateKey}`;
             
-            // 获取当前使用次数
-            let count = await redis.get(redisKey) || 0;
-            count = parseInt(count);
-            
-            // 达到20次则拒绝
+            let count = parseInt(await redis.get(redisKey) || 0);
             if (count >= 20) {
                 await e.reply(`今日梭哈次数已达上限（20/20），请明天再来！`);
                 return true;
             }
             
-            // 获取用户昵称
-            const nickname = await this.getUserNickname(e);
+            // 获取用户信息
+            let nickName = `用户${userID}`;
+            try {
+                if (e.isGroup) {
+                    const memberInfo = await e.group.getMemberMap();
+                    const member = memberInfo.get(userID);
+                    nickName = member?.card || member?.nickname || nickName;
+                } else {
+                    const friendInfo = await Bot.getFriendInfo(userID);
+                    nickName = friendInfo?.nickname || nickName;
+                }
+            } catch (err) {
+                logger.error('获取用户信息失败：', err);
+            }
             
-            // 模拟抽取5个不重复词条
-            const attributes = this.generateAttributes();
+            // 生成属性
+            const attributes = await this.generateAttributes();
             
-            // 渲染并发送图片
             await Render.render('Template/Shock/shock', {
                 attributes,
                 date: new Date().toLocaleDateString(),
-                nickname,
                 count: count + 1,
-                randomHint: this.getRandomHint()
+                randomHint: this.getRandomHint(),
+                qq: userID,
+                baseInfo: {
+                    nickName: nickName
+                }
             }, {
                 e, 
                 retType: 'image',
                 scale: 1.2
             });
             
-            // 更新使用次数（设置24小时过期）
+            // 原子操作：增加计数并设置过期时间
             await redis.incr(redisKey);
             if (count === 0) {
                 const expireTime = this.calculateMidnightExpire();
@@ -68,26 +77,6 @@ export class Shock extends plugin {
         }
     }
 
-    // 获取用户昵称
-    async getUserNickname(e) {
-        try {
-            let nickname;
-            if (e.isGroup) {
-                // 群聊中获取群昵称或卡片
-                const member = await e.group.getMemberInfo(e.user_id);
-                nickname = member.card || member.nickname || `用户${e.user_id}`;
-            } else {
-                // 私聊中获取好友昵称
-                const friend = await e.friend.getInfo();
-                nickname = friend.nickname || `用户${e.user_id}`;
-            }
-            return nickname;
-        } catch {
-            return `用户${e.user_id}`;
-        }
-    }
-
-    // 获取随机运势提示
     getRandomHint() {
         const hints = [
             "声骇共鸣，运势如虹！",
@@ -105,54 +94,51 @@ export class Shock extends plugin {
     }
 
     generateAttributes() {
-        // 定义所有可能的词条和数值
         const allAttributes = [
             { name: "暴击率", values: [10.5, 9.9, 9.3, 8.7, 8.4, 8.1, 7.5, 6.9, 6.3] },
             { name: "暴击伤害", values: [21.0, 19.8, 18.6, 17.4, 16.2, 15.0, 13.8, 12.6] },
-            { name: "百分比攻击", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
-            { name: "百分比生命", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
+            { name: "攻击", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
+            { name: "生命", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
             { name: "普攻伤害加成", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
             { name: "重击伤害加成", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
             { name: "共鸣技能伤害加成", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
             { name: "共鸣解放伤害加成", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
-            { name: "百分比防御", values: [14.7, 13.8, 12.8, 11.8, 10.9, 10.0, 9.0, 8.1] },
+            { name: "防御", values: [14.7, 13.8, 12.8, 11.8, 10.9, 10.0, 9.0, 8.1] },
             { name: "共鸣效率", values: [12.4, 11.6, 10.8, 10.0, 9.2, 8.4, 7.6, 6.8] },
-            { name: "固定生命", values: [580, 540, 510, 470, 430, 390, 360, 320] },
-            { name: "固定攻击", values: [60, 50, 40] },
-            { name: "固定防御", values: [60, 50, 40] }
+            { name: "生命", values: [580, 540, 510, 470, 430, 390, 360, 320] },
+            { name: "攻击", values: [60, 50, 40] },
+            { name: "防御", values: [60, 50, 40] }
         ];
 
-        // 随机抽取5个不重复词条
-        const result = [];
-        const usedIndices = new Set();
-        
-        while (result.length < 5) {
-            const attrIndex = Math.floor(Math.random() * allAttributes.length);
-            
-            if (!usedIndices.has(attrIndex)) {
-                usedIndices.add(attrIndex);
-                
-                const attribute = allAttributes[attrIndex];
-                const valueIndex = Math.floor(Math.random() * attribute.values.length);
-                const value = attribute.values[valueIndex];
-                
-                // 确定数值显示格式（整数或带小数点）
-                const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
-                
-                result.push({
-                    name: attribute.name,
-                    value: displayValue,
-                    unit: this.getAttributeUnit(attribute.name)
-                });
-            }
+        // Fisher-Yates洗牌算法选取5个属性
+        const shuffled = [...allAttributes];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         
-        return result;
+        return shuffled.slice(0, 5).map(attr => {
+            const value = attr.values[Math.floor(Math.random() * attr.values.length)];
+            return {
+                name: attr.name,
+                value: Number.isInteger(value) ? value : value.toFixed(1),
+                unit: this.getAttributeUnit(attr.name)
+            };
+        });
     }
 
     getAttributeUnit(name) {
         if (name.includes("固定")) return "";
         if (name === "共鸣效率") return "";
         return "%";
+    }
+
+    // 计算到当天结束的秒数
+    calculateMidnightExpire() {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        return Math.round((tomorrow - now) / 1000);
     }
 }
