@@ -105,9 +105,9 @@ export class Shock extends plugin {
             { name: "共鸣解放伤害加成", values: [11.6, 10.9, 10.1, 9.4, 8.6, 7.9, 7.1, 6.4] },
             { name: "防御", values: [14.7, 13.8, 12.8, 11.8, 10.9, 10.0, 9.0, 8.1] },
             { name: "共鸣效率", values: [12.4, 11.6, 10.8, 10.0, 9.2, 8.4, 7.6, 6.8] },
-            { name: "生命", values: [580, 540, 510, 470, 430, 390, 360, 320] },
-            { name: "攻击", values: [60, 50, 40] },
-            { name: "防御", values: [60, 50, 40] }
+            { name: ".生命", values: [580, 540, 510, 470, 430, 390, 360, 320] },
+            { name: ".攻击", values: [60, 50, 40] },
+            { name: ".防御", values: [60, 50, 40] }
         ];
 
         // Fisher-Yates洗牌算法选取5个属性
@@ -128,8 +128,7 @@ export class Shock extends plugin {
     }
 
     getAttributeUnit(name) {
-        if (name.includes("固定")) return "";
-        if (name === "共鸣效率") return "";
+        if (name.includes(".")) return "";
         return "%";
     }
 
