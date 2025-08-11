@@ -1,1 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏角色持有率与命座统计</title>
+    <link rel="stylesheet" href="{{pluginResources}}/Template/Chiyoulv/Chiyoulv.css">
+    <style>
+        .header::before {
+            background: url("{{headImg}}") top/cover no-repeat;
+        }
+    </style>
+</head>
+
+<body {{sys.scale}}>
+    <div class="container">
+        <div class="header">
+            <div class="title-group">
+                <img src="{{pluginResources}}/Template/Chiyoulv/logo.png" class="logo" alt="Logo">
+                <h1>角色持有率</h1>
+            </div>
+            <p>样本数量: {{data.sampleSize}}</p>
+            <p>更新时间: {{updateTime}}</p>
+        </div>
+
+        <div class="stats-container">
+            {{each data.charList item}}
+            <div class="character-card">
+                <div class="character-header">
+                    <img src="{{item.avatar}}" alt="charAvatar" class="character-image">
+                    <div class="character-info">
+                        <!-- <img src="item.element" alt="charElement" class="element-icon"> -->
+                        <div class="character-name-container">
+                            <div class="character-name star{{item.star}}">{{item.charName}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="constellation-stats">
+                    <!-- <div class="constellation-title">命座分布</div> -->
+                    <div class="chart-container">
+                        <!-- <svg class="donut-chart" id="{{item.charId}}" viewBox="0 0 180 180"></svg> -->
+                        {{@ item.svgContent}}
+                        <div class="center-text" id="{{item.charId}}-center-text">{{item.holdRate}}%</div>
+                    </div>
+
+                    <div class="legend">
+                        {{each item.chainHoldRate v k}}
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--c{{k}}-color);"></div>
+                            <span>{{k}}链: {{v}}%</span>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    <div id="copyright">{{@copyright}}</div>
+</body>
+
+</html>

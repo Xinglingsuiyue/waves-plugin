@@ -1,0 +1,318 @@
+:root {
+    --primary-color: #3a86ff;
+    --secondary-color: #8338ec;
+    --text-color: #333;
+    --text-muted: #6b7280;
+    --light-gray: #f5f5f5;
+    --border-color: #e0e0e0;
+    --c0-color: #9CD2FF;
+    --c1-color: #80DDA3;
+    --c2-color: #66C6FF;
+    --c3-color: #C28CFF;
+    --c4-color: #FFB44D;
+    --c5-color: #FF8282;
+    --c6-color: #FFE680;
+    --five-star-color: #ffa500;
+    --four-star-color: #9370db;
+    --pyro-color: #f84f33;
+    --hydro-color: #4cc2f1;
+    --anemo-color: #74c2a8;
+    --electro-color: #a757cb;
+    --cryo-color: #9fd6e3;
+    --geo-color: #fab632;
+    --dendro-color: #a6c938;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-image: linear-gradient(to top left, rgb(236, 233, 230) 0%, rgb(255, 255, 255) 100%);
+    background-size: 1200px;
+    width: 1200px;
+    height: auto;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    min-height: 80vh;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    padding-bottom: 1rem;
+}
+
+/* 标题区 */
+.header {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.5rem;
+    border-radius: 1rem 1rem 0 0;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    min-height: 180px;
+    mask-image: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.9) 1rem);
+}
+
+/* 用于承载背景图的头部伪元素 */
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    mask-image: linear-gradient(to right,
+            transparent 0%,
+            rgba(0, 0, 0, 0.3) 50%,
+            #000 75%);
+    z-index: -1;
+}
+
+.title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+    margin-left: 3rem;
+}
+
+.logo {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    border: 2px solid var(--border-light);
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.06);
+}
+
+.title-group h1 {
+    font-size: 1.875rem;
+    color: var(--text-dark);
+    margin-bottom: 0.25rem;
+}
+
+.header p {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-left: 3rem;
+}
+
+/* 内容区 */
+.stats-container {
+    margin: 0 auto;
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 280px);
+    gap: 7px;
+    row-gap: 13px;
+    justify-items: center;
+    justify-content: center;
+}
+
+/* 卡片元素  */
+.character-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    width: 280px;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+/* 卡片鼠标悬停时 */
+.character-card:hover {
+    transform: translateY(-5px);
+}
+
+/* 卡片标题区 */
+.character-header {
+    padding: 15px;
+    background-color: var(--light-gray);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 卡片标题头像 */
+.character-image {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    background-color: #ddd;
+    object-fit: cover;
+}
+
+.character-info {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.character-name-container {
+    flex-grow: 1;
+}
+
+/* 角色名称 */
+.character-name {
+    font-weight: bold;
+    font-size: 25px;
+    display: inline-block;
+}
+
+/* 五星角色 */
+.star5 {
+    color: var(--five-star-color);
+}
+
+/* 四星角色 */
+.star4 {
+    color: var(--four-star-color);
+}
+
+/* 角色元素Logo */
+.element-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    background: none;
+    border-radius: 0;
+    object-fit: contain;
+}
+
+.pyro {
+    background-color: var(--pyro-color);
+}
+
+.hydro {
+    background-color: var(--hydro-color);
+}
+
+.anemo {
+    background-color: var(--anemo-color);
+}
+
+.electro {
+    background-color: var(--electro-color);
+}
+
+.cryo {
+    background-color: var(--cryo-color);
+}
+
+.geo {
+    background-color: var(--geo-color);
+}
+
+.dendro {
+    background-color: var(--dendro-color);
+}
+
+.ownership-rate {
+    font-size: 16px;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.rate-value {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.constellation-stats {
+    padding: 15px;
+}
+
+.constellation-title {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.chart-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 15px;
+}
+
+.donut-chart {
+    width: 100%;
+    height: 100%;
+}
+
+.center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 15px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .character-card {
+        width: 100%;
+    }
+}
+
+#copyright {
+    position: relative;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+}
+
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    align-items: center;
+    margin-top: 1rem;
+}
