@@ -44,7 +44,7 @@ export class ResourceReport extends plugin {
         }
 
         const waves = new Waves();
-        const accounts = await waves.getValidAccount(e, forceUserCookie = true);
+        const accounts = await waves.getValidAccount(e, '' , true);
         if (!accounts) return true;
 
         let avatarUrl = await this.getAvatarUrl(e);
