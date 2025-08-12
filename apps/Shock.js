@@ -10,7 +10,7 @@ export class Shock extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(～|~|鸣潮)(梭哈|梭哈|suoha|嗦哈|shuoha)$",
+                    reg: "^(～|~|鸣潮)(今日)?(梭哈|梭哈|suoha|嗦哈|shuoha)$",
                     fnc: "shockSimulate"
                 }
             ]
