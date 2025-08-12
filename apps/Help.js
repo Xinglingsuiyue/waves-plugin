@@ -195,12 +195,37 @@ export class Help extends plugin {
                         "desc": "抽卡模拟器"
                     },
                     {
+                        "icon": 72,
+                        "title": "~百连",
+                        "desc": "抽卡进阶版"
+                    },
+                    {
                         "icon": 73,
+                        "title": "~查看卡池",
+                        "desc": "查看该机器人可抽取的卡池"
+                    },
+                    {
+                        "icon": 74,
+                        "title": "~今日梭哈",
+                        "desc": "声骇模拟"
+                    },
+                    {
+                        "icon": 75,
+                        "title": "~海墟",
+                        "desc": "查询海墟相关服务"
+                    },
+                    {
+                        "icon": 76,
+                        "title": "~星声",
+                        "desc": "查看资源简报"
+                    },
+                    {
+                        "icon": 77,
                         "title": "~兑换码",
                         "desc": "查看游戏兑换码"
                     },
                     {
-                        "icon": 72,
+                        "icon": 78,
                         "title": "~帮助",
                         "desc": "查看帮助面板"
                     }
