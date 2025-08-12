@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
-import Config from "../components/Config.js";
 import Render from '../components/Render.js';
 
 export class ResourceReport extends plugin {
@@ -31,12 +30,11 @@ export class ResourceReport extends plugin {
 
     async resourceReport(e) {
         const originalUserId = e.user_id;
-        if (e.at) e.user_id = e.at;
 
         const match = e.msg.match(this.rule[0].reg);
         let periodType = 'version';
         let periodIndexStr = '';
-        
+
         if (match[1]) {
             periodType = 'version';
             periodIndexStr = match[1].replace('版本', '');
@@ -45,48 +43,10 @@ export class ResourceReport extends plugin {
             periodIndexStr = match[2].replace('月', '');
         }
 
-        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         const waves = new Waves();
-        
-        if (!accountList?.length) {
-            const publicCookie = await waves.pubCookie();
-            if (publicCookie) {
-                accountList = [publicCookie];
-                await redis.set(`Yunzai:waves:bind:${e.user_id}`, publicCookie.roleId);
-            } else {
-                await e.reply('该用户尚未绑定账号');
-                return true;
-            }
-        }
+        const accounts = await waves.getValidAccount(e, forceUserCookie = true);
+        if (!accounts) return true;
 
-        const validAccounts = [];
-        const deleteroleIds = [];
-        
-        for (const account of accountList) {
-            const isValid = await waves.isAvailable(
-                account.serverId, 
-                account.roleId, 
-                account.token,
-                account.did
-            );
-            
-            if (isValid) {
-                validAccounts.push(account);
-            } else {
-                deleteroleIds.push(account.roleId);
-            }
-        }
-        
-        if (deleteroleIds.length) {
-            const newAccountList = accountList.filter(acc => !deleteroleIds.includes(acc.roleId));
-            await Config.setUserData(e.user_id, newAccountList);
-        }
-        
-        if (!validAccounts.length) {
-            await e.reply('无有效账号');
-            return true;
-        }
-        
         let avatarUrl = await this.getAvatarUrl(e);
         let nickName = `用户${e.user_id}`;
         try {
@@ -101,20 +61,21 @@ export class ResourceReport extends plugin {
         } catch (err) {
             logger.error('获取用户信息失败：', err);
         }
-        
-        if (validAccounts.length > 1) {
-            const data = [];
-            for (const account of validAccounts) {
+
+        const periodTypeNames = { 'week': '周', 'month': '月', 'version': '版本' };
+
+        const processAccount = async (acc) => {
+            const { uid, serverId, token, did } = acc;
+            try {
                 const periodsData = await waves.getResourcePeriods(
-                    account.serverId, 
-                    account.roleId, 
-                    account.token,
-                    account.did
+                    serverId,
+                    uid,
+                    token,
+                    did
                 );
-                
+
                 if (!periodsData.status) {
-                    data.push({ message: `账号 ${account.roleId}: ${periodsData.msg}` });
-                    continue;
+                    return { uid, message: `账号 ${uid} 获取周期数据失败：${periodsData.msg}` };
                 }
 
                 const periods = periodsData.data;
@@ -122,31 +83,29 @@ export class ResourceReport extends plugin {
                 let periodTitle = '';
 
                 if (periodType === 'version') {
-                    const versionItem = periods.versions.find(v => 
+                    const versionItem = periods.versions.find(v =>
                         v.title.replace('版本', '').includes(periodIndexStr)
                     );
-                    
+
                     if (versionItem) {
                         finalPeriodIndex = versionItem.index;
                         periodTitle = versionItem.title;
                     } else if (periodIndexStr) {
-                        data.push({ message: `账号 ${account.roleId}: 未找到版本 ${periodIndexStr} 的数据` });
-                        continue;
+                        return { uid, message: `账号 ${uid}: 未找到版本 ${periodIndexStr} 的数据` };
                     } else {
                         finalPeriodIndex = periods.versions[0].index;
                         periodTitle = periods.versions[0].title;
                     }
                 } else if (periodType === 'month') {
-                    const monthItem = periods.months.find(m => 
+                    const monthItem = periods.months.find(m =>
                         m.title.includes(`${periodIndexStr}月`)
                     );
-                    
+
                     if (monthItem) {
                         finalPeriodIndex = monthItem.index;
                         periodTitle = monthItem.title;
                     } else if (periodIndexStr) {
-                        data.push({ message: `账号 ${account.roleId}: 未找到 ${periodIndexStr}月 的数据` });
-                        continue;
+                        return { uid, message: `账号 ${uid}: 未找到 ${periodIndexStr}月 的数据` };
                     } else {
                         finalPeriodIndex = periods.months[periods.months.length - 1].index;
                         periodTitle = periods.months[periods.months.length - 1].title;
@@ -154,38 +113,37 @@ export class ResourceReport extends plugin {
                 }
 
                 const reportData = await waves.getResourceReport(
-                    account.serverId, 
-                    account.roleId, 
-                    account.token,
-                    account.did,
+                    serverId,
+                    uid,
+                    token,
+                    did,
                     periodType,
                     finalPeriodIndex
                 );
-                
+
                 if (!reportData.status) {
-                    data.push({ message: `账号 ${account.roleId}: ${reportData.msg}` });
-                    continue;
+                    return { uid, message: `账号 ${uid} 获取报告失败：${reportData.msg}` };
                 }
 
-                const periodTypeNames = { 'week': '周', 'month': '月', 'version': '版本' };
                 const starDetails = reportData.data.starList.map(item => ({
                     type: item.type,
                     value: item.num,
-                    percentage: reportData.data.totalStar > 0 ? 
+                    percentage: reportData.data.totalStar > 0 ?
                         Math.round((item.num / reportData.data.totalStar) * 100) : 0
                 })).filter(item => item.value > 0);
 
                 const coinDetails = reportData.data.coinList.map(item => ({
                     type: item.type,
                     value: item.num,
-                    percentage: reportData.data.totalCoin > 0 ? 
+                    percentage: reportData.data.totalCoin > 0 ?
                         Math.round((item.num / reportData.data.totalCoin) * 100) : 0
                 })).filter(item => item.value > 0);
 
-                const renderData = {
+                const imageCard = await Render.render('Template/xingsheng/xingsheng', {
+                    qq: originalUserId,
                     baseInfo: {
                         nickName: nickName,
-                        roleId: account.roleId,
+                        roleId: uid,
                         avatar: avatarUrl
                     },
                     periodType: periodType,
@@ -198,146 +156,47 @@ export class ResourceReport extends plugin {
                         coinList: reportData.data.coinList
                     },
                     colors: [
-                        {color: '#FF6384'},
-                        {color: '#36A2EB'},
-                        {color: '#FFCE56'},
-                        {color: '#4BC0C0'},
-                        {color: '#9966FF'},
-                        {color: '#FF9F40'}
+                        { color: '#FF6384' },
+                        { color: '#36A2EB' },
+                        { color: '#FFCE56' },
+                        { color: '#4BC0C0' },
+                        { color: '#9966FF' },
+                        { color: '#FF9F40' }
                     ],
                     starDetails,
                     coinDetails,
                     copywriting: reportData.data.copyWriting || '',
                     currentTime: new Date().toLocaleString()
-                };
+                }, { e, retType: 'base64' });
 
-                const imageCard = await Render.render('Template/xingsheng/xingsheng', renderData, { 
-                    e, 
-                    retType: 'base64' 
-                });
-
-                data.push({ message: imageCard });
+                return { uid, message: imageCard };
+            } catch (error) {
+                logger.error(`处理账号 ${uid} 时出错:`, error);
+                return { uid, message: `账号 ${uid} 处理过程中出现错误` };
             }
-            
-            if (data.length > 1) {
-                await e.reply(await Bot.makeForwardMsg(data));
-                return true;
-            }
-        }
-        
-        const account = validAccounts[0];
-        const periodsData = await waves.getResourcePeriods(
-            account.serverId, 
-            account.roleId, 
-            account.token,
-            account.did
-        );
-
-        if (!periodsData.status) {
-            await e.reply(periodsData.msg);
-            return true;
-        }
-
-        const periods = periodsData.data;
-        let finalPeriodIndex = '';
-        let periodTitle = '';
-
-        if (periodType === 'version') {
-            const versionItem = periods.versions.find(v => 
-                v.title.includes(periodIndexStr)
-            );
-            
-            if (versionItem) {
-                finalPeriodIndex = versionItem.index;
-                periodTitle = versionItem.title;
-            } else if (periodIndexStr) {
-                await e.reply(`未找到版本 ${periodIndexStr} 的数据`);
-                return true;
-            } else {
-                finalPeriodIndex = periods.versions[0].index;
-                periodTitle = periods.versions[0].title;
-            }
-        } else if (periodType === 'month') {
-            const monthItem = periods.months.find(m => 
-                m.title.includes(`${periodIndexStr}月`)
-            );
-            
-            if (monthItem) {
-                finalPeriodIndex = monthItem.index;
-                periodTitle = monthItem.title;
-            } else if (periodIndexStr) {
-                await e.reply(`未找到 ${periodIndexStr}月 的数据`);
-                return true;
-            } else {
-                finalPeriodIndex = periods.months[periods.months.length - 1].index;
-                periodTitle = periods.months[periods.months.length - 1].title;
-            }
-        }
-
-        const reportData = await waves.getResourceReport(
-            account.serverId, 
-            account.roleId, 
-            account.token,
-            account.did,
-            periodType,
-            finalPeriodIndex
-        );
-        
-        if (!reportData.status) {
-            await e.reply(reportData.msg);
-            return true;
-        }
-
-        const periodTypeNames = { 'week': '周', 'month': '月', 'version': '版本' };
-        const starDetails = reportData.data.starList.map(item => ({
-            type: item.type,
-            value: item.num,
-            percentage: reportData.data.totalStar > 0 ? 
-                Math.round((item.num / reportData.data.totalStar) * 100) : 0
-        })).filter(item => item.value > 0);
-
-        const coinDetails = reportData.data.coinList.map(item => ({
-            type: item.type,
-            value: item.num,
-            percentage: reportData.data.totalCoin > 0 ? 
-                Math.round((item.num / reportData.data.totalCoin) * 100) : 0
-        })).filter(item => item.value > 0);
-
-        const renderData = {
-        	  qq: originalUserId,
-            baseInfo: {
-                nickName: nickName,
-                roleId: account.roleId,
-            },
-            periodType: periodType,
-            periodTitle: periodTitle,
-            periodNames: periodTypeNames,
-            reportData: {
-                totalStar: reportData.data.totalStar,
-                totalCoin: reportData.data.totalCoin,
-                starList: reportData.data.starList,
-                coinList: reportData.data.coinList
-            },
-            colors: [
-                {color: '#FF6384'},
-                {color: '#36A2EB'},
-                {color: '#FFCE56'},
-                {color: '#4BC0C0'},
-                {color: '#9966FF'},
-                {color: '#FF9F40'}
-            ],
-            starDetails,
-            coinDetails,
-            copywriting: reportData.data.copyWriting || '',
-            currentTime: new Date().toLocaleString()
         };
 
-        const imageCard = await Render.render('Template/xingsheng/xingsheng', renderData, { 
-            e, 
-            retType: 'base64' 
-        });
 
-        await e.reply(imageCard);
+        const results = await Promise.all(accounts.map(processAccount));
+
+
+        const data = results.sort((a, b) =>
+            accounts.findIndex(acc => acc.uid === a.uid) - accounts.findIndex(acc => acc.uid === b.uid)
+        ).map(item => ({ message: item.message }));
+
+
+        if (data.length === 0) {
+            await e.reply('所有账号数据获取失败');
+        } else if (data.length === 1) {
+            await e.reply(data[0].message);
+        } else {
+            const forwardMsg = await Bot.makeForwardMsg([
+                { user_id: Bot.uin, nickname: '资源简报', message: `用户 ${nickName} 的资源简报汇总` },
+                ...data
+            ]);
+            await e.reply(forwardMsg);
+        }
+
         return true;
     }
 }

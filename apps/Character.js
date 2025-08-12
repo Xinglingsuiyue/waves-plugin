@@ -2,7 +2,6 @@ import plugin from '../../../lib/plugins/plugin.js'
 import WeightCalculator from '../utils/Calculate.js'
 import { pluginResources } from '../model/path.js';
 import Waves from "../components/Code.js";
-import Config from "../components/Config.js";
 import Wiki from '../components/Wiki.js';
 import Render from '../components/Render.js';
 import path from 'path';
@@ -24,119 +23,83 @@ export class Character extends plugin {
     }
 
     async character(e) {
-
-        if (e.at) e.user_id = e.at;
-        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
+        const match = e.msg.match(this.rule[0].reg);
+        if (!match) return await e.reply('请输入正确的命令格式，如：[~安可面板]');
+        const [, message, roleId] = match;
         const waves = new Waves();
 
-        const [, message, roleId] = e.msg.match(this.rule[0].reg);
-
-        if (!message) return e.reply('请输入正确的命令格式，如：[~安可面板]')
-
-        if (!accountList.length) {
-            if (roleId || await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                let publicCookie = await waves.pubCookie();
-                if (!publicCookie) {
-                    return await e.reply('当前没有可用的公共Cookie，请使用[~登录]进行登录');
-                } else {
-                    if (roleId) {
-                        publicCookie.roleId = roleId;
-                        await redis.set(`Yunzai:waves:bind:${e.user_id}`, publicCookie.roleId);
-                    } else if (await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                        publicCookie.roleId = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
-                    }
-                    accountList.push(publicCookie);
-                }
-            } else {
-                return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
-            }
-        }
+        const accounts = await waves.getValidAccount(e, roleId);
+        if (!accounts) return;
 
         const wiki = new Wiki();
         let name = await wiki.getAlias(message);
 
-        let data = [];
-        let deleteroleId = [];
-        let imgList = [];
+        const data = [];
+        const imgListSet = new Set();
 
-        await Promise.all(accountList.map(async (account) => {
-            const usability = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token, account.did ? account.did : '');
+        await Promise.all(accounts.map(async (acc) => {
+            const { uid, serverId, token, did } = acc;
 
-            if (!usability) {
-                data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
-                deleteroleId.push(account.roleId);
-                return;
-            }
-
-            if (roleId) {
-                account.roleId = roleId;
-                await redis.set(`Yunzai:waves:bind:${e.user_id}`, account.roleId);
-            }
-
-            const roleData = await waves.getRoleData(account.serverId, account.roleId, account.token, account.did ? account.did : '');
+            const roleData = await waves.getRoleData(serverId, uid, token, did);
 
             if (!roleData.status) {
-                data.push({ message: roleData.msg });
+                data.push({ message: `UID ${uid}: ${roleData.msg}` });
                 return;
             }
 
             const rolePicDir = path.join(pluginResources, 'rolePic', name);
 
-            // 处理主角名称
             if (name.includes('漂泊者')) {
-                name = '漂泊者'
+                name = '漂泊者';
             }
 
             const char = roleData.data.roleList.find(role => role.roleName === name);
-
             if (!char) {
-                data.push({ message: `UID: ${account.roleId} 还未拥有共鸣者 ${name}` });
+                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${name}` });
                 return;
             }
 
-            const roleDetail = await waves.getRoleDetail(account.serverId, account.roleId, char.roleId, account.token, account.did ? account.did : '')
-
+            const roleDetail = await waves.getRoleDetail(serverId, uid, char.roleId, token, did);
             if (!roleDetail.status) {
-                data.push({ message: roleDetail.msg });
+                data.push({ message: `UID ${uid}: ${roleDetail.msg}` });
                 return;
             }
 
             if (!roleDetail.data.role) {
                 const showroleList = roleData.data.showRoleIdList.map(roleId => {
-                    const role = roleData.data.roleList.find(role => role.roleId === roleId || role.mapRoleId === roleId);
+                    const role = roleData.data.roleList.find(r => r.roleId === roleId || r.mapRoleId === roleId);
                     return role ? role.roleName : null;
                 }).filter(Boolean);
 
-                data.push({ message: `UID: ${account.roleId} 未在库街区展示共鸣者 ${name}，请在库街区展示此角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色` });
+                data.push({
+                    message: `UID: ${uid} 未在库街区展示共鸣者 ${name}，请在库街区展示此角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色`
+                });
                 return;
             }
 
-            const webpFiles = fs.existsSync(rolePicDir)
-                ? fs.readdirSync(rolePicDir).filter(file => path.extname(file).toLowerCase() === '.webp')
-                : [];
+            let webpFiles = [];
+            try {
+                webpFiles = fs.readdirSync(rolePicDir).filter(file => file.toLowerCase().endsWith('.webp'));
+            } catch {}
 
             const rolePicUrl = webpFiles.length > 0
                 ? `file://${rolePicDir}/${webpFiles[Math.floor(Math.random() * webpFiles.length)]}`
                 : roleDetail.data.role.rolePicUrl;
 
-            imgList.push(rolePicUrl);
+            imgListSet.add(rolePicUrl);
 
-            roleDetail.data = (new WeightCalculator(roleDetail.data)).calculate()
+            roleDetail.data = (new WeightCalculator(roleDetail.data)).calculate();
 
             const imageCard = await Render.render('Template/charProfile/charProfile', {
-                data: { uid: account.roleId, rolePicUrl, roleDetail },
+                data: { uid, rolePicUrl, roleDetail },
             }, { e, retType: 'base64' });
 
             data.push({ message: imageCard });
-
         }));
 
-        if (deleteroleId.length) {
-            const newAccountList = accountList.filter(account => !deleteroleId.includes(account.roleId));
-            Config.setUserData(e.user_id, newAccountList);
+        if (data.length === 0) {
+            return await e.reply('无法获取角色数据，请确保角色已展示在库街区');
         }
-
-        imgList = [...new Set(imgList)];
 
         const msgData = data.length === 1
             ? data[0].message
@@ -148,7 +111,11 @@ export class Character extends plugin {
             : [msgRes?.message_id].filter(Boolean);
 
         for (const id of message_id) {
-            await redis.set(`Yunzai:waves:originpic:${id}`, JSON.stringify({ type: 'profile', img: imgList }), { EX: 3600 * 3 });
+            await redis.set(
+                `Yunzai:waves:originpic:${id}`,
+                JSON.stringify({ type: 'profile', img: [...imgListSet] }),
+                { EX: 3600 * 3 }
+            );
         }
 
         return true;

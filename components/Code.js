@@ -567,6 +567,79 @@ class Waves {
 
         return false;
     }
+
+    // 获取有效账号信息
+    async getValidAccount(e, roleId = '', forceUserCookie = false) {
+        if (e.at) e.user_id = e.at;
+
+        const boundUid = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
+        if (!roleId && !boundUid) {
+            await e.reply('未绑定鸣潮特征码，请使用[~绑定uid]完成绑定，或使用[~登录]进行登录自动绑定');
+            return null;
+        }
+
+        // 统一获取账号列表
+        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || 
+                        await Config.getUserData(e.user_id);
+
+        const invalidRoleIds = new Set();
+        const resultList = [];
+        const targetUids = [...new Set([
+            ...(roleId ? [roleId] : []),
+            ...(boundUid ? [boundUid] : []),
+            ...accountList.map(a => a.roleId)
+        ].filter(Boolean))];
+
+        const publicCookie = forceUserCookie ? null : await this.pubCookie?.();
+
+        for (const uid of targetUids) {
+            const boundAcc = accountList.find(a => a.roleId === uid);
+            let cookieInfo = null;
+            if (boundAcc) {
+                const isUsable = await this.isAvailable(
+                    boundAcc.serverId, 
+                    boundAcc.roleId, 
+                    boundAcc.token, 
+                    boundAcc.did || ''
+                );
+                if (isUsable) {
+                    cookieInfo = {
+                        uid,
+                        serverId: boundAcc.serverId,
+                        token: boundAcc.token,
+                        did: boundAcc.did || ''
+                    };
+                } else {
+                    invalidRoleIds.add(uid);
+                }
+            }
+
+            if (!cookieInfo) {
+                if (forceUserCookie) {
+                    await e.reply(`用户 ${uid} 未登录或登录失效，请使用[~登录]进行登录`);
+                    continue;
+                }
+                if (publicCookie) {
+                    cookieInfo = {
+                        uid,
+                        serverId: publicCookie.serverId,
+                        token: publicCookie.token,
+                        did: publicCookie.did || ''
+                    };
+                } else {
+                    await e.reply(`没有可用的公共Cookie，请使用[~登录]进行登录`);
+                }
+            }
+
+            cookieInfo && resultList.push(cookieInfo);
+        }
+        if (invalidRoleIds.size > 0) {
+            const newAccountList = accountList.filter(a => !invalidRoleIds.has(a.roleId));
+            Config.setUserData(e.user_id, newAccountList);
+        }
+
+        return resultList.length > 0 ? resultList : null;
+    }
     
     // 新增海虚数据获取方法
     async getHaiXuData(serverId, roleId, token, did = null) {
