@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
-import Config from "../components/Config.js";
 import Render from '../components/Render.js';
 
 export class Slash extends plugin {
@@ -11,84 +10,50 @@ export class Slash extends plugin {
             event: "message",
             priority: 1009,
             rule: [{
-                reg: '^(～|~|∽∽∽∽∽∽∽∽|#?鸣潮)(冥歌海墟|新深渊|(?:再生)?海域|海墟|冥海|破船|禁忌海域|(?:再生海域-?)?海隙|(?:再生海域-?)?湍渊|(?:再生海域-?)?无尽)(\\d{9})?$',
+                reg: '^(?:～|~|鸣潮)[\\s]*?(冥歌海墟|新深渊|(?:再生)?海域|冥歌|海墟|冥海|破船|禁忌海域|(?:再生海域-?)?海隙|(?:再生海域-?)?湍渊|(?:再生海域-?)?无尽)',
                 fnc: 'slash'
             }]
         });
     }
 
     async slash(e) {
-        if (e.at) e.user_id = e.at;
-        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         const waves = new Waves();
 
-        let [, , type, roleId] = e.msg.match(this.rule[0].reg);
+        let [, type] = e.msg.match(this.rule[0].reg);
 
-        // 处理无账号但有指定UID或绑定UID的情况
-        if (!accountList?.length) {
-            if (roleId || await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                let publicCookie = await waves.pubCookie();
-                if (!publicCookie) {
-                    return await e.reply('当前没有可用的公共Cookie，请使用[~登录]进行登录');
-                } else {
-                    if (roleId) {
-                        publicCookie.roleId = roleId;
-                        await redis.set(`Yunzai:waves:bind:${e.user_id}`, publicCookie.roleId);
-                    } else if (await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                        publicCookie.roleId = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
-                    }
-                    // 确保有did属性
-                    if (!publicCookie.did) publicCookie.did = '';
-                    accountList = [publicCookie];
-                }
-            } else {
-                return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
-            }
-        }
+        const accounts = await waves.getValidAccount(e, '', true);
+        if (!accounts) return;
 
         let data = [];
-        let deleteRoleIds = [];
 
-        await Promise.all(accountList.map(async (account) => {
-            const currentRoleId = roleId || account.roleId;
-            
-            // 检查token可用性（添加did参数）
-            const usable = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token, account.did ? account.did : '');
-            if (!usable) {
-                deleteRoleIds.push(currentRoleId);
-                data.push({ message: `账号 ${currentRoleId} 的Token已失效\n请重新使用 [~登录] 进行登录` });
-                return;
-            }
+        await Promise.all(accounts.map(async (acc) => {
+            const { uid, serverId, token, did } = acc;
 
-            // 如果指定了roleId，更新绑定
-            if (roleId) {
-                await redis.set(`Yunzai:waves:bind:${e.user_id}`, currentRoleId);
-            }
 
             try {
                 // 获取基础数据和海虚数据（添加did参数）
                 const [baseData, slashData] = await Promise.all([
-                    waves.getBaseData(account.serverId, currentRoleId, account.token, account.did || ''),
-                    waves.getHaiXuData(account.serverId, currentRoleId, account.token, account.did || '')
+                    waves.getBaseData(serverId, uid, token, did),
+                    waves.getHaiXuData(serverId, uid, token, did)
                 ]);
 
                 // 检查数据有效性
                 if (!baseData?.status || !slashData?.status) {
                     const errorMsg = baseData?.msg || slashData?.msg || '获取数据失败';
-                    data.push({ message: `账号 ${currentRoleId} ${errorMsg}` });
+                    data.push({ message: `账号 ${uid} ${errorMsg}` });
                     return;
                 }
 
                 // 检查海墟数据是否为空
                 if (!slashData.data || !slashData.data.difficultyList) {
-                    data.push({ message: `账号 ${currentRoleId} 没有可用的海墟数据` });
+                    data.push({ message: `账号 ${uid} 没有可用的海墟数据` });
                     return;
                 }
 
                 // 格式化数据
-                const renderData = await this.formatData(slashData.data, baseData.data, type, e, !!roleId);
+                const renderData = await this.formatData(slashData.data, baseData.data, type, e, !!uid);
                 if (!renderData) {
-                    data.push({ message: `账号 ${currentRoleId} 数据格式化失败` });
+                    data.push({ message: `账号 ${uid} 数据格式化失败` });
                     return;
                 }
 
@@ -103,16 +68,10 @@ export class Slash extends plugin {
             } catch (err) {
                 logger.error('[冥歌海墟查询异常]', err);
                 data.push({ 
-                    message: `账号 ${currentRoleId} 查询异常: ${err.message || '未知错误'}`
+                    message: `账号 ${uid} 查询异常: ${err.message || '未知错误'}`
                 });
             }
         }));
-
-        // 清理失效账号
-        if (deleteRoleIds.length) {
-            let newAccountList = accountList.filter(acc => !deleteRoleIds.includes(acc.roleId));
-            Config.setUserData(e.user_id, newAccountList);
-        }
 
         // 返回结果
         if (data.length === 1) {

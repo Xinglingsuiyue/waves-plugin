@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Waves from "../components/Code.js";
-import Config from "../components/Config.js";
 import Render from '../components/Render.js';
 
 export class Challenge extends plugin {
@@ -11,7 +10,7 @@ export class Challenge extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(?:挑战|挑战数据|全息战略)(\\d{9})?$",
+                    reg: "^(?:～|~|鸣潮)(?:挑战|挑战数据|全息|全息战略)(\\d{9})?$",
                     fnc: "challenge"
                 }
             ]
@@ -19,50 +18,19 @@ export class Challenge extends plugin {
     }
 
     async challenge(e) {
-        if (e.at) e.user_id = e.at;
-        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         const waves = new Waves();
-
         const [, roleId] = e.msg.match(this.rule[0].reg);
 
-        if (!accountList.length) {
-            if (roleId || await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                let publicCookie = await waves.pubCookie();
-                if (!publicCookie) {
-                    return await e.reply('当前没有可用的公共Cookie，请使用[~登录]进行登录');
-                } else {
-                    if (roleId) {
-                        publicCookie.roleId = roleId;
-                        await redis.set(`Yunzai:waves:bind:${e.user_id}`, publicCookie.roleId);
-                    } else if (await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
-                        publicCookie.roleId = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
-                    }
-                    accountList.push(publicCookie);
-                }
-            } else {
-                return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
-            }
-        }
+        const accounts = await waves.getValidAccount(e, roleId);
+        if (!accounts) return;
 
         let data = [];
-        let deleteroleId = [];
-        await Promise.all(accountList.map(async (account) => {
-            const usability = await waves.isAvailable(account.serverId, roleId ? roleId : account.roleId, account.token, account.did ? account.did : '');
-
-            if (!usability) {
-                data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
-                deleteroleId.push(account.roleId);
-                return;
-            }
-
-            if (roleId) {
-                account.roleId = roleId;
-                await redis.set(`Yunzai:waves:bind:${e.user_id}`, account.roleId);
-            }
+        await Promise.all(accounts.map(async (acc) => {
+            const { uid, serverId, token, did } = acc;
 
             const [baseData, challengeData] = await Promise.all([
-                waves.getBaseData(account.serverId, account.roleId, account.token, account.did ? account.did : ''),
-                waves.getChallengeData(account.serverId, account.roleId, account.token, account.did ? account.did : '')
+                waves.getBaseData(serverId, uid, token, did),
+                waves.getChallengeData(serverId, uid, token, did)
             ]);
 
             if (!baseData.status || !challengeData.status) {
@@ -98,11 +66,6 @@ export class Challenge extends plugin {
                 data.push({ message: imageCard });
             }
         }));
-
-        if (deleteroleId.length) {
-            const newAccountList = accountList.filter(account => !deleteroleId.includes(account.roleId));
-            Config.setUserData(e.user_id, newAccountList);
-        }
 
         if (data.length === 1) {
             await e.reply(data[0].message);
