@@ -32,7 +32,7 @@ export class Shock extends plugin {
             const redisKey = `Shock:${userID}:${dateKey}`;
             
             let count = parseInt(await redis.get(redisKey) || 0);
-            if (count >= 999) {
+            if (count >= 20) {
                 await e.reply(`今日梭哈次数已达上限（20/20），请明天再来！`);
                 return true;
             }
