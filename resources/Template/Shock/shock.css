@@ -24,7 +24,7 @@
     background-size: cover;
     width: 1080px;
     height: 1156px;
-}
+
 
 .container {
     width: 1080px;
@@ -112,57 +112,13 @@
     left: 40%;
 }
 
-/* 角色立绘样式 */
-.character-display {
-    position: absolute;
-    top: 150px;
-    left: 700px;
-    width: 600px;
-    height: 1200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 2;
-    overflow: visible;
-}
-
-.character-display img {
-    width: 600px;
-    height: 1200px;
-    object-fit: contain;
-    object-position: center top;
-    border-radius: 15px;
-}
-
-
-.character-display img:hover {
-    transform: scale(1.02);
-}
-
-.character-info {
-    margin-top: 5px;                /* 与上方图片的间距 */
-    text-align: center;              /* 文字居中 */
-    background: rgba(20, 35, 60, 0.8); /* 半透明深蓝背景 */
-    border-radius: 10px;             /* 圆角 */
-    padding: 10px 20px;              /* 内边距 */
-    backdrop-filter: blur(5px);      /* 背景模糊效果 */
-}
-
-.character-name {
-    font-size: 32px;
-    color: #f6e05e;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-
 .artifact-container {
     position: absolute;
     top: 425px;
     left: 90px;
     width: 500px;
     height: 600px;
-    z-index: 3;
+
 }
 
 .artifact-header {
@@ -194,6 +150,7 @@
     text-align: center;
 }
 
+
 .stat-item {
     display: flex;
     justify-content: space-between;
@@ -201,6 +158,7 @@
     padding: 15px 0;
     border-bottom: 1px solid rgba(100, 150, 255, 0.1);
 }
+
 
 .stat-name {
     font-size: 40px;
@@ -246,6 +204,7 @@
     100% { opacity: 0.8; }
 }
 
+
 #copyright {
     position: absolute;
     bottom: 1px;
@@ -262,21 +221,4 @@
     color: #d3bc8e;
     display: inline-block;
     padding: 0 3px;
-}
-
-/* 响应式调整 */
-@media (max-width: 1200px) {
-    .character-display {
-        right: 30px;
-        width: 280px;
-    }
-    
-    .character-display img {
-        width: auto;
-        height: 900px;
-    }
-    
-    .artifact-container {
-        width: 450px;
-    }
 }
