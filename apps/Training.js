@@ -1,7 +1,9 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import WeightCalculator from '../utils/Calculate.js'
 import Waves from "../components/Code.js";
+import Config from '../components/Config.js';
 import Render from '../components/Render.js';
+import RankUtil from '../utils/RankUtil.js';
 
 export class Training extends plugin {
     constructor() {
@@ -21,18 +23,24 @@ export class Training extends plugin {
     async training(e) {
         const waves = new Waves();
         const [, roleId] = e.msg.match(this.rule[0].reg);
-
+        
+        // 处理@的情况
+        if (e.at) e.user_id = e.at;
+        
+        // 获取账号列表
         const accounts = await waves.getValidAccount(e, roleId);
         if (!accounts) return;
-
+        
+        const groupId = e.isGroup ? e.group_id : 'private';
         let data = [];
+        let deleteroleId = [];
 
         await Promise.all(accounts.map(async (acc) => {
             const { uid, serverId, token, did } = acc;
 
             const [baseData, roleData] = await Promise.all([
-	                waves.getBaseData(serverId, uid, token, did),
-	                waves.getRoleData(serverId, uid, token, did)
+                waves.getBaseData(serverId, uid, token, did),
+                waves.getRoleData(serverId, uid, token, did)
             ]);
 
             if (!baseData.status || !roleData.status) {
@@ -51,6 +59,40 @@ export class Training extends plugin {
                 calculatedRole.chainCount = calculatedRole.chainList.filter(chain => chain.unlocked).length;
                 return calculatedRole;
             });
+            
+            // 更新排行榜数据 - 添加武器图标
+            await Promise.all(roleList.map(async (role) => {
+                const phantomScore = role?.phantomData?.statistic?.totalScore || 0;
+                if (phantomScore > 0) {
+                    const charInfo = {
+                        roleIcon: role.roleIconUrl,
+                        weaponIcon: role.weaponData?.weapon?.iconUrl, // 武器图标
+                        phantomIcon: role.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
+                        roleName: role.roleName,
+                        level: role.level,
+                        chainCount: role.chainCount,
+                        weapon: {
+                            name: role.weaponData?.weapon?.weaponName || "未知",
+                            level: role.weaponData?.level || 0,
+                            rank: role.weaponData?.rank || 0,
+                            resonLevel: role.weaponData?.resonLevel || 0,
+                            icon: role.weaponData?.weapon?.iconUrl || "" // 新增武器图标字段
+                        },
+                        phantom: {
+                            rank: role.phantomData?.statistic?.rank || "N",
+                            color: role.phantomData?.statistic?.color || "#a0a0a0"
+                        }
+                    };
+                    
+                    // 全局排名
+                    await RankUtil.updateRankData(role.roleName, uid, phantomScore, 'global', charInfo);
+                    
+                    // 群排名（如果是群聊）
+                    if (groupId !== 'private') {
+                        await RankUtil.updateRankData(role.roleName, uid, phantomScore, groupId, charInfo);
+                    }
+                }
+            }));
 
             roleList.forEach(role => {
                 const { phantomData } = role;

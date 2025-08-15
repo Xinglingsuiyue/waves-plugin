@@ -2,10 +2,12 @@ import plugin from '../../../lib/plugins/plugin.js'
 import WeightCalculator from '../utils/Calculate.js'
 import { pluginResources } from '../model/path.js';
 import Waves from "../components/Code.js";
+import Config from '../components/Config.js';
 import Wiki from '../components/Wiki.js';
 import Render from '../components/Render.js';
 import path from 'path';
 import fs from 'fs';
+import RankUtil from '../utils/RankUtil.js';
 
 export class Character extends plugin {
     constructor() {
@@ -23,17 +25,21 @@ export class Character extends plugin {
     }
 
     async character(e) {
-        const match = e.msg.match(this.rule[0].reg);
-        if (!match) return await e.reply('请输入正确的命令格式，如：[~安可面板]');
-        const [, message, roleId] = match;
         const waves = new Waves();
-
+        const [, message, roleId] = e.msg.match(this.rule[0].reg);
+        
+        // 处理@的情况
+        if (e.at) e.user_id = e.at;
+        
+        // 获取账号列表
         const accounts = await waves.getValidAccount(e, roleId);
         if (!accounts) return;
+        
+        if (!message) return await e.reply('请输入正确的命令格式，如：[~安可面板]');
 
         const wiki = new Wiki();
         let name = await wiki.getAlias(message);
-
+        
         const data = [];
         const imgListSet = new Set();
 
@@ -88,7 +94,42 @@ export class Character extends plugin {
 
             imgListSet.add(rolePicUrl);
 
-            roleDetail.data = (new WeightCalculator(roleDetail.data)).calculate();
+            // 计算角色数据和声骸评分
+            const calculated = new WeightCalculator(roleDetail.data).calculate();
+            roleDetail.data = calculated;
+
+            const phantomScore = calculated?.phantomData?.statistic?.totalScore || 0;
+            if (phantomScore > 0) {
+                const groupId = e.isGroup ? e.group_id : 'private';
+                
+                // 修改后的charInfo对象 - 添加武器图标
+                const charInfo = {
+                    roleIcon: char.roleIconUrl,
+                    weaponIcon: calculated.weaponData?.weapon?.iconUrl, // 武器图标
+                    phantomIcon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
+                    roleName: name,
+                    level: calculated.level,
+                    chainCount: calculated.chainList 
+                        ? calculated.chainList.filter(chain => chain.unlocked).length 
+                        : 0,
+                    weapon: {
+                        name: calculated.weaponData?.weapon?.weaponName || "未知",
+                        level: calculated.weaponData?.level || 0,
+                        rank: calculated.weaponData?.rank || 0,
+                        resonLevel: calculated.weaponData?.resonLevel || 0,
+                        icon: calculated.weaponData?.weapon?.iconUrl || "" // 新增武器图标字段
+                    },
+                    phantom: {
+                        rank: calculated.phantomData?.statistic?.rank || "N",
+                        color: calculated.phantomData?.statistic?.color || "#a0a0a0"
+                    }
+                };
+                
+                await Promise.all([
+                    RankUtil.updateRankData(name, uid, phantomScore, groupId, charInfo),
+                    RankUtil.updateRankData(name, uid, phantomScore, 'global', charInfo)
+                ]);
+            }
 
             const imageCard = await Render.render('Template/charProfile/charProfile', {
                 data: { uid, rolePicUrl, roleDetail },
