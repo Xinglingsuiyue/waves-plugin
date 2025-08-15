@@ -9,6 +9,13 @@ import path from 'path';
 import fs from 'fs';
 import RankUtil from '../utils/RankUtil.js';
 
+// 漂泊者属性ID映射
+const WAVERIDER_ATTRIBUTES = {
+    '1604': '湮灭', '1605': '湮灭',
+    '1501': '衍射', '1502': '衍射',
+    '1406': '气动', '1408': '气动'
+};
+
 export class Character extends plugin {
     constructor() {
         super({
@@ -53,15 +60,37 @@ export class Character extends plugin {
                 return;
             }
 
-            const rolePicDir = path.join(pluginResources, 'rolePic', name);
-
+            // 处理漂泊者角色
+            let actualName = name;
             if (name.includes('漂泊者')) {
-                name = '漂泊者';
+                // 查找展示的漂泊者角色
+                const waverider = roleData.data.roleList.find(
+                    role => role.roleName === '漂泊者' && 
+                            Object.keys(WAVERIDER_ATTRIBUTES).includes(role.roleId)
+                );
+                
+                if (waverider) {
+                    // 根据角色ID获取具体属性
+                    const attribute = WAVERIDER_ATTRIBUTES[waverider.roleId];
+                    actualName = `漂泊者${attribute}`;
+                } else {
+                    actualName = '漂泊者';
+                }
             }
 
-            const char = roleData.data.roleList.find(role => role.roleName === name);
+            const rolePicDir = path.join(pluginResources, 'rolePic', actualName);
+
+            const char = roleData.data.roleList.find(role => {
+                // 处理漂泊者匹配
+                if (actualName.startsWith('漂泊者')) {
+                    return role.roleName === '漂泊者' && 
+                           Object.keys(WAVERIDER_ATTRIBUTES).includes(role.roleId);
+                }
+                return role.roleName === actualName;
+            });
+            
             if (!char) {
-                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${name}` });
+                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${actualName}` });
                 return;
             }
 
@@ -78,7 +107,7 @@ export class Character extends plugin {
                 }).filter(Boolean);
 
                 data.push({
-                    message: `UID: ${uid} 未在库街区展示共鸣者 ${name}，请在库街区展示此角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色`
+                    message: `UID: ${uid} 未在库街区展示共鸣者 ${actualName}，请在库街区展示此角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色`
                 });
                 return;
             }
@@ -102,12 +131,13 @@ export class Character extends plugin {
             if (phantomScore > 0) {
                 const groupId = e.isGroup ? e.group_id : 'private';
                 
-                // 修改后的charInfo对象 - 添加武器图标
+                // 修改后的charInfo对象 - 添加武器图标和角色属性信息
                 const charInfo = {
                     roleIcon: char.roleIconUrl,
-                    weaponIcon: calculated.weaponData?.weapon?.iconUrl, // 武器图标
+                    weaponIcon: calculated.weaponData?.weapon?.iconUrl,
                     phantomIcon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
-                    roleName: name,
+                    roleName: actualName, // 使用处理后的实际名称
+                    roleId: char.roleId, // 保留角色ID用于属性区分
                     level: calculated.level,
                     chainCount: calculated.chainList 
                         ? calculated.chainList.filter(chain => chain.unlocked).length 
@@ -117,7 +147,7 @@ export class Character extends plugin {
                         level: calculated.weaponData?.level || 0,
                         rank: calculated.weaponData?.rank || 0,
                         resonLevel: calculated.weaponData?.resonLevel || 0,
-                        icon: calculated.weaponData?.weapon?.iconUrl || "" // 新增武器图标字段
+                        icon: calculated.weaponData?.weapon?.iconUrl || ""
                     },
                     phantom: {
                         rank: calculated.phantomData?.statistic?.rank || "N",
@@ -126,8 +156,8 @@ export class Character extends plugin {
                 };
                 
                 await Promise.all([
-                    RankUtil.updateRankData(name, uid, phantomScore, groupId, charInfo),
-                    RankUtil.updateRankData(name, uid, phantomScore, 'global', charInfo)
+                    RankUtil.updateRankData(actualName, uid, phantomScore, groupId, charInfo),
+                    RankUtil.updateRankData(actualName, uid, phantomScore, 'global', charInfo)
                 ]);
             }
 

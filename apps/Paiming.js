@@ -7,6 +7,13 @@ import Render from '../components/Render.js';
 import fs from 'fs';
 import path from 'path';
 
+// 漂泊者属性ID映射
+const WAVERIDER_ATTRIBUTES = {
+    '1604': '湮灭', '1605': '湮灭',
+    '1501': '衍射', '1502': '衍射',
+    '1406': '气动', '1408': '气动'
+};
+
 export class CharacterRanking extends plugin {
     constructor() {
         super({
@@ -15,7 +22,7 @@ export class CharacterRanking extends plugin {
             priority: 1010,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(.*?)(总)?排名$",
+                    reg: "^(?:～|~|鸣潮)(.*?)(?:总|全服)?(?:排行|排名)$",
                     fnc: "characterRank"
                 }
             ]
@@ -102,15 +109,25 @@ export class CharacterRanking extends plugin {
 
             // 获取角色标准名称
             const wiki = new Wiki();
-            const name = await wiki.getAlias(charName);
+            let name = await wiki.getAlias(charName);
+            
+            // 处理漂泊者角色
+            if (name.includes('漂泊者')) {
+                // 尝试获取具体属性
+                const attributeMatch = charName.match(/(湮灭|衍射|气动)/);
+                if (attributeMatch) {
+                    name = `漂泊者${attributeMatch[0]}`;
+                } else {
+                    // 默认处理为湮灭
+                    name = '漂泊者湮灭';
+                }
+            }
+            
             if (!name) return e.reply(`找不到角色: ${charName}`);
             
-            const finalName = name.includes('漂泊者') ? '漂泊者' : name;
-            
-            // 加载排名数据（包含当前用户信息）
             const rankResult = isGlobal
-                ? this.loadRankData(this.getGlobalRankFilePath(finalName), currentUserUIDs)
-                : this.loadRankData(this.getGroupRankFilePath(groupId, finalName), currentUserUIDs);
+                ? this.loadRankData(this.getGlobalRankFilePath(name), currentUserUIDs)
+                : this.loadRankData(this.getGroupRankFilePath(groupId, name), currentUserUIDs);
             
             const rankData = rankResult.topList;
             const currentUserEntry = rankResult.currentUserEntry;
@@ -123,7 +140,7 @@ export class CharacterRanking extends plugin {
             try {
                 imageCard = await this.generateRankImage(
                     e, 
-                    finalName, 
+                    name, 
                     rankData, 
                     isGlobal ? '总' : '群',
                     currentUserUIDs,

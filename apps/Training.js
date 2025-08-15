@@ -5,6 +5,13 @@ import Config from '../components/Config.js';
 import Render from '../components/Render.js';
 import RankUtil from '../utils/RankUtil.js';
 
+// 漂泊者属性ID映射
+const WAVERIDER_ATTRIBUTES = {
+    '1604': '湮灭', '1605': '湮灭',
+    '1501': '衍射', '1502': '衍射',
+    '1406': '气动', '1408': '气动'
+};
+
 export class Training extends plugin {
     constructor() {
         super({
@@ -57,6 +64,15 @@ export class Training extends plugin {
             const roleList = (await Promise.all(Promises)).filter(Boolean).map(role => {
                 const calculatedRole = new WeightCalculator(role).calculate();
                 calculatedRole.chainCount = calculatedRole.chainList.filter(chain => chain.unlocked).length;
+                
+                // 处理漂泊者角色名
+                if (calculatedRole.roleName === '漂泊者') {
+                    const attribute = WAVERIDER_ATTRIBUTES[calculatedRole.roleId];
+                    if (attribute) {
+                        calculatedRole.roleName = `漂泊者${attribute}`;
+                    }
+                }
+                
                 return calculatedRole;
             });
             
@@ -64,11 +80,21 @@ export class Training extends plugin {
             await Promise.all(roleList.map(async (role) => {
                 const phantomScore = role?.phantomData?.statistic?.totalScore || 0;
                 if (phantomScore > 0) {
+                    // 处理漂泊者角色名
+                    let roleName = role.roleName;
+                    if (roleName === '漂泊者') {
+                        const attribute = WAVERIDER_ATTRIBUTES[role.roleId];
+                        if (attribute) {
+                            roleName = `漂泊者${attribute}`;
+                        }
+                    }
+                    
                     const charInfo = {
                         roleIcon: role.roleIconUrl,
-                        weaponIcon: role.weaponData?.weapon?.iconUrl, // 武器图标
+                        weaponIcon: role.weaponData?.weapon?.iconUrl,
                         phantomIcon: role.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
-                        roleName: role.roleName,
+                        roleName: roleName,
+                        roleId: role.roleId, // 保留角色ID用于属性区分
                         level: role.level,
                         chainCount: role.chainCount,
                         weapon: {
@@ -76,7 +102,7 @@ export class Training extends plugin {
                             level: role.weaponData?.level || 0,
                             rank: role.weaponData?.rank || 0,
                             resonLevel: role.weaponData?.resonLevel || 0,
-                            icon: role.weaponData?.weapon?.iconUrl || "" // 新增武器图标字段
+                            icon: role.weaponData?.weapon?.iconUrl || ""
                         },
                         phantom: {
                             rank: role.phantomData?.statistic?.rank || "N",
@@ -85,11 +111,11 @@ export class Training extends plugin {
                     };
                     
                     // 全局排名
-                    await RankUtil.updateRankData(role.roleName, uid, phantomScore, 'global', charInfo);
+                    await RankUtil.updateRankData(roleName, uid, phantomScore, 'global', charInfo);
                     
                     // 群排名（如果是群聊）
                     if (groupId !== 'private') {
-                        await RankUtil.updateRankData(role.roleName, uid, phantomScore, groupId, charInfo);
+                        await RankUtil.updateRankData(roleName, uid, phantomScore, groupId, charInfo);
                     }
                 }
             }));
