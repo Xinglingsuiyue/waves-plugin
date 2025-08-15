@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
+// 漂泊者属性ID映射
+const WAVERIDER_ATTRIBUTES = {
+    '1604': '湮灭', '1605': '湮灭',
+    '1501': '衍射', '1502': '衍射',
+    '1406': '气动', '1408': '气动'
+};
+
 export default class RankUtil {
     // 获取数据存储路径
     static getRankDataPath() {
@@ -22,6 +29,15 @@ export default class RankUtil {
     // 更新排行榜数据（添加角色信息参数）
     static async updateRankData(charName, uid, score, groupId = 'private', charInfo = null) {
         try {
+            // 处理漂泊者角色名
+            let finalCharName = charName;
+            if (charInfo && charInfo.roleName === '漂泊者') {
+                const attribute = WAVERIDER_ATTRIBUTES[charInfo.roleId];
+                if (attribute) {
+                    finalCharName = `漂泊者${attribute}`;
+                }
+            }
+            
             const paths = this.getRankDataPath();
             
             // 确保基础目录存在
@@ -36,7 +52,7 @@ export default class RankUtil {
             
             // 全局排名更新
             await this.updateRankFile(
-                path.join(paths.globalDir, `${charName}.json`), 
+                path.join(paths.globalDir, `${finalCharName}.json`), 
                 uid, 
                 score,
                 charInfo // 添加角色信息
@@ -47,7 +63,7 @@ export default class RankUtil {
                 const groupDirPath = paths.groupDir(groupId);
                 this.ensureDirectoryExists(groupDirPath);
                 await this.updateRankFile(
-                    path.join(groupDirPath, `${charName}.json`), 
+                    path.join(groupDirPath, `${finalCharName}.json`), 
                     uid, 
                     score,
                     charInfo // 添加角色信息
