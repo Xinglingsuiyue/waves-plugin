@@ -1,0 +1,402 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    font-family: "Guruwords";
+    font-weight: 600;
+}
+
+body {
+    transform-origin: top left;
+    width: 2080px;
+}
+
+#box {
+    position: relative;
+    width: 2080px;
+    padding-bottom: 10px;
+    background: url(./imgs/bg.jpg) no-repeat;
+    background-color: rgba(64, 102, 167);
+}
+
+#header {
+    position: relative;
+    margin: 0px 50px;
+    height: 240px;
+    width: 1980px;
+    color: #fff;
+}
+
+#user-name {
+    position: absolute;
+    font-family: sans-serif;
+    font-weight: 700;
+    letter-spacing: 30px;
+    text-shadow: 0 0 3px #000, 3px 3px 20px #000;
+    font-style: italic;
+    font-size: 100px;
+    top: 50px;
+    left: 50px;
+}
+
+#user-uid {
+    position: absolute;
+    font-size: 60px;
+    font-weight: 700;
+    letter-spacing: 10px;
+    text-shadow: 0 0 3px #000, 3px 3px 20px #000;
+    font-style: italic;
+    font-size: 50px;
+    top: 200px;
+    left: 50px;
+}
+
+#container-1 {
+    position: relative;
+    margin: 50px;
+    font-family: "Guruwords";
+    height: auto;
+    width: 1980px;
+    background-color: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+ul {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 20px 20px 0px 0px;
+}
+
+li:nth-child(odd)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(119, 119, 119, 0.2);
+}
+
+li:nth-child(even)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(175, 175, 175, 0.2);
+}
+
+li:first-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: none;
+    z-index: -2;
+}
+
+.star-5 {
+    background-color: rgba(253, 255, 125, 0.5);
+}
+
+.star-4 {
+    background-color: rgba(132, 237, 255, 0.5);
+}
+
+li {
+    display: grid;
+    grid-template-columns: 5% 25% 27% 25% 18%;
+    position: relative;
+    list-style-type: none;
+    width: 100%;
+    height: 80px;
+}
+
+li>* {
+    height: 80px;
+    border: 1px rgba(170, 170, 170, 0.3) solid;
+    border-style: none solid;
+}
+
+li:first-child {
+    background-color: rgba(167, 167, 167, 0.3);
+}
+
+.center {
+    text-align: center;
+    line-height: 80px;
+    font-size: 30px;
+}
+
+.index {
+    font-style: italic;
+}
+
+.role {
+    display: flex;
+    flex-direction: row;
+}
+
+.level {
+    margin: 20px 0px 20px 10px;
+    height: 40px;
+    line-height: 40px;
+    width: 86px;
+    font-size: 32px;
+    color: #000;
+    font-weight: 600;
+}
+
+.reson {
+    width: 36px;
+    height: 50px;
+    line-height: 50px;
+    margin: 15px 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    color: white;
+}
+
+.reson-0 {
+    background-color: #a0a0a0;
+}
+
+.reson-1 {
+    background-color: #00D200;
+}
+
+.reson-2 {
+    background-color: #6640ff;
+}
+
+.reson-3 {
+    background-color: #9f00ed;
+}
+
+.reson-4 {
+    background-color: #eec900;
+}
+
+.reson-5 {
+    background-color: #f08a5d;
+}
+
+.reson-6 {
+    background-color: #9d2933;
+}
+
+.name {
+    margin: 0px 5px;
+}
+
+.role-pic>img {
+    margin: 5px 15px;
+    height: 70px;
+    width: 70px;
+}
+
+.weapon {
+    display: flex;
+    flex-direction: row;
+}
+
+.weapon-pic>img {
+    margin: 5px 15px;
+    height: 70px;
+    width: 70px;
+}
+
+.skill {
+    display: grid;
+    grid-template-columns: 20% 20% 20% 20% 20%;
+    font-size: 36px;
+    color: #797979;
+}
+
+.skill>* {
+    position: relative;
+    border: 1px rgba(170, 170, 170, 0.3) solid;
+    border-style: none solid;
+}
+
+.skill img {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    width: 80%;
+    z-index: 0;
+    filter: brightness(0.85);
+    mix-blend-mode: multiply;
+}
+
+.phantom {
+    display: flex;
+    flex-direction: row;
+}
+
+.phantom-pic>img {
+    margin: 5px 30px;
+    height: 70px;
+    width: 70px;
+}
+
+.phantom-rank {
+    margin: 15px 0px;
+    width: 80px;
+    height: 50px;
+    line-height: 50px;
+    border-radius: 10px;
+    color: white;
+}
+
+.phantom-score {
+    margin-left: 15px;
+    font-weight: 700;
+    font-size: 34px;
+}
+
+#copyright {
+    position: relative;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 10px;
+}
+
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}
+
+/* 排名高亮样式 */
+.top-1 {
+    background: linear-gradient(90deg, rgba(255,215,0,0.3), rgba(255,215,0,0.1)) !important;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3) !important;
+    border: 1px solid rgba(255, 215, 0, 0.5) !important;
+}
+
+.top-2 {
+    background: linear-gradient(90deg, rgba(192,192,192,0.3), rgba(192,192,192,0.1)) !important;
+    box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3) !important;
+    border: 1px solid rgba(192, 192, 192, 0.5) !important;
+}
+
+.top-3 {
+    background: linear-gradient(90deg, rgba(205,127,50,0.3), rgba(205,127,50,0.1)) !important;
+    box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3) !important;
+    border: 1px solid rgba(205, 127, 50, 0.5) !important;
+}
+
+.rank-number {
+    font-size: 40px !important;
+    font-weight: bold !important;
+    color: #ffd700 !important;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5) !important;
+}
+
+.uid {
+    font-size: 30px !important;
+    letter-spacing: 1px !important;
+    color: #81d4fa !important;
+    text-shadow: 0 0 3px #000, 1px 1px 5px #000 !important;
+}
+
+/* 新增: 触发者高亮样式 */
+.highlighted-row {
+    background-color: rgba(255, 0, 0, 0.1) !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.3) !important;
+    border: 2px solid rgba(255, 0, 0, 0.5) !important;
+}
+
+.uid.current-user {
+    color: #ff0000 !important;
+    font-weight: 900 !important;
+    font-size: 32px !important;
+    text-shadow: 
+        0 0 8px rgba(255, 0, 0, 0.8),
+        0 0 12px rgba(255, 100, 100, 0.6) !important;
+    animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 5px #fff, 0 0 10px #ff0000; }
+    to { text-shadow: 0 0 10px #fff, 0 0 20px #ff0000, 0 0 30px #ff0000; }
+}
+
+/* 新增: 触发者未上榜时的展示区域 */
+#current-user-section {
+    background: rgba(255, 230, 230, 0.9);
+    border-top: 3px solid #ff0000;
+    padding: 25px 0;
+    border-radius: 0 0 20px 20px;
+}
+
+.separator {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ff0000, transparent);
+    margin: 0 50px 20px;
+}
+
+.current-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    padding: 0 50px;
+}
+
+.current-user-label {
+    color: #ff0000;
+    font-weight: 900;
+    margin-right: 30px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.current-user-uid {
+    font-family: monospace;
+    color: #c10000;
+    background: rgba(255, 200, 200, 0.6);
+    padding: 5px 20px;
+    border-radius: 10px;
+    margin-right: 30px;
+    letter-spacing: 3px;
+}
+
+.current-user-message {
+    color: #ff6a00;
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* 新增: 100+ 排名特殊样式 */
+.rank-over100 {
+    font-size: 36px !important;
+    font-weight: 900 !important;
+    color: #ff6a00 !important;
+    text-shadow: 
+        0 0 5px rgba(255, 106, 0, 0.7),
+        0 0 10px rgba(255, 106, 0, 0.5) !important;
+    letter-spacing: 1px;
+}
+
+/* 确保排名列有足够宽度 */
+.rank-number {
+    min-width: 100px;
+}

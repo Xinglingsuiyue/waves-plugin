@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <title>{{charName}}声骸评分 · {{updateTime}}</title>
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/ranking/charRank.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div id="box">
+        <div id="header">
+            <div id="user-name">{{charName}}声骸评分 · {{ rankType }}排名</div>
+            <div id="user-uid">更新时间: {{ updateTime }}</div>
+        </div>
+        <div id="container-1">
+            <ul>
+                <li>
+                    <div class="center">排名</div>
+                    <div class="center">角色</div>
+                    <div class="center">武器</div>
+                    <div class="center">UID</div>
+                    <div class="center">声骸</div>
+                </li>
+                {{each roleList entry idx}}
+                <li class="{{idx < 3 ? 'top-' + (idx+1) : ''}} {{entry.isCurrentUser ? 'highlighted-row' : ''}}">
+                    <div class="rank-number center">{{idx + 1}}</div>
+                    <div class="role center">
+                        <div class="level">
+                            Lv{{entry.level}}
+                        </div>
+                        <div class="role-pic">
+                            <!-- 角色图标 -->
+                        </div>
+                        <div class="reson reson-{{entry.chainCount}}">
+                            {{entry.chainCount}}
+                        </div>
+                        <div class="name">
+                            {{entry.roleName}}
+                        </div>
+                    </div>
+                    <div class="weapon center">
+                        <div class="level">
+                            Lv{{entry.weaponData.level}}
+                        </div>
+                        <div class="weapon-pic">
+                            <!-- 武器图标 -->
+                        </div>
+                        <div class="reson reson-{{entry.weaponData.resonLevel}}">
+                            {{entry.weaponData.resonLevel}}
+                        </div>
+                        <div class="name">
+                            {{entry.weaponData.weapon.weaponName}}
+                        </div>
+                    </div>
+                    <div class="uid center {{entry.isCurrentUser ? 'current-user' : ''}}">
+                        {{entry.uid}}
+                    </div>
+                    <div class="phantom center">
+                        <div class="phantom-pic">
+                            {{if entry.phantomData.equipPhantomList[0]}}
+                                <!-- 声骸图标 -->
+                            {{else}}
+                                
+                            {{/if}}
+                        </div>
+                        <div class="phantom-rank" style="background-color: {{entry.phantomData.statistic.color}};">
+                            {{entry.phantomData.statistic.rank}}
+                        </div>
+                        <div class="phantom-score">
+                            {{typeof entry.phantomData.statistic.totalScore === 'number' ?
+                            entry.phantomData.statistic.totalScore.toFixed(2) : entry.phantomData.statistic.totalScore}}
+                        </div>
+                    </div>
+                </li>
+                {{/each}}
+                
+                <!-- 新增：当前用户未进入前20名的显示行 -->
+                {{if showCurrentUserRow}}
+                <li class="highlighted-row">
+                    <div class="rank-number center">
+                        {{@currentUserRow.rank}}
+                    </div>
+                    <div class="role center">
+                        <div class="level">
+                            Lv{{currentUserRow.level}}
+                        </div>
+                        <div class="role-pic">
+                            <!-- 角色图标 -->
+                        </div>
+                        <div class="reson reson-{{currentUserRow.chainCount}}">
+                            {{currentUserRow.chainCount}}
+                        </div>
+                        <div class="name">
+                            {{currentUserRow.roleName}}
+                        </div>
+                    </div>
+                    <div class="weapon center">
+                        <div class="level">
+                            Lv{{currentUserRow.weaponData.level}}
+                        </div>
+                        <div class="weapon-pic">
+                            <!-- 武器图标 -->
+                        </div>
+                        <div class="reson reson-{{currentUserRow.weaponData.resonLevel}}">
+                            {{currentUserRow.weaponData.resonLevel}}
+                        </div>
+                        <div class="name">
+                            {{currentUserRow.weaponData.weapon.weaponName}}
+                        </div>
+                    </div>
+                    <div class="uid center current-user">
+                        {{currentUserRow.uid}}
+                    </div>
+                    <div class="phantom center">
+                        <div class="phantom-pic">
+                            {{if currentUserRow.phantomData.equipPhantomList.length}}
+                                <!-- 声骸图标 -->
+                            {{/if}}
+                        </div>
+                        <div class="phantom-rank" style="background-color: {{currentUserRow.phantomData.statistic.color}};">
+                            {{currentUserRow.phantomData.statistic.rank}}
+                        </div>
+                        <div class="phantom-score">
+                            {{typeof currentUserRow.phantomData.statistic.totalScore === 'number' ?
+                            currentUserRow.phantomData.statistic.totalScore.toFixed(2) : currentUserRow.phantomData.statistic.totalScore}}
+                        </div>
+                    </div>
+                </li>
+                {{/if}}
+            </ul>
+        </div>
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+
+</html>
