@@ -47,6 +47,11 @@ export class Character extends plugin {
         const wiki = new Wiki();
         let name = await wiki.getAlias(message);
         
+        // 修复1: 恢复文档1的漂泊者处理逻辑
+        if (name.includes('漂泊者')) {
+            name = '漂泊者';
+        }
+
         const data = [];
         const imgListSet = new Set();
 
@@ -60,37 +65,12 @@ export class Character extends plugin {
                 return;
             }
 
-            // 处理漂泊者角色
-            let actualName = name;
-            if (name.includes('漂泊者')) {
-                // 查找展示的漂泊者角色
-                const waverider = roleData.data.roleList.find(
-                    role => role.roleName === '漂泊者' && 
-                            Object.keys(WAVERIDER_ATTRIBUTES).includes(role.roleId)
-                );
-                
-                if (waverider) {
-                    // 根据角色ID获取具体属性
-                    const attribute = WAVERIDER_ATTRIBUTES[waverider.roleId];
-                    actualName = `漂泊者${attribute}`;
-                } else {
-                    actualName = '漂泊者';
-                }
-            }
+            const rolePicDir = path.join(pluginResources, 'rolePic', name);
 
-            const rolePicDir = path.join(pluginResources, 'rolePic', actualName);
-
-            const char = roleData.data.roleList.find(role => {
-                // 处理漂泊者匹配
-                if (actualName.startsWith('漂泊者')) {
-                    return role.roleName === '漂泊者' && 
-                           Object.keys(WAVERIDER_ATTRIBUTES).includes(role.roleId);
-                }
-                return role.roleName === actualName;
-            });
-            
+            const char = roleData.data.roleList.find(role => role.roleName === name);
             if (!char) {
-                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${actualName}` });
+                // 修复2: 显示实际查询的角色名
+                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${name}` });
                 return;
             }
 
@@ -101,13 +81,19 @@ export class Character extends plugin {
             }
 
             if (!roleDetail.data.role) {
+                // 修复3: 优化展示角色列表的显示
                 const showroleList = roleData.data.showRoleIdList.map(roleId => {
                     const role = roleData.data.roleList.find(r => r.roleId === roleId || r.mapRoleId === roleId);
+                    // 特殊处理漂泊者显示
+                    if (role && role.roleName === '漂泊者') {
+                        const attribute = WAVERIDER_ATTRIBUTES[role.roleId] || '';
+                        return `漂泊者${attribute}`;
+                    }
                     return role ? role.roleName : null;
                 }).filter(Boolean);
 
                 data.push({
-                    message: `UID: ${uid} 未在库街区展示共鸣者 ${actualName}，请在库街区展示此角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色`
+                    message: `UID: ${uid} 未在库街区展示此角色，请在库街区展示角色\n\n当前展示角色有：\n${showroleList.join('、')}\n\n使用[~登录]登录该账号后即可查看所有角色`
                 });
                 return;
             }
@@ -131,13 +117,17 @@ export class Character extends plugin {
             if (phantomScore > 0) {
                 const groupId = e.isGroup ? e.group_id : 'private';
                 
-                // 修改后的charInfo对象 - 添加武器图标和角色属性信息
+                // 修复4: 保留文档2的排行榜优化
+                // 生成带属性后缀的漂泊者名称
+                const leaderboardName = (name === '漂泊者' && char.roleId in WAVERIDER_ATTRIBUTES)
+                    ? `漂泊者${WAVERIDER_ATTRIBUTES[char.roleId]}`
+                    : name;
+
                 const charInfo = {
                     roleIcon: char.roleIconUrl,
                     weaponIcon: calculated.weaponData?.weapon?.iconUrl,
                     phantomIcon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
-                    roleName: actualName, // 使用处理后的实际名称
-                    roleId: char.roleId, // 保留角色ID用于属性区分
+                    roleName: leaderboardName, // 排行榜使用带属性名称
                     level: calculated.level,
                     chainCount: calculated.chainList 
                         ? calculated.chainList.filter(chain => chain.unlocked).length 
@@ -156,8 +146,8 @@ export class Character extends plugin {
                 };
                 
                 await Promise.all([
-                    RankUtil.updateRankData(actualName, uid, phantomScore, groupId, charInfo),
-                    RankUtil.updateRankData(actualName, uid, phantomScore, 'global', charInfo)
+                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, groupId, charInfo),
+                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, 'global', charInfo)
                 ]);
             }
 
