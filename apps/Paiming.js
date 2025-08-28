@@ -22,7 +22,7 @@ export class CharacterRanking extends plugin {
             priority: 1010,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(.*?)(?:总|全服)?(?:排行|排名)$",
+                    reg: "^(?:～|~|鸣潮)(.*?)(总)?(?:排行|排名)$",
                     fnc: "characterRank"
                 }
             ]
