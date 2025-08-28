@@ -1,7 +1,7 @@
-pool_name: 「挽歌永不落幕」
+pool_name: 「不坠烜冕」
 five_star:
   up_pool:
-    - name: 弗洛洛
+    - name: 奥古斯塔
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -13,8 +13,8 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 桃祈
-    - name: 灯灯
+    - name: 炽霞
+    - name: 釉瑚
     - name: 渊武
   other_pool:
     # 4星角色

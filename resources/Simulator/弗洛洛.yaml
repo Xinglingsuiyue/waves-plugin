@@ -1,7 +1,7 @@
-pool_name: 「漫于盈缺时轴」
+pool_name: 「挽歌永不落幕」
 five_star:
   up_pool:
-    - name: 尤诺
+    - name: 弗洛洛
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -14,8 +14,8 @@ five_star:
 four_star:
   up_pool:
     - name: 桃祈
-    - name: 白芷
-    - name: 秋水
+    - name: 灯灯
+    - name: 渊武
   other_pool:
     # 4星角色
     - name: 桃祈
