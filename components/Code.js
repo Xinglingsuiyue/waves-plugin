@@ -80,7 +80,7 @@ class Waves {
         return host;
     }
     // 构建通用请求头
-    async buildHeaders(platform = 'ios', token = null, did = null) {
+    async buildHeaders(platform = 'ios', token = null, did = null, needToken = false) {
         const headers = {
             "source": platform ,
             "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
@@ -106,7 +106,7 @@ class Waves {
         }
         
         // 添加用户token（如果存在）
-        if (token) {
+        if (needToken) {
             headers["token"] = token;
         }
 
@@ -141,8 +141,8 @@ class Waves {
     }
 
     // 获取可用性
-    async isAvailable(serverId, roleId, token, did = null, strict = false) {
-        const headers = await this.buildHeaders('ios', token, did);
+    async isAvailable(serverId, roleId, token, did = null, strict = false ) {
+        const headers = await this.buildHeaders('ios', token, did, true);
         const data = qs.stringify({ serverId, roleId });
 
         try {
@@ -195,7 +195,7 @@ class Waves {
 
     // 日常数据
     async getGameData(token, did = null) {
-        const headers = await this.buildHeaders('ios', token, did);
+        const headers = await this.buildHeaders('ios', token, did, true);
         const data = qs.stringify({ type: '2', sizeType: '1' });
 
         try {
@@ -767,7 +767,7 @@ class Waves {
             return { status: false, msg: '无效的资源周期类型' };
         }
         
-        const headers = await this.buildHeaders('ios', token, did);
+        const headers = await this.buildHeaders('ios', token, did, true);
         const data = qs.stringify({
             period: periodIndex,
             roleId,
