@@ -409,9 +409,9 @@ class Waves {
     }
 
     // 签到
-    async signIn(serverId, roleId, userId, token, did = null) {
+    async signIn(serverId, roleId, userId, token, did = null ) {
         await this.refreshData(serverId, roleId, token, did);
-        const headers = await this.buildHeaders('ios', token, did);
+        const headers = await this.buildHeaders('ios', token, did, true);
         
         const data = qs.stringify({
             gameId: 3,
@@ -446,7 +446,7 @@ class Waves {
     // 签到记录
     async queryRecord(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
-        const headers = await this.buildHeaders('ios', token, did);
+        const headers = await this.buildHeaders('ios', token, did, true);
         const data = qs.stringify({
             gameId: 3,
             serverId,
@@ -727,7 +727,7 @@ class Waves {
             return { status: false, msg: '当前没有可用的Cookie，请使用[~登录]进行登录' };
         }
         
-        const headers = await this.buildHeaders('ios', token, did);
+        const headers = await this.buildHeaders('ios', token, did, true);
         
         try {
             const response = await wavesApi.get(CONSTANTS.RESOURCE_PERIOD_LIST_URL, { 
