@@ -1,4 +1,4 @@
-pool_name: 「诗与乐的交响」
+pool_name: 「倦客不知身近远」
 five_star:
   up_pool:
     - name: 仇远
@@ -14,8 +14,8 @@ five_star:
 four_star:
   up_pool:
     - name: 桃祈
-    - name: 白芷
-    - name: 秋水
+    - name: 秧秧
+    - name: 丹瑾
   other_pool:
     # 4星角色
     - name: 桃祈
