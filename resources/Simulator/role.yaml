@@ -1,7 +1,7 @@
-pool_name: 「漫于盈缺时轴」
+pool_name: 「于灰烬中」
 five_star:
   up_pool:
-    - name: 尤诺
+    - name: 嘉贝莉娜
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 桃祈
-    - name: 白芷
-    - name: 秋水
+    - name: 散华
+    - name: 莫特斐
+    - name: 灯灯
   other_pool:
     # 4星角色
     - name: 桃祈
