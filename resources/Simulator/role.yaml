@@ -27,6 +27,7 @@ four_star:
     - name: 炽霞
     - name: 渊武
     - name: 莫特斐
+    - name: 卜灵
     # 4星武器
     - name: 东落
     - name: 西升
@@ -43,6 +44,7 @@ four_star:
     - name: 华彩乐段
     - name: 呼啸重音
     - name: 奇幻变奏
+    - name: 永续坍缩
   basic: 0.06
   other: 0.5
 three_star:
