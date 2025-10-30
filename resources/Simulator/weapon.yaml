@@ -9,9 +9,9 @@ five_star:
 four_star:
   up_pool:
     
-    - name: 飞逝
-    - name: 东落
-    - name: 核熔星盘
+    - name: 永夜长明
+    - name: 骇行
+    - name: 永续坍缩
   other_pool:
     # 4星角色
     - name: 秧秧
@@ -25,6 +25,7 @@ four_star:
     - name: 釉瑚
     - name: 灯灯
     - name: 莫特斐
+    - name: 卜灵
     # 4星武器
     - name: 西升
     - name: 东落
@@ -43,6 +44,7 @@ four_star:
     - name: 尘云旋臂
     - name: 华彩乐段
     - name: 行进序曲
+    - name: 永续坍缩
   basic: 0.06
   other: 0.5
 three_star:
