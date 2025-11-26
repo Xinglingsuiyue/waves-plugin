@@ -1,4 +1,4 @@
-pool_name: 「胜利为我喝彩」
+pool_name: 「曙暮一线之间」
 five_star:
   up_pool:
     - name: 千咲
@@ -13,36 +13,42 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 散华
-    - name: 莫特斐
-    - name: 灯灯
+    - name: 桃祈
+    - name: 渊武
+    - name: 秋水
   other_pool:
     # 4星角色
-    - name: 桃祈
     - name: 秧秧
-    - name: 散华
-    - name: 灯灯
-    - name: 丹瑾
-    - name: 釉瑚
     - name: 炽霞
+    - name: 白芷
+    - name: 丹瑾
+    - name: 散华
+    - name: 桃祈
+    - name: 秋水
     - name: 渊武
+    - name: 釉瑚
+    - name: 灯灯
     - name: 莫特斐
+    - name: 卜灵
     # 4星武器
-    - name: 东落
     - name: 西升
+    - name: 东落
     - name: 飞逝
-    - name: 骇行
     - name: 异度
-    - name: 永夜长明
-    - name: 不归孤军
-    - name: 无眠烈火
-    - name: 袍泽之固
+    - name: 凋亡频移
+    - name: 奇幻变奏
     - name: 今州守望
     - name: 异响空灵
-    - name: 行进序曲
+    - name: 无眠烈火
+    - name: 永夜长明
+    - name: 核熔星盘
+    - name: 不归孤军
+    - name: 骇行
+    - name: 悖论喷流
+    - name: 尘云旋臂
     - name: 华彩乐段
-    - name: 呼啸重音
-    - name: 奇幻变奏
+    - name: 行进序曲
+    - name: 永续坍缩
   basic: 0.06
   other: 0.5
 three_star:

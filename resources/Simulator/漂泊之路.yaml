@@ -1,31 +1,93 @@
-pool_name: 「曙暮一线之间」
+pool_name: 「漂泊之路」
 five_star:
   up_pool:
+    - name: 今汐
+    - name: 长离
+    - name: 吟霖
+    - name: 忌炎
+    - name: 椿
+    - name: 折枝
+    - name: 守岸人
+    - name: 相里要
+    - name: 菲比
+    - name: 珂莱塔
+    - name: 布兰特
+    - name: 坎特蕾拉
+    - name: 赞妮
+    - name: 夏空
+    - name: 卡提希娅
+    - name: 嘉贝莉娜
+    - name: 仇远
+    - name: 露帕
+    - name: 洛可可
+    - name: 弗洛洛
+    - name: 尤诺
+    - name: 奥古斯塔
     - name: 千咲
+    - name: 维里奈
+    - name: 安可
+    - name: 卡卡罗
+    - name: 凌阳
+    - name: 鉴心
+
   other_pool:
     - name: 维里奈
     - name: 安可
     - name: 卡卡罗
     - name: 凌阳
     - name: 鉴心
+    - name: 今汐
+    - name: 长离
+    - name: 吟霖
+    - name: 忌炎
+    - name: 椿
+    - name: 折枝
+    - name: 守岸人
+    - name: 相里要
+    - name: 菲比
+    - name: 珂莱塔
+    - name: 布兰特
+    - name: 坎特蕾拉
+    - name: 赞妮
+    - name: 夏空
+    - name: 卡提希娅
+    - name: 嘉贝莉娜
+    - name: 仇远
+    - name: 露帕
+    - name: 洛可可
+    - name: 弗洛洛
+    - name: 尤诺
+    - name: 奥古斯塔
+    - name: 千咲
   basic: 0.008
   increase: 0.0902
   other: 0.5
 four_star:
   up_pool:
+    - name: 白芷
     - name: 桃祈
+    - name: 灯灯
     - name: 渊武
-    - name: 秋水
-  other_pool:
-    # 4星角色
-    - name: 桃祈
     - name: 秧秧
     - name: 散华
-    - name: 灯灯
+    - name: 秋水
     - name: 丹瑾
     - name: 釉瑚
-    - name: 炽霞
+    - name: 炽霞 
+    - name: 莫特斐
+    - name: 卜灵
+  other_pool:
+    # 4星角色
+    - name: 白芷
+    - name: 桃祈
+    - name: 灯灯
     - name: 渊武
+    - name: 秧秧
+    - name: 散华
+    - name: 秋水
+    - name: 丹瑾
+    - name: 釉瑚
+    - name: 炽霞 
     - name: 莫特斐
     - name: 卜灵
     # 4星武器
