@@ -6,7 +6,7 @@ import { pluginResources } from '../model/path.js';
 import YAML from 'yaml';
 import Wiki from '../components/Wiki.js';
 
-const holdingRateApi = 'https://top.camellya.xyz/api/waves/hold/rates';
+const holdingRateApi = 'https://wh.loping151.site/api/waves/hold/rates';
 
 export class HoldingRate extends plugin {
     constructor() {
