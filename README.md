@@ -213,7 +213,7 @@ pnpm install --filter=waves-plugin
 - [x] 抽卡分析图片本地化
 - [x] 模拟声骇梭哈
 - [x] 星声功能
-- [ ] 角色持有率
+- [x] 角色持有率
 - [x] 角色评级排名
 - [ ] 海墟排名
 - [ ] 伤害计算
@@ -255,7 +255,7 @@ pnpm install --filter=waves-plugin
 2. 角色攻略：[小沐XMu](https://www.kurobbs.com/person-center?id=10450567) & [moealkyne](https://www.kurobbs.com/person-center?id=10422445) & [金铃子](https://www.kurobbs.com/person-center?id=10584798) & [丸子](https://space.bilibili.com/75)
 3. 声骸评分：[燊林大火](https://github.com/SLDHshenlindahuo)
 4. 帮助背景图：[loong](https://x.com/loong_blo/status/1848708696521773257)
-5. 角色持有率数据：[WutheringWavesUID](https://github.com/tyql688/WutheringWavesUID)
+5. 角色持有率数据：[WutheringWavesUID](https://github.com/tyql688/WutheringWavesUID) & [XutheringWavesUID](https://github.com/Loping151/XutheringWavesUID)
 
 ## 许可证
 
