@@ -4,7 +4,7 @@
 
 # WAVES-PLUGIN
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）后面readme已经魔改，原版请前往https://github.com/erzaozi/waves-plugin.git查看
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）后面readme已经魔改，原版请前往https://github.com/erzaozi/waves-plugin.git 查看
 
 先把更新地址替换一下
 
@@ -256,120 +256,6 @@ pnpm install --filter=waves-plugin
 3. 声骸评分：[燊林大火](https://github.com/SLDHshenlindahuo)
 4. 帮助背景图：[loong](https://x.com/loong_blo/status/1848708696521773257)
 5. 角色持有率数据：[WutheringWavesUID](https://github.com/tyql688/WutheringWavesUID) & [XutheringWavesUID](https://github.com/Loping151/XutheringWavesUID)
-
-## 许可证
-
-本项目使用 [GNU AGPLv3](https://choosealicense.com/licenses/agpl-3.0/) 作为开源许可证。
-
-> [!CAUTION]
-> **禁止** 对本项目的 HTML 模板及其他渲染 UI 文件进行 **复制**、**修改** 或 **再分发**。这包括但不限于公开托管、分享或将这些文件包含在其他项目中> > 0. **打开在线登录服务**
-> >    - 在锅巴的本插件配置面板中，找到 `允许网页登录` 配置项，将其开关打开
-> >    - 使用本地浏览器访问 `http://127.0.0.1:25088`，如果跳转到项目 Github 首页，说明服务已开启
-> >
-> > 1. **访问 Cloudflare Zero Trust 工作台**
-> >    - 打开浏览器，在地址栏打开 [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) 并登录您的 Cloudflare 账户
-> > 
-> > 2. **创建隧道**
-> >    - 在工作台面板上，依次点击左侧导航栏中的 `Networks` 选项
-> >    - 在下拉菜单中选择 `Tunnels`
-> >    - 点击页面左上角的 `Create a tunnel` 按钮
-> >    - 在 `Select your tunnel type` 中选择 `Cloudflared`，点击 `Next`
-> >    - 在接下来的网页中，输入一个易于辨识的隧道名称（如 `kuro-login-tunnel`），然后点击 `Save tunnel`
-> > 
-> > 3. **选择环境**
-> >    - 在 `Choose your environment` 部分，选择与您运行的机器人相对应的环境（例如，Linux、Windows、macOS等）
-> >    - 根据所选环境，查看底部的 `Install and run a connector` 部分，按照指示进行必要的安装和配置
-> > 
-> > 4. **配置隧道设置**
-> >    - 在页面的最后部分进行隧道设置，以便配置您的登录网址：
-> >      - 在 `Subdomain` 字段中输入您希望使用的子域名，例如 `waves`
-> >      - 在 `Domain` 下拉菜单中选择您托管的域名，例如 `example.com`
-> >      - 在 `Path` 字段中保持为空，除非您有特定的路径需要设置
-> >      - 在 `Type` 选项中选择 `HTTP`
-> >      - 在 `URL` 字段中输入您本地服务的地址（例如 `localhost:25088`）。请根据您的实际服务端口进行调整
-> > 
-> > 5. **保存和测试**
-> >    - 确认所有配置无误后，点击 `Save tunnel` 完成设置
-> >    - 返回到隧道管理页面，查看新创建的隧道状态，确保其为活跃在线状态
-> >    - 通过访问 `https://waves.example.com` 来测试您的本地化登录服务是否能够正常工作，如果跳转到项目 Github 首页，说明配置正确
-> >
-> > 6. **配置插件**
-> >    - 在锅巴的本插件配置面板中，找到 `登录服务公开地址` 配置项，将您刚刚配置的隧道地址填入，例如 `https://waves.example.com`
-> >    - 向机器人发送命令 `~登录`，尝试访问机器人给出的登录地址，如果能访问登录页面说明配置正确
-> > 
-> > #### 注意事项
-> > - 对于不同环境，Cloudflare 连接器的安装细节可能略有不同，请参考 Cloudflare 的官方文档进行具体操作
-> > - 没有图形界面的 Linux 用户可以使用 `curl` 命令来测试登录服务是否能够正常工作，例如：`curl http://127.0.0.1:25088`
-> > - 如果按照上述步骤，仍然无法访问登录页面，请尝试以下操作：
-> >   1. 检查隧道状态确保其为活跃在线状态
-> >   2. 若机器人是容器部署需要自行配置端口映射
-> >   3. 尝试使用不同网络访问登录服务或让群友进行访问测试
-> > 
-> > </details>
-
-## 功能列表
-
-请使用 `~帮助` 获取完整帮助
-
-- [x] 登录账号
-- [x] 自动签到
-- [x] 用户信息查询
-- [x] 日常数据查询
-- [x] 波片恢满提醒
-- [x] 数据坞 / 声骸查询
-- [x] 探索度查询
-- [x] 挑战数据查询
-- [x] 逆境深塔数据查询
-- [x] 练度统计
-- [x] 抽卡记录查询分析
-- [x] 抽卡记录导入导出
-- [x] 游戏内所有物品图鉴
-- [x] 官方公告推送
-- [x] 角色攻略
-- [x] 抽卡模拟器
-- [x] 随机表情包
-- [x] 角色卡片查询
-- [x] 计算声骸得分
-- [x] 活动日历查询
-- [x] 库街区签到
-- [x] 用户统计
-
-## 功能列表
-
-<details><summary>点击展开</summary>
-
-| 命令      | 功能                       | 示例                                                                                                |
-| --------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
-| ~登录     | 登录账户 Token             | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Bind.png)      |
-| ~卡片     | 获取用户详细信息           | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/User.png)      |
-| ~签到     | 库街区签到                 | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/SignIn.png)    |
-| ~体力     | 获取用户日常数据卡片       | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Sanity.png)    |
-| ~数据坞   | 获取用户数据坞以及声骸信息 | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Calabash.png)  |
-| ~探索度   | 获取用户探索度数据卡片     | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Explore.png)   |
-| ~全息战略 | 获取用户挑战数据卡片       | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Challenge.png) |
-| ~面板     | 获取用户角色面板           | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Panel.png)     |
-| ~抽卡记录 | 获取用户抽卡数据卡片       | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Gacha.png)     |
-| ~日历     | 获取游戏活动时间           | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Calendar.png)  |
-| ~图鉴     | 获取游戏内所有物品图鉴     | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Guide.png)     |
-| ~攻略     | 获取角色攻略               | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Strategy.png)  |
-| ~十连     | 抽卡模拟器                 | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Simulator.png) |
-| ~公告     | 获取官方公告与资讯         | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/News.png)      |
-| ~帮助     | 获取插件帮助               | ![renderings](https://cdn.jsdelivr.net/gh/erzaozi/waves-plugin@main/resources/readme/Help.png)      |
-
-</details>
-
-## 支持与贡献
-
-如果你喜欢这个项目，请不妨点个 Star🌟，这是对开发者最大的动力， 当然，你可以对我 [爱发电](https://afdian.net/a/sumoqi) 赞助，呜咪~❤️
-
-有意见或者建议也欢迎提交 [Issues](https://github.com/erzaozi/waves-plugin/issues) 和 [Pull requests](https://github.com/erzaozi/waves-plugin/pulls)。
-
-## 资源
-
-1. 图鉴：[库街区 Wiki](https://wiki.kurobbs.com/mc/home)
-2. 角色攻略：[小沐XMu](https://www.kurobbs.com/person-center?id=10450567) & [moealkyne](https://www.kurobbs.com/person-center?id=10422445) & [金铃子](https://www.kurobbs.com/person-center?id=10584798) & [丸子](https://space.bilibili.com/75)
-3. 声骸评分：[燊林大火](https://github.com/SLDHshenlindahuo)
-4. 帮助背景图：[loong](https://x.com/loong_blo/status/1848708696521773257)
 
 ## 许可证
 
