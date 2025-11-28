@@ -33,7 +33,6 @@ export class CharacterRanking extends plugin {
             ]
         });
 
-        // 修正路径定义
         this.pluginResources = path.join(process.cwd(), 'plugins', 'waves-plugin', 'resources');
         this.RANK_DATA_PATH = path.join(this.pluginResources, 'data', 'CharacterRank');
         this.GLOBAL_RANK_DIR = path.join(this.RANK_DATA_PATH, 'global');
@@ -55,7 +54,6 @@ export class CharacterRanking extends plugin {
     ensureDirectoryExists(dirPath) {
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath, { recursive: true });
-            logger.mark(`[角色声骸排名] 创建目录: ${dirPath}`);
         }
     }
     
@@ -87,8 +85,7 @@ export class CharacterRanking extends plugin {
             this.ensureDirectoryExists(configDir);
             
             const configPath = path.join(configDir, 'characterRanking.json');
-            fs.writeFileSync(configPath, JSON.stringify(this.config, null, 2), 'utf8');
-            logger.mark(`[角色声骸排名] 配置已保存: ${configPath}`);
+            fs.writeFileSync(configPath, JSON.stringify(this.config, null, 2));
         } catch (err) {
             logger.error(`[角色声骸排名] 保存配置错误: ${err.stack}`);
         }
@@ -104,9 +101,9 @@ export class CharacterRanking extends plugin {
         if (result.success) {
             // 更新同步时间
             this.config.lastSyncTime = new Date().toISOString();
-            this.saveConfig(); // 确保配置保存
+            this.saveConfig();
             
-            await e.reply(`数据同步完成！共处理 ${result.totalFiles} 个群文件，同步了 ${result.totalCharacters} 个角色`);
+            await e.reply(`数据同步完成！共处理 ${result.totalFiles} 个角色文件`);
         } else {
             await e.reply('数据同步失败，请查看日志了解详情');
         }
@@ -335,17 +332,16 @@ export class CharacterRanking extends plugin {
     }
     
     /**
-     * 同步所有群数据到全局排名 - 修复版本
+     * 同步所有群数据到全局排名
      */
     async syncAllGroupDataToGlobal() {
         try {
             if (!fs.existsSync(this.GROUP_RANK_DIR)) {
-                return { success: true, totalFiles: 0, totalCharacters: 0, message: '群排名目录不存在，无需同步' };
+                return { success: true, totalFiles: 0, message: '群排名目录不存在，无需同步' };
             }
             
             const groupDirs = fs.readdirSync(this.GROUP_RANK_DIR);
             let totalSynced = 0;
-            let totalCharacters = 0;
             
             // 先收集所有群的所有角色数据
             const allGroupData = new Map(); // charName -> {uid -> entry}
@@ -382,14 +378,11 @@ export class CharacterRanking extends plugin {
                         });
                         
                         totalSynced++;
-                        logger.mark(`[角色声骸排名] 读取群文件: ${groupFilePath}, 包含 ${groupData.length} 条数据`);
                     } catch (err) {
                         logger.error(`[角色声骸排名] 读取群文件错误 ${groupFilePath}: ${err.stack}`);
                     }
                 }
             }
-            
-            logger.mark(`[角色声骸排名] 共收集到 ${allGroupData.size} 个角色的数据`);
             
             // 现在处理每个角色的全局数据
             for (const [charName, groupCharMap] of allGroupData) {
@@ -400,107 +393,32 @@ export class CharacterRanking extends plugin {
                 if (fs.existsSync(globalFilePath)) {
                     try {
                         globalData = JSON.parse(fs.readFileSync(globalFilePath, 'utf8'));
-                        logger.mark(`[角色声骸排名] 读取全局文件 ${charName}: ${globalData.length} 条记录, 文件路径: ${globalFilePath}`);
                     } catch (err) {
                         logger.error(`[角色声骸排名] 读取全局文件错误 ${globalFilePath}: ${err.stack}`);
                         globalData = [];
                     }
                 }
                 
-                // 修复：使用新的合并方法，确保群数据覆盖全局数据
-                const mergedData = this.mergeRankDataWithOverwrite(globalData, Array.from(groupCharMap.values()));
+                // 合并数据
+                const mergedData = this.mergeRankData(globalData, Array.from(groupCharMap.values()));
                 
                 // 保存合并后的数据
                 try {
-                    // 确保目录存在
-                    this.ensureDirectoryExists(path.dirname(globalFilePath));
-                    
-                    // 写入文件前先备份原文件（可选）
-                    if (fs.existsSync(globalFilePath)) {
-                        const backupPath = globalFilePath + '.backup';
-                        fs.copyFileSync(globalFilePath, backupPath);
-                        logger.mark(`[角色声骸排名] 备份原文件: ${backupPath}`);
-                    }
-                    
-                    // 写入文件
-                    fs.writeFileSync(globalFilePath, JSON.stringify(mergedData, null, 2), 'utf8');
-                    
-                    // 验证写入是否成功
-                    const verifyData = JSON.parse(fs.readFileSync(globalFilePath, 'utf8'));
-                    if (verifyData.length === mergedData.length) {
-                        logger.mark(`[角色声骸排名] 成功同步角色 ${charName}: ${mergedData.length} 条记录, 文件路径: ${globalFilePath}`);
-                        totalCharacters++;
-                        
-                        // 特别记录卡提希娅的同步情况
-                        if (charName === '卡提希娅') {
-                            const userEntry = verifyData.find(entry => entry.uid === '100194893');
-                            if (userEntry) {
-                                logger.mark(`[角色声骸排名] 卡提希娅同步后: UID 100194893 排名 ${verifyData.findIndex(e => e.uid === '100194893') + 1}, 分数 ${userEntry.score}`);
-                            }
-                        }
-                    } else {
-                        logger.error(`[角色声骸排名] 文件写入验证失败: ${charName}, 期望: ${mergedData.length}, 实际: ${verifyData.length}`);
-                    }
+                    fs.writeFileSync(globalFilePath, JSON.stringify(mergedData, null, 2));
                 } catch (err) {
                     logger.error(`[角色声骸排名] 保存全局文件错误 ${globalFilePath}: ${err.stack}`);
                 }
             }
             
-            // 修复：更新配置并立即保存
-            this.config.lastSyncTime = new Date().toISOString();
-            this.saveConfig(); // 确保配置保存
-            
-            logger.mark(`[角色声骸排名] 数据同步完成: 处理了 ${totalSynced} 个群文件, ${totalCharacters} 个角色`);
-            
-            return { 
-                success: true, 
-                totalFiles: totalSynced, 
-                totalCharacters: totalCharacters,
-                message: `同步完成，处理了 ${totalSynced} 个群文件，${totalCharacters} 个角色` 
-            };
+            return { success: true, totalFiles: totalSynced, message: '同步完成' };
         } catch (err) {
             logger.error(`[角色声骸排名] 同步数据错误: ${err.stack}`);
-            return { success: false, totalFiles: 0, totalCharacters: 0, message: err.message };
+            return { success: false, totalFiles: 0, message: err.message };
         }
     }
     
     /**
-     * 修复的合并排名数据方法 - 确保群数据完全覆盖全局数据
-     */
-    mergeRankDataWithOverwrite(globalData, groupData) {
-        const uidMap = new Map();
-        
-        // 先添加全局数据
-        globalData.forEach(entry => {
-            uidMap.set(entry.uid, entry);
-        });
-        
-        // 用群数据覆盖全局数据（群数据优先级更高）
-        groupData.forEach(entry => {
-            // 确保群数据有时间戳
-            if (!entry.timestamp) {
-                entry.timestamp = Date.now();
-            }
-            uidMap.set(entry.uid, entry);
-        });
-        
-        // 按分数排序
-        const sortedData = Array.from(uidMap.values()).sort((a, b) => b.score - a.score);
-        
-        // 特别记录卡提希娅的合并情况
-        if (sortedData.length > 0) {
-            const katixiaEntry = sortedData.find(entry => entry.uid === '100194893');
-            if (katixiaEntry) {
-                const rank = sortedData.findIndex(entry => entry.uid === '100194893') + 1;
-                logger.mark(`[角色声骸排名] 卡提希娅合并后: UID 100194893 排名 ${rank}, 分数 ${katixiaEntry.score}`);
-            }
-        }
-        
-        return sortedData;
-    }
-    
-    /**
-     * 合并排名数据，保留每个UID的最高分（保留原方法，供其他可能的使用）
+     * 合并排名数据，保留每个UID的最高分
      */
     mergeRankData(globalData, groupData) {
         const uidMap = new Map();
