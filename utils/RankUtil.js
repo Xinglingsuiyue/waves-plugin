@@ -55,7 +55,7 @@ export default class RankUtil {
                 path.join(paths.globalDir, `${finalCharName}.json`), 
                 uid, 
                 score,
-                charInfo // 添加角色信息
+                charInfo
             );
             
             // 群排名更新 (处理全服标识)
@@ -66,7 +66,7 @@ export default class RankUtil {
                     path.join(groupDirPath, `${finalCharName}.json`), 
                     uid, 
                     score,
-                    charInfo // 添加角色信息
+                    charInfo
                 );
             }
         } catch (err) {
@@ -74,10 +74,9 @@ export default class RankUtil {
         }
     }
 
-    // 更新排名文件（添加角色信息参数）
+    // 更新排名文件（移除自动清理功能）
     static async updateRankFile(filePath, uid, newScore, charInfo = null) {
         const now = Date.now();
-        const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
         
         // 确保文件所在目录存在
         const fileDir = path.dirname(filePath);
@@ -85,9 +84,15 @@ export default class RankUtil {
         
         // 读取现有数据或初始化
         let rankData = [];
+        let fileExists = false;
+        
         if (fs.existsSync(filePath)) {
+            fileExists = true;
             try {
-                rankData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                const fileContent = fs.readFileSync(filePath, 'utf8');
+                if (fileContent.trim()) {
+                    rankData = JSON.parse(fileContent);
+                }
             } catch (err) {
                 // 忽略解析错误
             }
@@ -100,7 +105,7 @@ export default class RankUtil {
                 uid, 
                 score: newScore, 
                 timestamp: now,
-                charInfo // 存储角色信息
+                charInfo
             };
             rankData.push(userEntry);
         } else {
@@ -108,13 +113,11 @@ export default class RankUtil {
             if (newScore > userEntry.score) {
                 userEntry.score = newScore;
                 userEntry.timestamp = now;
-                // 更新角色信息
                 userEntry.charInfo = charInfo || userEntry.charInfo;
             }
         }
         
-        // 清理过期数据 (超过30天)
-        rankData = rankData.filter(entry => entry.timestamp > thirtyDaysAgo);
+        // 移除了自动清理过期数据的代码，保留所有历史记录
         
         try {
             // 保存更新
