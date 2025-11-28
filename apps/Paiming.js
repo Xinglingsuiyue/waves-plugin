@@ -26,7 +26,7 @@ export class CharacterRanking extends plugin {
                     fnc: "characterRank"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(?:排行|排名)数据同步$",
+                    reg: "^(?:～|~|鸣潮)(?:同步|数据)(?:排行|排名)(?:数据|同步)$",
                     fnc: "syncRankData",
                     permission: "master"
                 }
@@ -44,7 +44,8 @@ export class CharacterRanking extends plugin {
         
         this.defaultConfig = {
             allowPublicGlobalRank: false,
-            allowPublicGroupRank: true
+            allowPublicGroupRank: true,
+            lastSyncTime: null
         };
         
         this.config = this.loadConfig();
@@ -98,6 +99,10 @@ export class CharacterRanking extends plugin {
         const result = await this.syncAllGroupDataToGlobal();
         
         if (result.success) {
+            // 更新同步时间
+            this.config.lastSyncTime = new Date().toISOString();
+            this.saveConfig();
+            
             await e.reply(`数据同步完成！共处理 ${result.totalFiles} 个角色文件`);
         } else {
             await e.reply('数据同步失败，请查看日志了解详情');
@@ -144,9 +149,14 @@ export class CharacterRanking extends plugin {
             
             if (!name) return e.reply(`找不到角色: ${charName}`);
             
-            const rankResult = isGlobal
-                ? this.loadRankData(this.getGlobalRankFilePath(name), currentUserUIDs)
-                : this.loadRankData(this.getGroupRankFilePath(groupId, name), currentUserUIDs);
+            let rankResult;
+            if (isGlobal) {
+                // 对于全局排名，直接读取全局文件
+                rankResult = this.loadRankData(this.getGlobalRankFilePath(name), currentUserUIDs);
+            } else {
+                // 对于群排名，使用原始逻辑
+                rankResult = this.loadRankData(this.getGroupRankFilePath(groupId, name), currentUserUIDs);
+            }
             
             const rankData = rankResult.topList;
             const currentUserEntry = rankResult.currentUserEntry;
@@ -333,6 +343,9 @@ export class CharacterRanking extends plugin {
             const groupDirs = fs.readdirSync(this.GROUP_RANK_DIR);
             let totalSynced = 0;
             
+            // 先收集所有群的所有角色数据
+            const allGroupData = new Map(); // charName -> {uid -> entry}
+            
             for (const groupDir of groupDirs) {
                 if (!groupDir.startsWith('group_')) continue;
                 
@@ -346,10 +359,54 @@ export class CharacterRanking extends plugin {
                     
                     const charName = path.basename(charFile, '.json');
                     const groupFilePath = path.join(groupPath, charFile);
-                    const globalFilePath = this.getGlobalRankFilePath(charName);
                     
-                    await this.syncSingleGroupData(groupFilePath, globalFilePath);
-                    totalSynced++;
+                    try {
+                        const groupData = JSON.parse(fs.readFileSync(groupFilePath, 'utf8'));
+                        
+                        if (!allGroupData.has(charName)) {
+                            allGroupData.set(charName, new Map());
+                        }
+                        
+                        const charMap = allGroupData.get(charName);
+                        
+                        // 将群数据添加到总映射中，保留最高分
+                        groupData.forEach(entry => {
+                            const existing = charMap.get(entry.uid);
+                            if (!existing || entry.score > existing.score) {
+                                charMap.set(entry.uid, entry);
+                            }
+                        });
+                        
+                        totalSynced++;
+                    } catch (err) {
+                        logger.error(`[角色声骸排名] 读取群文件错误 ${groupFilePath}: ${err.stack}`);
+                    }
+                }
+            }
+            
+            // 现在处理每个角色的全局数据
+            for (const [charName, groupCharMap] of allGroupData) {
+                const globalFilePath = this.getGlobalRankFilePath(charName);
+                let globalData = [];
+                
+                // 读取现有的全局数据
+                if (fs.existsSync(globalFilePath)) {
+                    try {
+                        globalData = JSON.parse(fs.readFileSync(globalFilePath, 'utf8'));
+                    } catch (err) {
+                        logger.error(`[角色声骸排名] 读取全局文件错误 ${globalFilePath}: ${err.stack}`);
+                        globalData = [];
+                    }
+                }
+                
+                // 合并数据
+                const mergedData = this.mergeRankData(globalData, Array.from(groupCharMap.values()));
+                
+                // 保存合并后的数据
+                try {
+                    fs.writeFileSync(globalFilePath, JSON.stringify(mergedData, null, 2));
+                } catch (err) {
+                    logger.error(`[角色声骸排名] 保存全局文件错误 ${globalFilePath}: ${err.stack}`);
                 }
             }
             
@@ -357,31 +414,6 @@ export class CharacterRanking extends plugin {
         } catch (err) {
             logger.error(`[角色声骸排名] 同步数据错误: ${err.stack}`);
             return { success: false, totalFiles: 0, message: err.message };
-        }
-    }
-    
-    /**
-     * 同步单个群文件到全局排名
-     */
-    async syncSingleGroupData(groupFilePath, globalFilePath) {
-        if (!fs.existsSync(groupFilePath)) return;
-        
-        try {
-            const groupData = JSON.parse(fs.readFileSync(groupFilePath, 'utf8'));
-            
-            if (!fs.existsSync(globalFilePath)) {
-                // 全局文件不存在，直接复制群数据
-                fs.writeFileSync(globalFilePath, JSON.stringify(groupData, null, 2));
-                return;
-            }
-            
-            // 合并数据：取最高分
-            const globalData = JSON.parse(fs.readFileSync(globalFilePath, 'utf8'));
-            const mergedData = this.mergeRankData(globalData, groupData);
-            
-            fs.writeFileSync(globalFilePath, JSON.stringify(mergedData, null, 2));
-        } catch (err) {
-            logger.error(`[角色声骸排名] 同步文件错误 ${groupFilePath}: ${err.stack}`);
         }
     }
     
