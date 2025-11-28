@@ -43,6 +43,13 @@ export class CharacterRanking extends plugin {
         };
         
         this.config = this.loadConfig();
+        
+        // 机器人启动时自动同步一次（延迟10秒执行）
+        setTimeout(() => {
+            this.syncAllGroupDataToGlobal().catch(err => {
+                logger.error(`[角色声骸排名] 启动同步失败: ${err.stack}`);
+            });
+        }, 10000);
     }
     
     ensureDirectoryExists(dirPath) {
@@ -94,6 +101,14 @@ export class CharacterRanking extends plugin {
         const charName = matchResult[1].trim();
         const isGlobal = matchResult[2] === "总";
         const groupId = e.isGroup ? e.group_id : 'private';
+        
+        // 添加同步命令检测
+        if (charName === '同步数据' && e.isMaster) {
+            await e.reply('开始同步群数据到全局排名...');
+            await this.syncAllGroupDataToGlobal();
+            await e.reply('数据同步完成！');
+            return true;
+        }
         
         if (!charName) return e.reply('请输入角色名称，例如：~安可排名');
         
@@ -301,5 +316,95 @@ export class CharacterRanking extends plugin {
             logger.error(`[角色声骸排名] 生成排名图片错误: ${err.stack}`);
             return '生成排名图片失败，请检查模板文件';
         }
+    }
+    
+    /**
+     * 同步所有群数据到全局排名
+     */
+    async syncAllGroupDataToGlobal() {
+        try {
+            logger.mark('[角色声骸排名] 开始同步群数据到全局排名...');
+            
+            if (!fs.existsSync(this.GROUP_RANK_DIR)) {
+                logger.mark('[角色声骸排名] 群排名目录不存在，无需同步');
+                return;
+            }
+            
+            const groupDirs = fs.readdirSync(this.GROUP_RANK_DIR);
+            let totalSynced = 0;
+            
+            for (const groupDir of groupDirs) {
+                if (!groupDir.startsWith('group_')) continue;
+                
+                const groupPath = path.join(this.GROUP_RANK_DIR, groupDir);
+                if (!fs.statSync(groupPath).isDirectory()) continue;
+                
+                const charFiles = fs.readdirSync(groupPath);
+                
+                for (const charFile of charFiles) {
+                    if (!charFile.endsWith('.json')) continue;
+                    
+                    const charName = path.basename(charFile, '.json');
+                    const groupFilePath = path.join(groupPath, charFile);
+                    const globalFilePath = this.getGlobalRankFilePath(charName);
+                    
+                    await this.syncSingleGroupData(groupFilePath, globalFilePath);
+                    totalSynced++;
+                }
+            }
+            
+            logger.mark(`[角色声骸排名] 同步完成，共处理 ${totalSynced} 个角色文件`);
+        } catch (err) {
+            logger.error(`[角色声骸排名] 同步数据错误: ${err.stack}`);
+        }
+    }
+    
+    /**
+     * 同步单个群文件到全局排名
+     */
+    async syncSingleGroupData(groupFilePath, globalFilePath) {
+        if (!fs.existsSync(groupFilePath)) return;
+        
+        try {
+            const groupData = JSON.parse(fs.readFileSync(groupFilePath, 'utf8'));
+            
+            if (!fs.existsSync(globalFilePath)) {
+                // 全局文件不存在，直接复制群数据
+                fs.writeFileSync(globalFilePath, JSON.stringify(groupData, null, 2));
+                logger.mark(`[角色声骸排名] 创建全局文件: ${globalFilePath}`);
+                return;
+            }
+            
+            // 合并数据：取最高分
+            const globalData = JSON.parse(fs.readFileSync(globalFilePath, 'utf8'));
+            const mergedData = this.mergeRankData(globalData, groupData);
+            
+            fs.writeFileSync(globalFilePath, JSON.stringify(mergedData, null, 2));
+            logger.mark(`[角色声骸排名] 合并数据到: ${globalFilePath}`);
+        } catch (err) {
+            logger.error(`[角色声骸排名] 同步文件错误 ${groupFilePath}: ${err.stack}`);
+        }
+    }
+    
+    /**
+     * 合并排名数据，保留每个UID的最高分
+     */
+    mergeRankData(globalData, groupData) {
+        const uidMap = new Map();
+        
+        // 添加全局数据
+        globalData.forEach(entry => {
+            uidMap.set(entry.uid, entry);
+        });
+        
+        // 合并群数据，取最高分
+        groupData.forEach(entry => {
+            const existing = uidMap.get(entry.uid);
+            if (!existing || entry.score > existing.score) {
+                uidMap.set(entry.uid, entry);
+            }
+        });
+        
+        return Array.from(uidMap.values());
     }
 }
