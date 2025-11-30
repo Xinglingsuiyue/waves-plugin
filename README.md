@@ -215,7 +215,7 @@ pnpm install --filter=waves-plugin
 - [x] 星声功能
 - [x] 角色持有率
 - [x] 角色评级排名
-- [ ] 海墟排名
+- [x] Cosplay
 - [ ] 伤害计算
 - [ ] 卡池倒计时
 
