@@ -110,7 +110,7 @@ export class Bind extends plugin {
                     tokenList.push({ message: `ww添加token${token},${did}` })
         }
         if (tokenList.length > 0) {
-            if (e.isGroup && !Config.getConfig().allow_group_token_display){
+            if (e.isGroup && Config.getConfig().allow_group_token_display){
                 await e.reply(await Bot.makeForwardMsg(tokenList), false, { recallMsg: 10 });
             }
             else if (!e.isGroup){
