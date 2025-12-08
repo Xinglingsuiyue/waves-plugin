@@ -225,6 +225,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "config.allow_group_token_display",
+          label: "允许群显示token",
+          bottomHelpMessage: "是否允许群显示token",
+          component: "Switch",
+        },
+        {
           field: "config.server_port",
           label: "开放端口",
           bottomHelpMessage: "登录HTTP服务器开放端口",
@@ -303,6 +309,12 @@ export function supportGuoba() {
           field: "config.use_public_cookie",
           label: "使用公共Token",
           bottomHelpMessage: "允许未登录用户使用登录用户的Token进行查询",
+          component: "Switch",
+        },
+        {
+          field: "config.link_ww",
+          label: "联动ww",
+          bottomHelpMessage: "查询tk或登录成功时是否提示ww登录方法",
           component: "Switch",
         },
         {
