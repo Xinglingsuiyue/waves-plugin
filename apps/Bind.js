@@ -105,9 +105,9 @@ export class Bind extends plugin {
         await e.reply(`${gameData.data.roleName}(${gameData.data.roleId}) 登录成功！${warningMsg}`, true);
 
         const tokenList = []
-        if (Config.getConfig().link_ww && !message.startsWith("eyJhbGc") && userData.did) {
+        if (Config.getConfig().link_ww && !message.startsWith("eyJhbGc") && did) {
                     tokenList.push({ message: `直接复制下面内容发送即可登录ww` })
-                    tokenList.push({ message: `ww添加token${userData.token},${userData.did}` })
+                    tokenList.push({ message: `ww添加token${token},${did}` })
         }
         if (tokenList.length > 0) {
             if (e.isGroup && !Config.getConfig().allow_group_token_display){
