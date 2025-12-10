@@ -102,7 +102,22 @@ export class Bind extends plugin {
         await redis.set(`Yunzai:waves:bind:${e.user_id}`, gameData.data.roleId);
 
         Config.setUserData(e.user_id, userConfig);
-        return await e.reply(`${gameData.data.roleName}(${gameData.data.roleId}) 登录成功！${warningMsg}`, true);
+        await e.reply(`${gameData.data.roleName}(${gameData.data.roleId}) 登录成功！${warningMsg}`, true);
+
+        const tokenList = []
+        if (Config.getConfig().link_ww && !message.startsWith("eyJhbGc") && did) {
+                    tokenList.push({ message: `直接复制下面内容发送即可登录ww` })
+                    tokenList.push({ message: `ww添加token${token},${did}` })
+        }
+        if (tokenList.length > 0) {
+            if (e.isGroup && Config.getConfig().allow_group_token_display){
+                await e.reply(await Bot.makeForwardMsg(tokenList), false, { recallMsg: 10 });
+            }
+            else if (!e.isGroup){
+                await e.reply(await Bot.makeForwardMsg(tokenList));
+            }
+        }
+        return true;
     }
     async unLogin(e) {
         let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
@@ -138,20 +153,29 @@ export class Bind extends plugin {
             return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
         }
 
-        if (e.isGroup) return await e.reply('为了您的账号安全，请私聊使用该指令');
+        if (e.isGroup && !Config.getConfig().allow_group_token_display) return await e.reply('为了您的账号安全，请私聊使用该指令');
 
         const tokenList = []
         accountList.forEach((item) => {
-            tokenList.push({ message: item.roleId })
+            tokenList.push({ message: `鸣潮uid: ${item.roleId}` })
             
             if (item.did) {
-                tokenList.push({ message: `${item.token},${item.did}` })
+                tokenList.push({ message: `token 和 did: ${item.token},${item.did}` })
+                if (Config.getConfig().link_ww) {
+                    tokenList.push({ message: `--------------------------------` })
+                    tokenList.push({ message: `直接复制下面内容发送即可登录ww` })
+                    tokenList.push({ message: `ww添加token${item.token},${item.did}` })
+                }
             } else {
-                tokenList.push({ message: item.token })
+                tokenList.push({ message: `token: ${item.token}` })
             }
         })
-
-        await e.reply(await Bot.makeForwardMsg(tokenList))
+        if (e.isGroup){
+            await e.reply(await Bot.makeForwardMsg(tokenList), false, { recallMsg: 10 })
+        }
+        else {
+            await e.reply(await Bot.makeForwardMsg(tokenList))
+        }
         return true;
     }
 }

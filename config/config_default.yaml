@@ -13,6 +13,8 @@ task_interval: 37
 strategy_provide: all
 # 是否使用公共cookie
 use_public_cookie: true
+# 查询tk时是否提示ww登录
+link_ww: false
 # 是否允许用户导入抽卡记录
 allow_import: false
 # 是否开启成功日志输出
@@ -29,6 +31,8 @@ reverse_proxy_url: 'https://api.kurobbs.com'
 # ---------- 登录服务器配置 ----------
 # 允许在线登录
 allow_login: false
+# 允许群显示token
+allow_group_token_display: false
 # 服务器开放端口
 server_port: 25088
 # 登录地址获取
