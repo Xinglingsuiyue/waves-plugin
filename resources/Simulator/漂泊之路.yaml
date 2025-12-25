@@ -29,6 +29,8 @@ five_star:
     - name: 卡卡罗
     - name: 凌阳
     - name: 鉴心
+    - name: 琳奈
+    - name: 莫宁
 
   other_pool:
     - name: 维里奈
@@ -59,6 +61,8 @@ five_star:
     - name: 尤诺
     - name: 奥古斯塔
     - name: 千咲
+    - name: 琳奈
+    - name: 莫宁
   basic: 0.008
   increase: 0.0902
   other: 0.5

@@ -1,7 +1,7 @@
-pool_name: 「曙暮一线之间」
+pool_name: 「非定义光谱」
 five_star:
   up_pool:
-    - name: 千咲
+    - name: 琳奈
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 桃祈
-    - name: 渊武
-    - name: 秋水
+    - name: 秧秧
+    - name: 釉瑚
+    - name: 白芷
   other_pool:
     # 4星角色
     - name: 桃祈

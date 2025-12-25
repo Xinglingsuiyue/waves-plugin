@@ -1,7 +1,7 @@
 pool_name: 「浮声沉兵」
 five_star:
   up_pool:
-    - name: 昙切
+    - name: 溢彩荧辉
   other_pool: []
   basic: 0.008
   increase: 0.0902
@@ -9,9 +9,9 @@ five_star:
 four_star:
   up_pool:
     
-    - name: 不归孤军
-    - name: 东落
-    - name: 核熔星盘
+    - name: 悖论喷流
+    - name: 永续坍缩
+    - name: 无眠烈火
   other_pool:
     # 4星角色
     - name: 秧秧
