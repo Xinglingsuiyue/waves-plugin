@@ -26,7 +26,7 @@ const CONSTANTS = {
     RESOURCE_WEEK_URL: '/aki/resource/week',
     RESOURCE_MONTH_URL: '/aki/resource/month',
     RESOURCE_VERSION_URL: '/aki/resource/version',
-    KURO_VERSION: "2.5.1",
+    KURO_VERSION: "2.9.1",
     FORUM_LIST_URL: '/forum/list',
     FORUM_POST_DETAIL_URL: '/forum/post/detail',
     COSPLAY_TOPIC_ID: 90,
