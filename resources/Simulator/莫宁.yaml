@@ -1,4 +1,4 @@
-pool_name: 「未出」
+pool_name: 「纵使星光于无穷远」
 five_star:
   up_pool:
     - name: 莫宁
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 桃祈
-    - name: 渊武
-    - name: 秋水
+    - name: 炽霞
+    - name: 白芷
+    - name: 丹瑾
   other_pool:
     # 4星角色
     - name: 秧秧
