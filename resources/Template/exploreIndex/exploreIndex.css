@@ -57,7 +57,7 @@
 
 .title {
     position: relative;
-    margin: 52px 0px 0px 58px;
+    margin: 52px 0px 0px 0px;
     width: 1108px;
     height: 242px;
 }
@@ -92,24 +92,33 @@
     font-size: 47px;
 }
 
-.area {
-    margin: 21px 0px 0px 57px;
+.country {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 21px 0px 0px 58px;
     width: 1108px;
-    height: auto;
+}
+
+.area {
+    width: 49%;
+    margin-bottom: 20px;
 }
 
 .area-name {
+    display: block;
     padding: 20px 0px 0px 30px;
     height: 130px;
     background: url(imgs/area-bg.png) no-repeat;
     background-size: cover;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .area-key {
     display: inline-block;
     padding: 16px 0px 0px 14px;
     color: #fff;
-    font-size: 40px;
     font-size: 45px;
 }
 
@@ -117,59 +126,70 @@
     display: inline-block;
     padding: 16px 0px 0px 18px;
     color: #cfa251;
-    font-size: 40px;
     font-size: 45px;
 }
 
-.progress {
-    min-height: 94px;
+.progress-row {
     display: flex;
-    flex-direction: row;
-    width: 1108px;
-    border: 3px solid #e9e2dc;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.progress-item {
+    width: 33.33%;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #e9e2dc;
     border-top-color: transparent;
     align-items: center;
+    padding: 8px;
+    box-sizing: border-box;
 }
 
-.progress-name {
-    margin: 22px 0px;
-    padding-left: 16px;
+.progress-item .progress-number {
+    width: 100%;
+    text-align: center;
+    margin: 8px 0px;
     color: #353535;
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 700;
-    width: 190px;
+    order: 1;
 }
 
-.progress-bar-frame {
-    height: 32px;
-    width: 802px;
-    border-radius: 16px;
-    border: 3px solid #cac0bc;
+.progress-item .progress-bar-frame {
+    height: 26px;
+    width: 90%;
+    border-radius: 13px;
+    border: 2px solid #cac0bc;
+    margin: 4px auto;
+    order: 2;
 }
 
-.progress-bar-total {
+.progress-item .progress-bar-total {
     position: relative;
-    left: 8px;
-    top: 5px;
-    width: 780px;
+    left: 6px;
+    top: 4px;
+    width: 90%;
     background-color: #cbcbcb;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
-.progress-bar {
-    height: 16px;
-    line-height: 28px;
+.progress-item .progress-bar {
+    height: 13px;
     background-color: #bfa852;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
-.progress-number {
-    width: 100px;
+.progress-item .progress-name {
+    width: 100%;
     color: #353535;
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 700;
-    text-align: right;
-    float: right;
+    text-align: center;
+    margin-top: 4px;
+    order: 3;
 }
 
 #copyright {

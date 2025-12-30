@@ -31,12 +31,9 @@
                     <div class="area-key">{{area.areaName}}</div>
                     <div class="area-value">{{area.areaProgress}}%</div>
                 </div>
-                {{each area.itemList row idx}}
-                {{if idx % 2 == 0}}
-                <div class="progress" style="background-color: #fcfafb;">
-                    {{else }}
-                    <div class="progress" style="background-color: #e9e3dc;">
-                        {{/if}}
+                <div class="progress-row">
+                    {{each area.itemList row idx}}
+                    <div class="progress-item" style="background-color: {{if idx % 2 == 0}}#fcfafb{{else}}#e9e3dc{{/if}};">
                         <div class="progress-name">{{row.name}}</div>
                         <div class="progress-bar-frame">
                             <div class="progress-bar-total">
@@ -47,11 +44,11 @@
                     </div>
                     {{/each}}
                 </div>
-                {{/each}}
             </div>
             {{/each}}
-            <div id="copyright">{{@copyright}}</div>
         </div>
+        {{/each}}
+        <div id="copyright">{{@copyright}}</div>
     </div>
 
     <script>
