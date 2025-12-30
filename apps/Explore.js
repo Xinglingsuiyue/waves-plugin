@@ -39,11 +39,13 @@ export class Explore extends plugin {
                 data.push({ message: baseData.msg || exploreData.msg });
             } else {
 
-                const imageCard = await Render.render('Template/exploreIndex/exploreIndex', {
-                    isSelf: !!(!uid && await redis.get(`Yunzai:waves:users:${e.user_id}`)),
-                    baseData: baseData.data,
-                    exploreData: exploreData.data.exploreList,
-                }, { e, retType: 'base64' });
+const imageCard = await Render.render('Template/exploreIndex/exploreIndex', {
+    isSelf: !!(!uid && await redis.get(`Yunzai:waves:users:${e.user_id}`)),
+    baseData: baseData.data,
+    exploreData: [...exploreData.data.exploreList].reverse(),
+}, { e, retType: 'base64' });
+
+
 
                 data.push({ message: imageCard });
             }
