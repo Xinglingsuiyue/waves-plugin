@@ -112,6 +112,26 @@
     z-index: 10;
 }
 
+
+/* 新增：特殊货币样式 - 纯数字 */
+.lanqiu {
+    position: absolute;
+    top: 500px;
+    left: 710px;
+    font-size: 42px;
+    font-weight: bold;
+}
+
+.jinqiu {
+    position: absolute;
+    top: 500px;
+    left: 1640px;
+    font-size: 42px;
+    font-weight: bold;
+}
+
+
+
 /* 总贝币 - 绝对定位 */
 .stat-coin {
     position: absolute;

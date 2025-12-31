@@ -39,6 +39,24 @@
                 <div class="stat-value">{{reportData?.totalStar || 0}}</div>
             </div>
             
+<!-- 更安全的写法 -->
+    <div class="jinqiu">
+        {{each reportData?.itemList item}}
+            {{if item.type == 3}}
+                {{item.total || 0}}
+            {{/if}}
+        {{/each}}
+    </div>
+    <div class="lanqiu">
+        {{each reportData?.itemList item}}
+            {{if item.type == 4}}
+                {{item.total || 0}}
+            {{/if}}
+        {{/each}}
+    </div>
+
+             
+               
             <!-- 总贝币 -->
             <div class="stat-coin">
                 <div class="stat-value">{{reportData?.totalCoin || 0}}</div>
