@@ -56,13 +56,22 @@
 #profile {
     position: relative;
     display: grid;
-    grid-template-columns: 267px 267px 267px 267px;
-    column-gap: 16px;
-    row-gap: 15px;
+    grid-template-columns: 269px 269px 269px 269px;
+    grid-template-rows: 120px 120px 120px 120px;
+    column-gap: 30px;
+    row-gap: 40px;
     margin-top: 190px;
     left: 52px;
     width: 1117px;
     height: 570px;
+}
+
+.value:nth-child(-n+4) {
+    position: relative;
+    top: -10px;
+    left: -30px;
+    color: #FFDF00;
+    font-size: 52px;
 }
 
 .value {
