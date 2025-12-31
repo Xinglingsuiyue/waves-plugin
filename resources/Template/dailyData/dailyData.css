@@ -73,10 +73,31 @@
     font-size: 48px;
 }
 
+#jiejindan {
+    position: absolute;
+    top: 41px;
+    left: 548px;
+    font-size: 48px;
+}
+
+#qiandao {
+    position: absolute;
+    top: -80px;
+    left: 715px;
+    font-size: 33px;
+}
+
+#zhange {
+    position: absolute;
+    top: -85px;
+    left: 970px;
+    font-size: 48px;
+}
+
 #activity {
     position: absolute;
     top: 41px;
-    left: 626px;
+    left: 876px;
     font-size: 48px;
 }
 
