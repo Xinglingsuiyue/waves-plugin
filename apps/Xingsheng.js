@@ -153,7 +153,9 @@ export class ResourceReport extends plugin {
                         totalStar: reportData.data.totalStar,
                         totalCoin: reportData.data.totalCoin,
                         starList: reportData.data.starList,
-                        coinList: reportData.data.coinList
+                        coinList: reportData.data.coinList,
+                        // 确保itemList传递给模板，用于显示浮金波纹和唤声涡纹
+                        itemList: reportData.data.itemList || []
                     },
                     colors: [
                         { color: '#FF6384' },
@@ -176,14 +178,11 @@ export class ResourceReport extends plugin {
             }
         };
 
-
         const results = await Promise.all(accounts.map(processAccount));
-
 
         const data = results.sort((a, b) =>
             accounts.findIndex(acc => acc.uid === a.uid) - accounts.findIndex(acc => acc.uid === b.uid)
         ).map(item => ({ message: item.message }));
-
 
         if (data.length === 0) {
             await e.reply('所有账号数据获取失败');
