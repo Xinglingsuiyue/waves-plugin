@@ -195,6 +195,7 @@
 .legend-value.color4 { color: #66CC33; }
 .legend-value.color5 { color: #4BC0C0; }
 .legend-value.color6 { color: #36A2EB; }
+.legend-value.color7 { color: #FF00CC; }
 
 /* 贝币颜色类 */
 .coin-legend-value.coin-color1 { color: #FF6384; }
@@ -203,6 +204,7 @@
 .coin-legend-value.coin-color4 { color: #66CC33; }
 .coin-legend-value.coin-color5 { color: #4BC0C0; }
 .coin-legend-value.coin-color6 { color: #36A2EB; }
+.coin-legend-value.coin-color7 { color: #FF00CC; }
 
 /* 星声图表容器 - 绝对定位 */
 .chart-container {
