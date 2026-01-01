@@ -22,6 +22,7 @@ const CONSTANTS = {
     SELF_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerDataDetail',
     OTHER_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerIndex',
     HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashDetail',
+    OTHER_HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashIndex',
     RESOURCE_PERIOD_LIST_URL: '/aki/resource/period/list',
     RESOURCE_WEEK_URL: '/aki/resource/week',
     RESOURCE_MONTH_URL: '/aki/resource/month',
@@ -204,7 +205,7 @@ class Waves {
         }
     }
 
-    // 其他方法保持不变
+//登录
     async getToken(mobile, code) {
         const did = [...Array(40)].map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[(Math.random() * 36) | 0]).join('');
         const headers = await this.buildHeaders('ios');
@@ -269,7 +270,7 @@ class Waves {
             return { status: false, msg: '刷新资料失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//体力
     async getGameData(token, did = null) {
         const headers = await this.buildHeaders('ios', token, did, true);
         const data = qs.stringify({ type: '2', sizeType: '1' });
@@ -292,7 +293,7 @@ class Waves {
             return { status: false, msg: '获取日常数据失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//卡片
     async getBaseData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -317,7 +318,7 @@ class Waves {
             return { status: false, msg: '获取我的资料失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//角色
     async getRoleData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -342,7 +343,7 @@ class Waves {
             return { status: false, msg: '获取共鸣者失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//数据坞
     async getCalabashData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -367,7 +368,7 @@ class Waves {
             return { status: false, msg: '获取数据坞失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//全息战略
     async getChallengeData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -392,7 +393,7 @@ class Waves {
             return { status: false, msg: '获取挑战数据失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//探索度
     async getExploreData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -417,7 +418,7 @@ class Waves {
             return { status: false, msg: '获取数据失败' };
         }
     }
-
+//卡片
     async getRoleDetail(serverId, roleId, id, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -442,7 +443,7 @@ class Waves {
             return { status: false, msg: '获取角色详细信息失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
+//库街区签到
     async signIn(serverId, roleId, userId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did, true);
@@ -493,8 +494,8 @@ class Waves {
             return { status: false, msg: '查询签到领取记录失败，疑似网络问题，请检查控制台日志' };
         }
     }
-
-    async getTowerData(serverId, roleId, token, did = null) {
+//逆境深塔
+async getTowerData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
         const data = qs.stringify({ gameId: 3, serverId, roleId });
@@ -530,6 +531,7 @@ class Waves {
         }
     }
 
+//抽卡记录
     async getGaCha(data) {
         const isCN = !!(data.serverId == "76402e5b20be2c39f095a152090afddc");
 
@@ -640,7 +642,47 @@ class Waves {
 
         return resultList.length > 0 ? resultList : null;
     }
+//冥歌海墟    
+async getHaiXuDataForOther(serverId, roleId, token, did = null, userId = null) {
+    await this.refreshData(serverId, roleId, token, did);
+    const headers = await this.buildHeaders('ios', token, did);
     
+
+    const requestData = {
+        'roleId': roleId,
+        'serverId': serverId,
+        'userId': userId || ''  
+    };
+
+    try {
+        const response = await wavesApi.post(CONSTANTS.OTHER_HAIXU_DATA_URL, qs.stringify(requestData), { headers });
+        if (response.data.code === 10902 || response.data.code === 200) {
+          
+            if (!response.data.data || response.data.data === 'null') {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`获取他人海墟数据返回空数据`));
+                return { 
+                    status: true, 
+                    data: { 
+                        difficultyList: [], 
+                        isUnlock: false 
+                    } 
+                };
+            }
+            
+            const parsedData = JSON.parse(response.data.data);
+            
+            if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取他人海墟数据成功`));
+            return { status: true, data: parsedData };
+        } else {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取他人海墟数据失败`), logger.red(response.data.msg));
+            return { status: false, msg: response.data.msg };
+        }
+    } catch (error) {
+        logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取他人海墟数据异常`), logger.red(error));
+        return { status: false, msg: '获取他人海墟数据失败，疑似网络问题' };
+    }
+}
+
     async getHaiXuData(serverId, roleId, token, did = null) {
         await this.refreshData(serverId, roleId, token, did);
         const headers = await this.buildHeaders('ios', token, did);
@@ -650,18 +692,20 @@ class Waves {
             const response = await wavesApi.post(CONSTANTS.HAIXU_DATA_URL, data, { headers });
             if (response.data.code === 10902 || response.data.code === 200) {
                 const parsedData = JSON.parse(response.data.data);
-                if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取海虚数据成功`));
+                if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取海墟数据成功`));
                 return { status: true, data: parsedData };
             } else {
-                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海虚数据失败`), logger.red(response.data.msg));
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海墟数据失败`), logger.red(response.data.msg));
                 return { status: false, msg: response.data.msg };
             }
         } catch (error) {
-            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海虚数据异常`), logger.red(error));
-            return { status: false, msg: '获取海虚数据失败，疑似网络问题' };
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取海墟数据异常`), logger.red(error));
+            return { status: false, msg: '获取海墟数据失败，疑似网络问题' };
         }
     }
 
+
+//活动
     async getEventList(eventType = 0) {
         const headers = await this.buildHeaders('ios');
         const data = qs.stringify({ gameId: 3, eventType });
@@ -684,7 +728,7 @@ class Waves {
             return { status: false, msg: '获取活动列表失败' };
         }
     }
-
+//星声
     async getResourcePeriods(serverId, roleId, token, did = null) {
         if (!serverId || !roleId || !token) {
             return { status: false, msg: '当前没有可用的Cookie，请使用[~登录]进行登录' };
