@@ -1,251 +1,247 @@
-:root {
-    --star2-color: #00b894;
-    --star3-color: #3a86ff;
-    --star4-color: #6c5ce7;
-    --star5-color: #FFB44D;
-    --accent-color: #fd79a8;
-    --text-color: #2d3436;
-    --text-muted: #636e72;
-    --border-color: #e0e0e0;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    user-select: none;
+    font-family: "Guruwords", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
-body {
-    background-image: linear-gradient(to top left,
-            rgb(245, 241, 237) 0%,
-            rgb(255, 255, 255) 100%);
-    color: var(--text-color);
-    padding: 16px;
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.6;
-}
-
-.dashboard {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    position: relative;
-    backdrop-filter: blur(8px);
-}
-
-/* Header区域优化 */
-.header {
-    position: relative;
-    padding: 24px 20px 0;
-    color: #fff;
-    background-image: url(bloodMoon.png);
-    background-size: 150%;
-    overflow: hidden;
-    border-radius: 16px 16px 0 0;
-}
-
-.logo img {
-    width: 75px;
-    height: 75px;
-    border: 3px solid var(--star5-color);
-    border-radius: 50%;
-    margin-right: 16px;
-}
-
-.ghost-ship {
-    position: absolute;
-    top: -50px;
-    right: -10px;
-    width: 220px;
+#body {
+    transform-origin: top left;
+    width: 1220px;
     height: auto;
-    opacity: 1;
-    pointer-events: none;
+}
+
+#body>div {
+    width: 100%;
+    background: url(imgs/background.png) no-repeat;
+    background-size: cover;
+}
+
+/* 用户信息区域 */
+#account {
+    height: 424px;
+    position: relative;
+}
+
+#logo img {
+    transform: translate(68px, 100px);
+    width: 210px;
+    height: 210px;
+    border: 3px solid var(--duiwu-color);
+    border-radius: 50%;
+}
+
+#user-avatar {
+    position: absolute;
+    height: 200px;
+    width: 200px;
+    left: 73px;
+    top: 105px;
     z-index: 1;
+    border-radius: 50%;
+    border: 3px solid #d6a64e;
+    object-fit: cover;
 }
 
-.tab {
-    flex: 1;
-    padding: 12px;
-    text-align: center;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-    cursor: default;
-    border-bottom: 2px solid transparent;
-}
-
-.tab.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    font-weight: 500;
-    border-bottom-color: var(--accent-color);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.team-container:nth-child(odd) .team-title {
-    color: var(--star4-color);
-}
-
-.team-container:nth-child(odd) .diamond {
-    background: var(--star4-color);
-}
-
-.team-container:nth-child(even) .team-title {
-    color: var(--star2-color);
-}
-
-.team-container:nth-child(even) .diamond {
-    background: var(--star2-color);
-}
-
-.content-section {
-    padding: 0 16px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 1rem;
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.05);
-}
-
-.challenge-item {
-    margin-bottom: 20px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-}
-
-.challenge-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background-size: 100% auto;
-    background-position: center;
+#user-name {
+    position: relative;
+    left: 323px;
+    top: -100px;
+    height: auto;
     color: white;
+    font-size: 58px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.challenge-name {
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    padding-left: 3.3rem;
+#user-uid {
+    position: relative;
+    left: 462px;
+    top: -75px;
+    color: white;
+    font-size: 39px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.rank {
-    color: var(--star5-color);
-    margin-right: 8px;
-    font-size: 1.5rem;
-    line-height: 1;
+.tower-body {
+    padding: 0px 61px;
 }
 
-.team-container {
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    padding-left: 15px;
-    border-bottom: 1px solid rgba(224, 224, 224, 0.3);
-    gap: 2rem;
-}
-
-.team-container:last-child {
-    border-bottom: none;
-}
-
+/* 信息栏 */
 .info-bar {
     display: flex;
     justify-content: space-between;
-    padding: 12px 16px;
-    margin: 16px;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 20px 40px;
+    margin: 30px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    font-size: 36px;
+    color: #e1e1e1;
+    border: 2px solid #85857c;
     backdrop-filter: blur(10px);
-    border-radius: 8px;
-    font-size: 16px;
-    color: var(--text-color);
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(224, 224, 224, 0.6);
 }
 
-.title-group {
-    position: relative;
-    z-index: 2;
-    display: flex;
+/* 挑战区域 */
+.tower-area {
+    margin-top: 60px;
+    padding: 24px 40px 0px 40px;
+    background: url(imgs/area-bg.png) no-repeat;
+    background-size: cover;
+    width: 1098px;
+    height: 114px;
 }
 
-.team-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.team-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--star4-color);
-    font-weight: 500;
-}
-
-.diamond {
-    width: 12px;
-    height: 12px;
-    background: var(--star4-color);
-    transform: rotate(45deg);
-    opacity: 0.8;
-}
-
-.team-score {
-    color: var(--star3-color);
+.tower-name {
+    font-size: 50px;
+    color: #e1e1e1;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     font-weight: 600;
-    display: flex;
-    margin-left: 1rem;
+    letter-spacing: 0.5px;
 }
 
+.tower-star {
+    float: right;
+    font-size: 50px;
+    color: #e1e1e1;
+    font-weight: 700;
+}
+
+/* 楼层*/
+.floor-list {
+    display: flex;
+    align-items: center;
+    width: 1098px;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    margin: 20px 0;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.floor-name {
+    padding: 0px 0px 0px 60px;
+    transform: translate(150px, -10px);
+    width: 200px;
+    color: #FFFFFF;
+    font-size: 36px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 700;
+}
+
+.star-icon {
+    padding: 0px 0px 0px 22px;
+    width: 280px;
+}
+
+.star-icon>img {
+    margin: 0px 12px;
+    width: 40px;
+    display: none;
+}
+
+/* 队伍角色区域 */
 .team-roles {
     display: flex;
-    gap: 12px;
-    margin: 12px 0;
+    margin: 0 30px;
 }
 
 .role {
-    width: 50px;
-    height: 50px;
+    width: 130px;
+    transform: translate(150px, 0px);
+    height: 130px;
     border-radius: 50%;
     overflow: hidden;
     background: #fff;
-    box-shadow: 0 2px 6px rgba(255, 255, 255 0.1);
+    box-shadow: 0 2px 6px rgba(255, 255, 255, 0.1);
 }
 
 .role img {
     width: 100%;
     height: 100%;
+    border: 3px solid var(--star5-color);
     border-radius: 50%;
     object-fit: cover;
 }
 
+/* 装备图标  */
 .artifact-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 7px;
-    display: flex;
-    margin-left: 2rem;
-    border: 3px solid var(--border-color);
+    transform: translate(150px, 0px);
+    width: 130px;
+    height: 130px;
+    right: -100px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.artifact-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 队伍分数 */
+.team-score {
+    position: absolute;
+    left: 190px;
+    top: 100px;
+    font-size: 50px;
+    color: gold;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+
+/* 颜色变量和样式 */
+:root {
+    --star2-color: #00b894;
+    --star3-color: #3a86ff;
+    --star4-color: #6c5ce7;
+    --star5-color: gold;
+    --accent-color: #fd79a8;
+    --text-color: #2d3436;
+    --text-muted: #636e72;
+    --border-color: #e0e0e0;
+    --duiwu-color: #FFFFFF;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+
+
+/* 评级 sss ss */
+.rank {
+    color: var(--star5-color);
+    font-size: 50px;
+    margin-right: 8px;
+}
+
+.score {
+    color: var(--star5-color);
+    font-weight: 700;
 }
 
 #copyright {
     position: relative;
-    align-items: center;
-    font-size: 1rem;
+    font-size: 24px;
     font-weight: bold;
+    margin: 0 auto;
     color: white;
     text-shadow: 2px 2px 2px black;
     text-align: center;
+    padding-top: 40px;
+    padding-bottom: 10px;
 }
 
 #copyright .version {
     color: #d3bc8e;
     display: inline-block;
-    align-items: center;
+    padding: 0 3px;
 }

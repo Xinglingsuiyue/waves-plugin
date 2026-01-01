@@ -6,45 +6,35 @@
     <title>冥歌海墟</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{pluginResources}}/Template/slash/slash.css">
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
 </head>
 
 <body id="body" {{sys.scale}}>
-    <div class="dashboard">
-        <div class="header">
-            <div class="title-group">
-                <div class="logo">
+    <div>
+        <div id="account">
+                <div id="logo">
                     <img src="{{userInfo.avatar}}" alt="Logo" />
                 </div>
-
-                <div class="title-info">
-                    <h1>{{userInfo.name}}</h1>
-                    <span>UID: {{userInfo.uid}}</span>
-                </div>
+            <div id="user-name">{{userInfo.name}}</div>
+            <div id="user-uid"> {{userInfo.uid}}</div>
+        </div>
+        
+        <div class="tower-body">
+            <div class="info-bar">
+                <div>剩余时间: {{leftTime}}</div>
+                <div>总积分: {{allScore}}/{{maxScore}}</div>
             </div>
 
-            <img src="{{pluginResources}}/Template/slash/ghostShip.png" alt="Ghost Ship" class="ghost-ship">
-        </div>
+            {{each challengeList challenge index}}
+            <div class="tower-area">
+                <span class="tower-name">{{challenge.challengeId}}. {{challenge.challengeName}}</span>
+                <span class="tower-star"><span class="rank">{{challenge.rank}}</span> 积分: <span class="score">{{challenge.score}}</span></span>
+            </div>
 
-        <div class="info-bar">
-            <div>剩余时间: {{leftTime}}</div>
-            <div>总积分: {{allScore}}/{{maxScore}}</div>
-        </div>
-
-        {{each challengeList challenge index}}
-        <div class="content-section">
-            <div class="challenge-item">
-                <div class="challenge-header" style="background-image: url({{challenge.detailPageBG}})">
-                    <div class="challenge-name">{{challenge.challengeId}}. {{challenge.challengeName}}</div>
-                    <div><span class="rank">{{challenge.rank}}</span> 积分: <span class="score">{{challenge.score}}</span>
-                    </div>
-                </div>
-
-                {{each challenge.halfList half idx}}
-                <div class="team-container">
-                    <div class="team-title">
-                        <div class="diamond"></div>队伍{{idx + 1}}
-                    </div>
-
+            {{each challenge.halfList half idx}}
+            <div class="floor-list" style="background-image: url({{challenge.detailPageBG}});">
+                <div class="floor-name">队伍{{idx + 1}}</div>
+                
                     {{each half.roleList role}}
                     <div class="team-roles">
                         <div class="role" style="border: 2px solid var(--star{{role.star}}-color);">
@@ -58,13 +48,13 @@
                     <div class="team-score">{{half.score}}</div>
                 </div>
                 {{/each}}
+                {{/each}}
             </div>
-            {{if index === challengeList.length - 1}}
-            <div id="copyright">{{@copyright}}</div>
-            {{/if}}
-        </div>
-        {{/each}}
+        
+        <div id="copyright">{{@copyright}}</div>
     </div>
+
+
 </body>
 
 </html>
