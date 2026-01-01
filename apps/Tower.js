@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Waves from "../components/Code.js";
+import Config from "../components/Config.js";
 import Render from '../components/Render.js';
 
 export class TowerInfo extends plugin {
@@ -10,7 +11,7 @@ export class TowerInfo extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(?:逆境)?(?:深(?:塔|渊)|(稳定|实验|超载|深境)(?:区)?)",
+                    reg: "^(?:～|~|鸣潮)(?:逆境)?(?:深(?:塔|渊)|(稳定|实验|超载|深境)(?:区)?)(\\d{9})?$",
                     fnc: "tower"
                 }
             ]
@@ -18,21 +19,76 @@ export class TowerInfo extends plugin {
     }
 
     async tower(e) {
+        if (e.at) e.user_id = e.at;
         const waves = new Waves();
 
-        let [, key] = e.msg.match(this.rule[0].reg)
+        let [, key, roleId] = e.msg.match(this.rule[0].reg)
 
-        const accounts = await waves.getValidAccount(e, '', true);
-        if (!accounts) return;
+        // 使用公共Cookie查询
+        if (roleId) {
+            let publicCookie = await waves.pubCookie();
+            if (!publicCookie) {
+                return await e.reply('当前没有可用的公共Cookie，无法查询指定UID');
+            }
+            
+            // 使用公共Cookie查询
+            publicCookie.roleId = roleId;
+            const [baseData, towerData] = await Promise.all([
+                waves.getBaseData(publicCookie.serverId, roleId, publicCookie.token),
+                waves.getTowerData(publicCookie.serverId, roleId, publicCookie.token)
+            ]);
+
+            if (!baseData.status || !towerData.status) {
+                return await e.reply(baseData.msg || towerData.msg);
+            }
+
+            const Mapping = { '稳定': 1, '实验': 2, '深境': 3, '超载': 4 };
+            if (!key) key = '深境';
+            if (!towerData.data.difficultyList.some(item => item.difficulty === Mapping[key] && item.towerAreaList.length > 0)) {
+                return await e.reply(`账号 ${roleId} 没有${key}区数据`);
+            }
+            
+            towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区` };
+            const imageCard = await Render.render('Template/towerData/tower', {
+                isSelf: false,
+                baseData: baseData.data,
+                towerData: towerData.data,
+            }, { e, retType: 'base64' });
+
+            return await e.reply(imageCard);
+        }
+
+        let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
+        
+        if (!accountList.length) {
+            if (await redis.get(`Yunzai:waves:bind:${e.user_id}`)) {
+                let publicCookie = await waves.pubCookie();
+                if (!publicCookie) {
+                    return await e.reply('当前没有可用的公共Cookie，请使用[~登录]进行登录');
+                } else {
+                    publicCookie.roleId = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
+                    accountList.push(publicCookie);
+                }
+            } else {
+                return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
+            }
+        }
 
         let data = [];
+        let deleteroleId = [];
 
-        await Promise.all(accounts.map(async (acc) => {
-            const { uid, serverId, token, did } = acc;
+        await Promise.all(accountList.map(async (account) => {
+            const usability = await waves.isAvailable(account.serverId, account.roleId, account.token);
+
+            if (!usability) {
+                data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
+                deleteroleId.push(account.roleId);
+                return;
+            }
 
             const [baseData, towerData] = await Promise.all([
-                waves.getBaseData(serverId, uid, token, did),
-                waves.getTowerData(serverId, uid, token, did)
+                waves.getBaseData(account.serverId, account.roleId, account.token),
+                waves.getTowerData(account.serverId, account.roleId, account.token)
             ]);
 
             if (!baseData.status || !towerData.status) {
@@ -41,12 +97,12 @@ export class TowerInfo extends plugin {
                 const Mapping = { '稳定': 1, '实验': 2, '深境': 3, '超载': 4 };
                 if (!key) key = '深境';
                 if (!towerData.data.difficultyList.some(item => item.difficulty === Mapping[key] && item.towerAreaList.length > 0)) {
-                    data.push({ message: `账号 ${uid} 没有${key}区数据` });
+                    data.push({ message: `账号 ${account.roleId} 没有${key}区数据` });
                     return;
                 }
                 towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区` };
                 const imageCard = await Render.render('Template/towerData/tower', {
-                    isSelf: !!(!uid && await redis.get(`Yunzai:waves:users:${e.user_id}`)),
+                    isSelf: true,
                     baseData: baseData.data,
                     towerData: towerData.data,
                 }, { e, retType: 'base64' });
@@ -54,6 +110,11 @@ export class TowerInfo extends plugin {
                 data.push({ message: imageCard });
             }
         }));
+
+        if (deleteroleId.length) {
+            let newAccountList = accountList.filter(account => !deleteroleId.includes(account.roleId));
+            Config.setUserData(e.user_id, newAccountList);
+        }
 
         if (data.length === 1) {
             await e.reply(data[0].message);
