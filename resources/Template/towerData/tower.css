@@ -59,6 +59,19 @@
     padding: 0px 61px;
 }
 
+.info-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+    margin: 30px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    font-size: 36px;
+    color: #e1e1e1;
+    border: 2px solid #85857c;
+    backdrop-filter: blur(10px);
+}
+
 .tower-area {
     margin-top: 60px;
     padding: 24px 40px 0px 40px;

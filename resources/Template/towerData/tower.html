@@ -16,6 +16,9 @@
             <div id="user-uid">{{baseData.id}}</div>
         </div>
         <div class="tower-body">
+        <div class="info-bar">
+                <div>剩余时间: {{towerData.leftTime}}</div>
+            </div>
             {{each towerData.difficultyList area}}
             {{if area.difficulty == towerData.difficulty}}
             {{each area.towerAreaList tower}}
