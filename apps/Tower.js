@@ -24,7 +24,7 @@ export class TowerInfo extends plugin {
 
         let [, key, roleId] = e.msg.match(this.rule[0].reg)
 
-        // 使用公共Cookie查询
+        // 优先使用公共Cookie查询
         if (roleId) {
             let publicCookie = await waves.pubCookie();
             if (!publicCookie) {
@@ -48,9 +48,25 @@ export class TowerInfo extends plugin {
                 return await e.reply(`账号 ${roleId} 没有${key}区数据`);
             }
             
-            towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区` };
+            let leftTime = '未知';
+            if (towerData.data.seasonEndTime) {
+                const timeSeconds = towerData.data.seasonEndTime / 1000;
+                const days = Math.floor(timeSeconds / (3600 * 24));
+                const hours = Math.floor((timeSeconds % (3600 * 24)) / 3600);
+                const minutes = Math.floor((timeSeconds % 3600) / 60);
+
+                if (days > 0) {
+                    leftTime = `${days}天${hours}小时${minutes}分钟`;
+                } else if (hours > 0) {
+                    leftTime = `${hours}小时${minutes}分钟`;
+                } else {
+                    leftTime = `${minutes}分钟`;
+                }
+            }
+            
+            towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区`, leftTime: leftTime };
             const imageCard = await Render.render('Template/towerData/tower', {
-                isSelf: false,
+                isSelf: false, // 指定UID查询
                 baseData: baseData.data,
                 towerData: towerData.data,
             }, { e, retType: 'base64' });
@@ -100,7 +116,24 @@ export class TowerInfo extends plugin {
                     data.push({ message: `账号 ${account.roleId} 没有${key}区数据` });
                     return;
                 }
-                towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区` };
+                
+                let leftTime = '未知';
+                if (towerData.data.seasonEndTime) {
+                    const timeSeconds = towerData.data.seasonEndTime / 1000;
+                    const days = Math.floor(timeSeconds / (3600 * 24));
+                    const hours = Math.floor((timeSeconds % (3600 * 24)) / 3600);
+                    const minutes = Math.floor((timeSeconds % 3600) / 60);
+
+                    if (days > 0) {
+                        leftTime = `${days}天${hours}小时${minutes}分钟`;
+                    } else if (hours > 0) {
+                        leftTime = `${hours}小时${minutes}分钟`;
+                    } else {
+                        leftTime = `${minutes}分钟`;
+                    }
+                }
+                
+                towerData.data = { ...towerData.data, difficulty: Mapping[key] || 3, diffiname: `${key}区`, leftTime: leftTime };
                 const imageCard = await Render.render('Template/towerData/tower', {
                     isSelf: true,
                     baseData: baseData.data,
