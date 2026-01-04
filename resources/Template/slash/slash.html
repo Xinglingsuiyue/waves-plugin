@@ -33,7 +33,7 @@
 
             {{each challenge.halfList half idx}}
             <div class="floor-list" style="background-image: url({{challenge.detailPageBG}});">
-                <div class="floor-name">队伍{{idx + 1}}</div>
+                <div class="floor-name">队伍{{['一','二'][idx] || (idx + 1)}}</div>
                 
                     {{each half.roleList role}}
                     <div class="team-roles">
