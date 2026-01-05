@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/towerInfo/tower.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div>
+        <div id="header">
+            <div class="tower-label" style="background-image: url('{{pluginResources}}/Template/towerInfo/imgs/7.png')">
+            </div>
+            <div class="header-content">
+                <h1 id="tower-title">逆境深塔 第{{phase}}期</h1>
+                <div class="phase-info">
+                    {{if towerData.Begin && towerData.End}}
+                    时间: {{towerData.Begin}} 至 {{towerData.End}}
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-bar">
+            <div class="time-label">
+                <span>剩余时间: {{leftTime}}</span>
+            </div>
+        </div>
+
+        <div class="tower-container">
+            {{each towerData.Area areaData areaId}}
+            <div class="tower-column">
+                <div class="tower-header">
+                    {{if areaId == '1'}}残响之塔{{else if areaId == '2'}}深境之塔{{else}}回音之塔{{/if}}
+                </div>
+                <div class="floor-container">
+                    {{each areaData.Floor floorData floorKey}}
+                    <div class="floor">
+                        <div class="floor-header">
+
+                        </div>
+                        
+                        <div class="floor-content">
+                            {{if floorData.RecommendElement && floorData.RecommendElement.length > 0}}
+                            <div class="recommend-section">
+                                <div class="section-title">推荐属性</div>
+                                <div class="recommend-elements">
+                                    {{each floorData.RecommendElement elementId}}
+                                    <div class="element-tag">
+                                        <div class="element-icon" style="background-image: url('{{pluginResources}}/Template/towerInfo/imgs/{{elementId}}.png')"></div>
+                                        <span>{{getElementName(elementId)}}</span>
+                                    </div>
+                                    {{/each}}
+                                </div>
+                            </div>
+                            {{/if}}
+                            
+                            {{if floorData.Monsters}}
+                            <div class="monsters-section">
+                                <div class="section-title">挑战对象</div>
+                                <ul class="monster-list">
+                                    {{each floorData.Monsters monsterData monsterId}}
+                                    <li class="monster-item">
+                                        <div class="monster-icon" style="background-image: url('{{monsterData.IconUrl}}')"></div>
+                                        <div class="monster-info">
+                                            <div class="monster-name-container">
+                                                <span class="monster-name">{{monsterData.Name}} (Lv.{{monsterData.Level}})</span>
+                                                <div class="monster-element" title="{{getElementName(monsterData.Element)}}">
+                                                    <div class="element-icon" style="background-image: url('{{pluginResources}}/Template/towerInfo/imgs/{{monsterData.Element}}.png')"></div>
+                                                </div>
+                                            </div>
+                                            <div class="monster-stats">
+                                                <span>生命: {{Math.round(monsterData.Life)}}</span>
+                                                <span>攻击: {{Math.round(monsterData.Atk)}}</span>
+                                                <span>防御: {{Math.round(monsterData.Def)}}</span>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{/if}}
+                            
+                            {{if floorData.Buffs}}
+                            <div class="buffs-section">
+                                <div class="section-title">Buff效果</div>
+                                <ul class="buff-list">
+                                    {{each floorData.Buffs buffData buffId}}
+                                    <li class="buff-item">
+                                        <div class="buff-desc">{{buffData.Desc.replace(/<[^>]*>/g, '')}}</div>
+                                    </li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{/if}}
+                            
+
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        
+        <div id="copyright">{{@copyright}} & Data By Hakush</div>
+    </div>
+</body>
+</html>
