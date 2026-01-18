@@ -53,3 +53,36 @@ allow_img_delete: false
 # ---------- 别名相关 ----------
 # 是否允许普通用户设置别名
 allow_set_alias: false
+
+# ==================== 刷新面板配置 ====================
+
+# 全量刷新冷却时间（秒）
+RefreshInterval: 60
+
+# 单角色刷新冷却时间（秒）
+RefreshSingleCharInterval: 30
+
+# 刷新面板并发数
+RefreshCardConcurrency: 3
+
+# 是否使用全局信号量控制并发
+UseGlobalSemaphore: false
+
+# 单角色刷新后行为：0=仅刷新 1=刷新并发送面板图
+RefreshSingleCharBehavior: 1
+
+# ==================== 外部数据共享配置 ====================
+
+# 是否启用外部 XutheringWavesUID 数据读取
+external_xwuid_enable: true
+
+# 外部玩家数据路径（留空则自动检测，可被环境变量 XWUID_PLAYERS_PATH 覆盖）
+external_xwuid_players_path: ""
+
+# 是否启用外部数据目录写入（排行榜共享）
+external_data_enable: false
+
+# 外部数据路径（可被环境变量 WAVES_DATA_PATH 覆盖）
+external_data_path: ""
+
+# ==================== 其他现有配置保持不变 ====================

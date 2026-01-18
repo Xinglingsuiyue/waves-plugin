@@ -214,6 +214,86 @@ export function supportGuoba() {
             placeholder: '请输入或选择Cron表达式',
           },
         },
+        // ==================== 新增：刷新与数据配置 ====================
+        {
+          component: "SOFT_GROUP_BEGIN",
+          label: "刷新与数据共享"
+        },
+        {
+          field: "config.RefreshInterval",
+          label: "全量刷新冷却",
+          bottomHelpMessage: "刷新所有面板的冷却时间（秒）",
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            placeholder: '默认 60 秒',
+          },
+        },
+        {
+          field: "config.RefreshSingleCharInterval",
+          label: "单人刷新冷却",
+          bottomHelpMessage: "刷新单个角色面板的冷却时间（秒）",
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            placeholder: '默认 30 秒',
+          },
+        },
+        {
+          field: "config.RefreshCardConcurrency",
+          label: "刷新并发数",
+          bottomHelpMessage: "刷新面板时的并发请求数量",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 10,
+            placeholder: '默认 3',
+          },
+        },
+        {
+          field: "config.RefreshSingleCharBehavior",
+          label: "单刷后发送",
+          bottomHelpMessage: "刷新单角色后是否自动发送面板图（0=否，1=是）",
+          component: "Switch",
+          componentProps: {
+            activeValue: 1,
+            inactiveValue: 0,
+          },
+        },
+        {
+          field: "config.external_xwuid_enable",
+          label: "启用外部数据",
+          bottomHelpMessage: "是否读取/写入外部 XutheringWavesUID 数据",
+          component: "Switch",
+        },
+        {
+          field: "config.external_xwuid_players_path",
+          label: "外部数据路径",
+          bottomHelpMessage: "XutheringWavesUID 的 players 目录绝对路径（留空则自动检测或使用默认）",
+          component: "Input",
+          componentProps: {
+            placeholder: '例：G:/gsuid_core/data/XutheringWavesUID/players',
+          },
+        },
+        {
+          field: "config.external_data_enable",
+          label: "启用排行共享",
+          bottomHelpMessage: "是否启用外部排行榜数据共享",
+          component: "Switch",
+        },
+        {
+          field: "config.external_data_path",
+          label: "外部排行路径",
+          bottomHelpMessage: "外部数据目录绝对路径（用于共享排行榜数据）",
+          component: "Input",
+          componentProps: {
+            placeholder: '例：G:/data/waves_rank',
+          },
+        },
+        {
+          component: "SOFT_GROUP_END",
+        },
+        // ==================== 结束 ====================
         {
           component: "SOFT_GROUP_BEGIN",
           label: "登录配置"

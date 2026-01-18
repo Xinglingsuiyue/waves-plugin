@@ -1,0 +1,9 @@
+{
+  "serverUrl": "http://156.238.251.102:3010",
+  "apiKey": "934128a7c7a18da4ca03fc2fd1ec4ada0e44f611f06e903a572b6a9952339c4f",
+  "serverId": "server-001",
+  "serverName": "My Server",
+  "syncInterval": 3600000,
+  "autoSync": true,
+  "lastSyncTime": 1764176620722
+}

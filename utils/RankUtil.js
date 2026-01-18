@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-
+import Config from '../components/Config.js';
+import { getExternalDataPath } from '../model/path.js';
 // 漂泊者属性ID映射
 const WAVERIDER_ATTRIBUTES = {
     '1604': '湮灭', '1605': '湮灭',
@@ -9,13 +10,23 @@ const WAVERIDER_ATTRIBUTES = {
 };
 
 export default class RankUtil {
-    // 获取数据存储路径
+    // 获取数据存储路径（支持外部目录）
     static getRankDataPath() {
         const pluginResources = path.join(process.cwd(), 'plugins', 'waves-plugin', 'resources');
+        const externalConfig = Config.getExternalConfig();
+        
+        // 检查是否使用外部数据目录
+        let basePath;
+        if (externalConfig.external_data_enable && externalConfig.external_data_path) {
+            basePath = path.join(externalConfig.external_data_path, 'CharacterRank');
+        } else {
+            basePath = path.join(pluginResources, 'data', 'CharacterRank');
+        }
+        
         return {
-            basePath: path.join(pluginResources, 'data', 'CharacterRank'),
-            globalDir: path.join(pluginResources, 'data', 'CharacterRank', 'global'),
-            groupDir: (groupId) => path.join(pluginResources, 'data', 'CharacterRank', 'groups', `group_${groupId}`)
+            basePath: basePath,
+            globalDir: path.join(basePath, 'global'),
+            groupDir: (groupId) => path.join(basePath, 'groups', `group_${groupId}`)
         };
     }
 

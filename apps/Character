@@ -1,0 +1,350 @@
+import plugin from '../../../lib/plugins/plugin.js'
+import WeightCalculator from '../utils/Calculate.js'
+import { pluginResources } from '../model/path.js';
+import Waves from "../components/Code.js";
+import Config from '../components/Config.js';
+import Wiki from '../components/Wiki.js';
+import Render from '../components/Render.js';
+import LocalData from '../components/LocalData.js';
+import path from 'path';
+import fs from 'fs';
+import RankUtil from '../utils/RankUtil.js';
+
+// 漂泊者属性ID映射
+const WAVERIDER_ATTRIBUTES = {
+    '1604': '湮灭', '1605': '湮灭',
+    '1501': '衍射', '1502': '衍射',
+    '1406': '气动', '1408': '气动'
+};
+
+export class Character extends plugin {
+    constructor() {
+        super({
+            name: "鸣潮-角色面板",
+            event: "message",
+            priority: 1009,
+            rule: [
+                // 1. 全量刷新：走 API，校验 Token
+                {
+                    reg: "^(?:～|~|鸣潮)(刷新|更新|upd)(全部|所有)?面板$",
+                    fnc: "refreshAllPanel"
+                },
+                // 2. 单角色刷新：走 API，校验 Token
+                {
+                    reg: "^(?:～|~|鸣潮)(刷新|更新|upd)(.+)面板$",
+                    fnc: "refreshSinglePanel"
+                },
+                // 3. 查看面板：纯本地，不校验 Token
+                {
+                    reg: "^(?:～|~|鸣潮)(?!刷新|更新|upd)(.+)面板(\\d{9})?$",
+                    fnc: "character"
+                }
+            ]
+        })
+    }
+
+    /**
+     * 获取绑定的账号列表 (纯配置读取，不进行网络校验)
+     * 对应 XutheringWavesUID 的“本地读取”策略
+     */
+    getBoundAccounts(userId, targetUid = null) {
+        const userData = Config.getUserData(userId);
+        
+        if (!userData || Object.keys(userData).length === 0) {
+            return { status: false, msg: '请先绑定鸣潮账号' };
+        }
+
+        let accounts = [];
+
+        // 兼容处理 Array 和 Object 两种存储结构
+        if (Array.isArray(userData)) {
+            accounts = userData.map(item => ({
+                uid: String(item.uid || item.gameUid || item.roleId || item.curUid),
+                ...item
+            }));
+        } else {
+            accounts = Object.keys(userData).map(key => {
+                const item = userData[key];
+                // 优先取对象内的 uid，取不到则用 key
+                return {
+                    uid: String(item.uid || item.gameUid || item.roleId || key),
+                    ...item
+                };
+            });
+        }
+
+        // 过滤无效 UID
+        accounts = accounts.filter(acc => acc.uid && acc.uid !== 'undefined' && acc.uid !== '0');
+
+        if (accounts.length === 0) {
+            return { status: false, msg: '未找到有效的绑定账号' };
+        }
+
+        // 如果指定了 UID
+        if (targetUid) {
+            const target = accounts.find(acc => acc.uid === String(targetUid));
+            if (!target) {
+                return { status: false, msg: `未在当前账号下找到绑定的UID: ${targetUid}` };
+            }
+            return { status: true, data: [target] };
+        }
+
+        return { status: true, data: accounts };
+    }
+
+    // ==================== 1. 查看面板 (纯本地模式) ====================
+    async character(e) {
+        // 解析命令
+        const match = e.msg.match(this.rule[2].reg);
+        if (!match) return;
+        const [, message, roleId] = match;
+        if (e.at) e.user_id = e.at;
+        if (!message) return await e.reply('请输入正确的命令格式，如：[~安可面板]');
+
+        const wiki = new Wiki();
+        let name = await wiki.getAlias(message);
+        if (name.includes('漂泊者')) name = '漂泊者';
+
+        // --- 核心：使用 getBoundAccounts 而非 getValidAccount ---
+        // 这一步完全绕过了 Token 校验，不会产生“账号已过期”日志
+        const accRes = this.getBoundAccounts(e.user_id, roleId);
+        if (!accRes.status) return await e.reply(accRes.msg);
+        const accounts = accRes.data;
+
+        const data = [];
+        const imgListSet = new Set();
+        let hasFoundLocal = false;
+
+        for (const acc of accounts) {
+            const uid = acc.uid;
+
+            // 只读本地 rawData.json
+            const localRole = LocalData.getRoleByName(uid, name);
+            
+            if (!localRole || !localRole.role) {
+                // 只有单账号时才提示，防止多账号刷屏
+                if (accounts.length === 1) {
+                    const allRoles = LocalData.getAllRoles(uid);
+                    if (allRoles.length === 0) {
+                        data.push({ message: `UID: ${uid} 本地无数据，请先发送 [~刷新面板]` });
+                    } else {
+                        const roleNames = allRoles.map(r => r.displayName).join('、');
+                        data.push({ message: `UID: ${uid} 未找到角色 ${name}\n已缓存：${roleNames}\n请发送 [~刷新面板] 更新` });
+                    }
+                }
+                continue;
+            }
+
+            hasFoundLocal = true;
+            const roleDetail = { status: true, data: localRole };
+            const char = localRole.role;
+
+            if (Config.getConfig()?.enable_log) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`读取本地缓存: UID ${uid} - ${name}`));
+            }
+
+            // 渲染逻辑
+            const rolePicDir = path.join(pluginResources, 'rolePic', name);
+            let webpFiles = [];
+            try { webpFiles = fs.readdirSync(rolePicDir).filter(f => f.toLowerCase().endsWith('.webp')); } catch {}
+            const rolePicUrl = webpFiles.length > 0
+                ? `file://${rolePicDir}/${webpFiles[Math.floor(Math.random() * webpFiles.length)]}`
+                : (char.rolePicUrl || '');
+            imgListSet.add(rolePicUrl);
+
+            const calculated = new WeightCalculator(roleDetail.data).calculate();
+            roleDetail.data = calculated;
+
+            // 排行榜逻辑 (优先读写 charListData.json)
+            const phantomScore = calculated?.phantomData?.statistic?.totalScore || 0;
+            if (phantomScore > 0) {
+                const groupId = e.isGroup ? e.group_id : 'private';
+                const leaderboardName = (name === '漂泊者' && char.roleId in WAVERIDER_ATTRIBUTES)
+                    ? `漂泊者${WAVERIDER_ATTRIBUTES[char.roleId]}` : name;
+                
+                const charInfo = {
+                    roleIcon: char.roleIconUrl,
+                    weaponIcon: calculated.weaponData?.weapon?.iconUrl,
+                    phantomIcon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
+                    roleName: leaderboardName,
+                    level: calculated.level,
+                    chainCount: calculated.chainList ? calculated.chainList.filter(c => c.unlocked).length : 0,
+                    weapon: {
+                        name: calculated.weaponData?.weapon?.weaponName || "未知",
+                        level: calculated.weaponData?.level || 0,
+                        rank: calculated.weaponData?.rank || 0,
+                        resonLevel: calculated.weaponData?.resonLevel || 0,
+                        icon: calculated.weaponData?.weapon?.iconUrl || ""
+                    },
+                    phantom: {
+                        rank: calculated.phantomData?.statistic?.rank || "N",
+                        color: calculated.phantomData?.statistic?.color || "#a0a0a0"
+                    }
+                };
+                
+                LocalData.saveCharListData(uid, char.roleId, phantomScore);
+                await Promise.all([
+                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, groupId, charInfo),
+                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, 'global', charInfo)
+                ]);
+            }
+
+            const imageCard = await Render.render('Template/charProfile/charProfile', {
+                data: { uid, rolePicUrl, roleDetail },
+            }, { e, retType: 'base64' });
+            data.push({ message: imageCard });
+        }
+
+        if (data.length === 0 && !hasFoundLocal) {
+             return await e.reply(`本地未找到 ${name} 的数据，请先发送 [~刷新面板]`);
+        }
+
+        if (data.length > 0) {
+            const msgData = data.length === 1 ? data[0].message : await Bot.makeForwardMsg([{ message: `用户 ${e.user_id}` }, ...data]);
+            const msgRes = await e.reply(msgData);
+            if (msgRes) {
+                 const message_id = Array.isArray(msgRes.message_id) ? msgRes.message_id : [msgRes.message_id];
+                 for (const id of message_id) {
+                     if(id) await redis.set(`Yunzai:waves:originpic:${id}`, JSON.stringify({ type: 'profile', img: [...imgListSet] }), { EX: 3600 * 3 });
+                 }
+            }
+        }
+        return true;
+    }
+
+    // ==================== 2. 全量刷新 (联网模式) ====================
+    async refreshAllPanel(e) {
+        const waves = new Waves();
+        if (e.at) e.user_id = e.at;
+        
+        // 刷新需要校验 Token，所以这里使用官方的 getValidAccount
+        const accounts = await waves.getValidAccount(e);
+        if (!accounts) return;
+
+        const results = [];
+        await e.reply(`开始刷新 ${accounts.length} 个账号的面板数据...`);
+
+        for (const acc of accounts) {
+            const { uid, serverId, token, did } = acc;
+            
+            // 校验冷却 (LocalData/Config 支持)
+            const cooldown = await Config.checkRefreshCooldown(uid, 'full');
+            if (cooldown.inCooldown) {
+                results.push({ uid, success: false, message: `冷却中 ${cooldown.remainingTime}s` });
+                continue;
+            }
+
+            try {
+                const roleData = await waves.getRoleData(serverId, uid, token, did);
+                if (!roleData.status) {
+                    results.push({ uid, success: false, message: roleData.msg });
+                    continue;
+                }
+
+                const roleList = roleData.data.roleList || [];
+                const roleDetailList = [];
+                const concurrency = Config.getRefreshConfig().RefreshCardConcurrency;
+
+                // 并发获取
+                for (let i = 0; i < roleList.length; i += concurrency) {
+                    const batch = roleList.slice(i, i + concurrency);
+                    const batchResults = await Promise.all(
+                        batch.map(role => waves.getRoleDetail(serverId, uid, role.roleId, token, did))
+                    );
+                    
+                    batchResults.forEach(res => {
+                        if (res.status && res.data.role) roleDetailList.push(res.data);
+                    });
+                    
+                    if (i + concurrency < roleList.length) await new Promise(r => setTimeout(r, 800));
+                }
+
+                // 写入 rawData.json
+                if (roleDetailList.length > 0) {
+                    LocalData.saveRawData(uid, roleDetailList);
+                    await Config.setRefreshCooldown(uid, 'full');
+                    results.push({ uid, success: true, message: `成功更新 ${roleDetailList.length} 个角色` });
+                } else {
+                    results.push({ uid, success: false, message: `未获取到角色数据` });
+                }
+            } catch (err) {
+                results.push({ uid, success: false, message: `异常: ${err.message}` });
+            }
+        }
+
+        let msg = `面板刷新结果：`;
+        for (const res of results) msg += `\nUID ${res.uid}: ${res.success?'✅':'❌'} ${res.message}`;
+        await e.reply(msg);
+    }
+
+    // ==================== 3. 单角色刷新 (联网模式) ====================
+    async refreshSinglePanel(e) {
+        const match = e.msg.match(this.rule[1].reg);
+        if (!match) return;
+        const charName = match[2];
+        
+        const waves = new Waves();
+        if (e.at) e.user_id = e.at;
+        
+        // 刷新需要校验 Token
+        const accounts = await waves.getValidAccount(e);
+        if (!accounts) return;
+
+        const wiki = new Wiki();
+        let name = await wiki.getAlias(charName);
+        if (name.includes('漂泊者')) name = '漂泊者';
+
+        const refreshConfig = Config.getRefreshConfig();
+        const results = [];
+
+        for (const acc of accounts) {
+            const { uid, serverId, token, did } = acc;
+            
+            const cooldown = await Config.checkRefreshCooldown(uid, 'single');
+            if (cooldown.inCooldown) {
+                results.push({ uid, success: false, message: `冷却中 ${cooldown.remainingTime}s` });
+                continue;
+            }
+
+            try {
+                const roleData = await waves.getRoleData(serverId, uid, token, did);
+                if (!roleData.status) {
+                    results.push({ uid, success: false, message: roleData.msg });
+                    continue;
+                }
+                
+                const char = roleData.data.roleList.find(r => r.roleName === name);
+                if (!char) {
+                    results.push({ uid, success: false, message: `未拥有 ${name}` });
+                    continue;
+                }
+
+                const detail = await waves.getRoleDetail(serverId, uid, char.roleId, token, did);
+                if (!detail.status || !detail.data.role) {
+                    results.push({ uid, success: false, message: `获取详情失败或未展示` });
+                    continue;
+                }
+
+                // 写入 rawData.json
+                LocalData.saveRawData(uid, [detail.data]);
+                await Config.setRefreshCooldown(uid, 'single');
+                results.push({ uid, success: true, message: `成功` });
+
+                // 如果配置为刷新后发送，则调用 character (本地模式)
+                if (refreshConfig.RefreshSingleCharBehavior === 1) {
+                    e.msg = `~${name}面板`;
+                    await this.character(e);
+                    return; 
+                }
+            } catch (err) {
+                results.push({ uid, success: false, message: `异常: ${err.message}` });
+            }
+        }
+
+        if (refreshConfig.RefreshSingleCharBehavior === 0) {
+            let msg = `${name} 刷新结果：`;
+            for (const res of results) msg += `\nUID ${res.uid}: ${res.success?'✅':'❌'} ${res.message}`;
+            await e.reply(msg);
+        }
+    }
+}

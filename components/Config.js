@@ -27,7 +27,94 @@ class Config {
         this.watchFiles();
         this.initLocalData();
     }
+    // ==================== 新增：刷新面板配置 ====================
+    
+    /**
+     * 获取刷新面板相关配置
+     */
+    getRefreshConfig() {
+        const config = this.getConfig() || {};
+        const defConfig = this.getDefConfig() || {};
+        
+        return {
+            // 刷新冷却时间（秒）
+            RefreshInterval: config.RefreshInterval ?? defConfig.RefreshInterval ?? 60,
+            // 单角色刷新冷却时间（秒）
+            RefreshSingleCharInterval: config.RefreshSingleCharInterval ?? defConfig.RefreshSingleCharInterval ?? 30,
+            // 刷新面板并发数
+            RefreshCardConcurrency: config.RefreshCardConcurrency ?? defConfig.RefreshCardConcurrency ?? 3,
+            // 是否使用全局信号量
+            UseGlobalSemaphore: config.UseGlobalSemaphore ?? defConfig.UseGlobalSemaphore ?? false,
+            // 刷新后行为：0=仅刷新 1=刷新并发送
+            RefreshSingleCharBehavior: config.RefreshSingleCharBehavior ?? defConfig.RefreshSingleCharBehavior ?? 1,
+        };
+    }
 
+    /**
+     * 获取外部数据共享配置
+     */
+    getExternalConfig() {
+        const config = this.getConfig() || {};
+        const defConfig = this.getDefConfig() || {};
+        
+        return {
+            // 是否启用外部 XutheringWavesUID 数据读取
+            external_xwuid_enable: config.external_xwuid_enable ?? defConfig.external_xwuid_enable ?? true,
+            // 外部玩家数据路径（可被环境变量覆盖）
+            external_xwuid_players_path: config.external_xwuid_players_path ?? getExternalPlayerPath(),
+            // 是否启用外部数据目录写入（排行榜）
+            external_data_enable: config.external_data_enable ?? defConfig.external_data_enable ?? false,
+            // 外部数据路径
+            external_data_path: config.external_data_path ?? getExternalDataPath(),
+        };
+    }
+
+    /**
+     * 获取用户刷新冷却时间戳
+     * @param {string} uid - 用户UID
+     * @param {string} type - 'full' 全量刷新 | 'single' 单角色刷新
+     */
+    async getRefreshCooldown(uid, type = 'full') {
+        const key = `Yunzai:waves:refresh:${type}:${uid}`;
+        const lastRefresh = await redis.get(key);
+        return lastRefresh ? parseInt(lastRefresh) : 0;
+    }
+
+    /**
+     * 设置用户刷新冷却
+     * @param {string} uid - 用户UID
+     * @param {string} type - 'full' 全量刷新 | 'single' 单角色刷新
+     */
+    async setRefreshCooldown(uid, type = 'full') {
+        const key = `Yunzai:waves:refresh:${type}:${uid}`;
+        const config = this.getRefreshConfig();
+        const interval = type === 'full' ? config.RefreshInterval : config.RefreshSingleCharInterval;
+        await redis.set(key, Date.now().toString(), { EX: interval });
+    }
+
+    /**
+     * 检查是否在冷却中
+     * @param {string} uid - 用户UID
+     * @param {string} type - 'full' 全量刷新 | 'single' 单角色刷新
+     * @returns {{inCooldown: boolean, remainingTime: number}}
+     */
+    async checkRefreshCooldown(uid, type = 'full') {
+        const config = this.getRefreshConfig();
+        const interval = type === 'full' ? config.RefreshInterval : config.RefreshSingleCharInterval;
+        const lastRefresh = await this.getRefreshCooldown(uid, type);
+        
+        if (lastRefresh === 0) {
+            return { inCooldown: false, remainingTime: 0 };
+        }
+        
+        const elapsed = (Date.now() - lastRefresh) / 1000;
+        const remaining = Math.ceil(interval - elapsed);
+        
+        return {
+            inCooldown: remaining > 0,
+            remainingTime: Math.max(0, remaining)
+        };
+    }
     initLocalData() {
         const dataDir = `${pluginResources}/data`;
         if (!fs.existsSync(dataDir)) {
