@@ -31,6 +31,9 @@ five_star:
     - name: 鉴心
     - name: 琳奈
     - name: 莫宁
+    - name: 爱弥斯
+    - name: 陆·赫斯
+    - name: 西格莉卡
 
   other_pool:
     - name: 维里奈
@@ -63,6 +66,9 @@ five_star:
     - name: 千咲
     - name: 琳奈
     - name: 莫宁
+    - name: 爱弥斯
+    - name: 陆·赫斯
+    - name: 西格莉卡
   basic: 0.008
   increase: 0.0902
   other: 0.5
