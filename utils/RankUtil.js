@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import Config from '../components/Config.js';
-import { getExternalDataPath } from '../model/path.js';
+
 // 漂泊者属性ID映射
 const WAVERIDER_ATTRIBUTES = {
     '1604': '湮灭', '1605': '湮灭',
@@ -10,23 +9,13 @@ const WAVERIDER_ATTRIBUTES = {
 };
 
 export default class RankUtil {
-    // 获取数据存储路径（支持外部目录）
+    // 获取数据存储路径
     static getRankDataPath() {
         const pluginResources = path.join(process.cwd(), 'plugins', 'waves-plugin', 'resources');
-        const externalConfig = Config.getExternalConfig();
-        
-        // 检查是否使用外部数据目录
-        let basePath;
-        if (externalConfig.external_data_enable && externalConfig.external_data_path) {
-            basePath = path.join(externalConfig.external_data_path, 'CharacterRank');
-        } else {
-            basePath = path.join(pluginResources, 'data', 'CharacterRank');
-        }
-        
         return {
-            basePath: basePath,
-            globalDir: path.join(basePath, 'global'),
-            groupDir: (groupId) => path.join(basePath, 'groups', `group_${groupId}`)
+            basePath: path.join(pluginResources, 'data', 'CharacterRank'),
+            globalDir: path.join(pluginResources, 'data', 'CharacterRank', 'global'),
+            groupDir: (groupId) => path.join(pluginResources, 'data', 'CharacterRank', 'groups', `group_${groupId}`)
         };
     }
 
@@ -58,7 +47,7 @@ export default class RankUtil {
             // 处理全服标识
             const isGlobal = groupId === 'global';
             if (isGlobal) {
-                groupId = 'private'; // 重置为private避免目录创建错误
+                groupId = 'private';
             }
             
             // 全局排名更新
@@ -69,7 +58,7 @@ export default class RankUtil {
                 charInfo
             );
             
-            // 群排名更新 (处理全服标识)
+            // 群排名更新
             if (groupId !== 'private') {
                 const groupDirPath = paths.groupDir(groupId);
                 this.ensureDirectoryExists(groupDirPath);
@@ -85,7 +74,7 @@ export default class RankUtil {
         }
     }
 
-    // 更新排名文件（移除自动清理功能）
+    // 更新排名文件
     static async updateRankFile(filePath, uid, newScore, charInfo = null) {
         const now = Date.now();
         
@@ -105,7 +94,6 @@ export default class RankUtil {
                     rankData = JSON.parse(fileContent);
                 }
             } catch (err) {
-                // 忽略解析错误
             }
         }
         
@@ -120,16 +108,12 @@ export default class RankUtil {
             };
             rankData.push(userEntry);
         } else {
-            // 只保留最高分
             if (newScore > userEntry.score) {
                 userEntry.score = newScore;
                 userEntry.timestamp = now;
                 userEntry.charInfo = charInfo || userEntry.charInfo;
             }
         }
-        
-        // 移除了自动清理过期数据的代码，保留所有历史记录
-        
         try {
             // 保存更新
             fs.writeFileSync(filePath, JSON.stringify(rankData, null, 2));
