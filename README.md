@@ -77,7 +77,7 @@
 #### 1. 克隆仓库
 
 ```
-git clone https://github.com/erzaozi/waves-plugin.git ./plugins/waves-plugin
+git clone https://github.com/Xinglingsuiyue/waves-plugin.git ./plugins/waves-plugin
 ```
 
 > [!NOTE]
