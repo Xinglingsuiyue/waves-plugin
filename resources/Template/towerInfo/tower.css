@@ -227,6 +227,12 @@
     margin-bottom: 5px;
 }
 
+.monster-elements {
+    display: flex;
+    gap: 5px;
+    margin-left: 10px;
+}
+
 .monster-name {
     font-size: 16px;
     font-weight: bold;
@@ -237,10 +243,8 @@
 .monster-element {
     display: flex;
     align-items: center;
-    background: #4a4a6a;
     padding: 5px;
     border-radius: 8px;
-    margin-left: 10px;
     width: 30px;
     height: 30px;
     justify-content: center;
