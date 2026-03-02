@@ -77,19 +77,36 @@ export class Calendar extends plugin {
             };
         });
 
-        const s = 1716753600000;
-        const d = 1209600000;
+        const towerCurrentCycle = this.calculateCurrentCycle(
+            '2026-03-02T04:00:00+08:00',
+            28,
+            'deep',
+            currentDate
+        );
+
+        const slashCurrentCycle = this.calculateCurrentCycle(
+            '2026-02-16T04:00:00+08:00',
+            28,
+            'slash',
+            currentDate
+        );
 
         activity.unshift({
             contentUrl: pluginResources + '/Template/calendar/imgs/tower.png',
             title: '深境再临',
-            time: (() => {
-                const cs = s + Math.floor((currentDate - s) / d) * d;
-                return `${new Date(cs).toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${new Date(cs).toTimeString().slice(0, 5)} - ${new Date(cs + d).toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${new Date(cs + d).toTimeString().slice(0, 5)}`;
-            })(),
-            active: '进行中',
-            remain: this.format(Math.round((s + Math.floor((currentDate - s) / d) * d + d - currentDate) / 1000)),
-            progress: Math.round(((currentDate - (s + Math.floor((currentDate - s) / d) * d)) / d) * 100),
+            time: `${towerCurrentCycle.startTime} - ${towerCurrentCycle.endTime}`,
+            active: towerCurrentCycle.active,
+            remain: towerCurrentCycle.remain,
+            progress: towerCurrentCycle.progress,
+        });
+
+        activity.unshift({
+            contentUrl: pluginResources + '/Template/calendar/imgs/slash.png',
+            title: '冥歌海墟',
+            time: `${slashCurrentCycle.startTime} - ${slashCurrentCycle.endTime}`,
+            active: slashCurrentCycle.active,
+            remain: slashCurrentCycle.remain,
+            progress: slashCurrentCycle.progress,
         });
 
         const imageCard = await Render.render('Template/calendar/calendar', {
@@ -98,6 +115,59 @@ export class Calendar extends plugin {
 
         await e.reply(imageCard);
         return true;
+    }
+
+    calculateCurrentCycle(firstStartTime, cycleDays, type, currentDate) {
+        const firstStart = new Date(firstStartTime).getTime();
+        const cycleDuration = cycleDays * 24 * 60 * 60 * 1000;
+        
+        const timeDiff = currentDate.getTime() - firstStart;
+        const cycleNum = Math.floor(timeDiff / cycleDuration);
+        
+        // 当前周期的开始和结束时间
+        let currentCycleStart = new Date(firstStart + cycleNum * cycleDuration);
+        let currentCycleEnd = new Date(firstStart + (cycleNum + 1) * cycleDuration);
+        
+        if (currentDate.getTime() < currentCycleStart.getTime()) {
+            currentCycleStart = new Date(firstStart + (cycleNum - 1) * cycleDuration);
+            currentCycleEnd = new Date(firstStart + cycleNum * cycleDuration);
+        }
+        
+        const startTime = `${currentCycleStart.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${currentCycleStart.toTimeString().slice(0, 5)}`;
+        const endTime = `${currentCycleEnd.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${currentCycleEnd.toTimeString().slice(0, 5)}`;
+        
+        // 计算状态
+        let active = '';
+        if (currentDate >= currentCycleEnd) {
+            active = '已结束';
+        } else if (currentDate >= currentCycleStart) {
+            active = '进行中';
+        } else {
+            active = '未开始';
+        }
+        
+        // 计算剩余时间
+        let remain = '';
+        if (currentDate >= currentCycleStart && currentDate < currentCycleEnd) {
+            remain = this.format(Math.round((currentCycleEnd.getTime() - currentDate.getTime()) / 1000));
+        }
+        
+        // 计算进度
+        let progress = 0;
+        if (currentDate >= currentCycleStart && currentDate < currentCycleEnd) {
+            progress = Math.round(((currentDate.getTime() - currentCycleStart.getTime()) / 
+                (currentCycleEnd.getTime() - currentCycleStart.getTime())) * 100);
+        } else if (currentDate >= currentCycleEnd) {
+            progress = 100;
+        }
+        
+        return {
+            startTime,
+            endTime,
+            active,
+            remain,
+            progress
+        };
     }
 
     format(seconds) {
