@@ -10,13 +10,13 @@ export class Cosplay extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(～|~|鸣潮)(cos|cosplay|角色)$",
+                    reg: "^(～|~|鸣潮)(cos|cosplay)$",
                     fnc: "randomCos",
                     coolDown: 30000,
                     permission: "everyone"
                 },
                 {
-                    reg: "^(～|~|鸣潮)(cos|cosplay|角色)(\\d+)$",
+                    reg: "^(～|~|鸣潮)(cos|cosplay)(\\d+)$",
                     fnc: "specifiedPageCos",
                     coolDown: 30000,
                     permission: "everyone"
