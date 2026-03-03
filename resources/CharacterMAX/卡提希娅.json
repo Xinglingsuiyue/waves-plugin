@@ -1,0 +1,610 @@
+{
+    "code": 200,
+    "msg": "请求成功",
+    "success": true,
+    "data": {
+        "chainList": [
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749626271682.png",
+                "name": "1命",
+                "order": 1,
+                "unlocked": true
+            },
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749625664614.png",
+                "name": "2命",
+                "order": 2,
+                "unlocked": true
+            },
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749626024633.png",
+                "name": "3命",
+                "order": 3,
+                "unlocked": true
+            },
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749626099743.png",
+                "name": "4命",
+                "order": 4,
+                "unlocked": true
+            },
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749625732420.png",
+                "name": "5命",
+                "order": 5,
+                "unlocked": true
+            },
+            {
+                "description": "",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1749625681580.png",
+                "name": "6命",
+                "order": 6,
+                "unlocked": true
+            }
+        ],
+        "level": 90,
+        "roleAttributeList": [
+            {
+                "attributeId": 2,
+                "attributeName": "生命",
+                "attributeValue": "59415",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625484466.png",
+                "sort": 1000
+            },
+            {
+                "attributeId": 7,
+                "attributeName": "攻击",
+                "attributeValue": "1000",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625429754.png",
+                "sort": 2000
+            },
+            {
+                "attributeId": 10,
+                "attributeName": "防御",
+                "attributeValue": "611",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625832584.png",
+                "sort": 3000
+            },
+            {
+                "attributeId": 8,
+                "attributeName": "暴击",
+                "attributeValue": "87.5%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625901965.png",
+                "sort": 5000
+            },
+            {
+                "attributeId": 9,
+                "attributeName": "暴击伤害",
+                "attributeValue": "299%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625791807.png",
+                "sort": 6000
+            },
+            {
+                "attributeId": 11,
+                "attributeName": "共鸣效率",
+                "attributeValue": "100.0%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625923096.png",
+                "sort": 7000
+            },
+            {
+                "attributeId": 141,
+                "attributeName": "偏谐值累积效率",
+                "attributeValue": "100.0%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625821120.png",
+                "sort": 7500
+            },
+            {
+                "attributeId": 17,
+                "attributeName": "普攻伤害加成",
+                "attributeValue": "58%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625855579.png",
+                "sort": 11000
+            },
+            {
+                "attributeId": 25,
+                "attributeName": "气动伤害加成",
+                "attributeValue": "10.0%",
+                "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625723554.png",
+                "sort": 16000
+            }
+        ],
+        "weaponData": {
+            "breach": 6,
+            "level": 90,
+            "mainPropList": [
+                {
+                    "attributeName": "攻击",
+                    "attributeValue": "412",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766626065937.png"
+                },
+                {
+                    "attributeName": "生命",
+                    "attributeValue": "72.2%",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766625423471.png"
+                }
+            ],
+            "resonLevel": 5,
+            "weapon": {
+                "effectDescription": "生命提升12%。施放变奏技能或普攻后15秒内，自身造成伤害无视目标8%防御，当目标的风蚀效应不少于1层时，对目标造成的伤害加深20%。",
+                "weaponEffectName": "自由骑士之舞",
+                "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1749626115345.png",
+                "weaponId": 21020056,
+                "weaponName": "不屈命定之冠",
+                "weaponStarLevel": 5,
+                "weaponType": 2
+            }
+        },
+        "role": {
+            "acronym": "ktxy",
+            "attributeId": 4,
+            "attributeName": "气动",
+            "breach": 6,
+            "chainUnlockNum": 6,
+            "isMainRole": false,
+            "level": 90,
+            "roleIconUrl": "https://web-static.kurobbs.com/adminConfig/27/role_icon/1749625268471.png",
+            "roleId": 1409,
+            "roleName": "卡提希娅",
+            "rolePicUrl": "https://web-static.kurobbs.com/adminConfig/27/role_pic/1766623697584.png",
+            "starLevel": 5,
+            "weaponTypeId": 2,
+            "weaponTypeName": "迅刀"
+        },
+        "phantomData": {
+            "cost": 11,
+            "equipPhantomList": [
+                {
+                    "cost": 4,
+                    "fetterDetail": {
+                        "firstDescription": "气动伤害提升10%",
+                        "groupId": 17,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1749626319815.png",
+                        "name": "愿戴荣光之旅",
+                        "num": 5,
+                        "secondDescription": "",
+                        "tripleDescription": "",
+                        "type": 0
+                    },
+                    "level": 25,
+                    "mainProps": [
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "22.0%",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625490270.png",
+                            "key": "8-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "攻击",
+                            "attributeValue": "150",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+                            "key": "10007-1",
+                            "valid": false
+                        }
+                    ],
+                    "phantomProp": {
+                        "cost": 4,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1742894477144.png",
+                        "name": "共鸣回响·芙露德莉斯",
+                        "phantomId": 6000106,
+                        "phantomPropId": 60001065,
+                        "quality": 5,
+                        "skillDescription": ""
+                    },
+                    "quality": 5,
+                    "subProps": [
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "10.5%",
+                            "key": "8-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "580",
+                            "key": "10002-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "11.6%",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "21%",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "普攻伤害加成",
+                            "attributeValue": "11.6%",
+                            "key": "17-1",
+                            "valid": true
+                        }
+                    ]
+                },
+                {
+                    "cost": 4,
+                    "fetterDetail": {
+                        "firstDescription": "气动伤害提升10%",
+                        "groupId": 17,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1749626319815.png",
+                        "name": "愿戴荣光之旅",
+                        "num": 5,
+                        "secondDescription": "",
+                        "tripleDescription": "",
+                        "type": 0
+                    },
+                    "level": 25,
+                    "mainProps": [
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "44.0%",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626001915.png",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "攻击",
+                            "attributeValue": "150",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+                            "key": "10007-1",
+                            "valid": false
+                        }
+                    ],
+                    "phantomProp": {
+                        "cost": 4,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1749625586631.png",
+                        "name": "梦魇·凯尔匹",
+                        "phantomId": 6000113,
+                        "phantomPropId": 60001135,
+                        "quality": 5,
+                        "skillDescription": ""
+                    },
+                    "quality": 5,
+                    "subProps": [
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "10.5%",
+                            "key": "8-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "580",
+                            "key": "10002-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "11.6%",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "21%",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "普攻伤害加成",
+                            "attributeValue": "11.6%",
+                            "key": "17-1",
+                            "valid": true
+                        }
+                    ]
+                },
+                {
+                    "cost": 1,
+                    "fetterDetail": {
+                        "firstDescription": "气动伤害提升10%",
+                        "groupId": 17,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1749626319815.png",
+                        "name": "愿戴荣光之旅",
+                        "num": 5,
+                        "secondDescription": "",
+                        "tripleDescription": "",
+                        "type": 0
+                    },
+                    "level": 25,
+                    "mainProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "22.8%",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625602025.png",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "2280",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+                            "key": "10002-1",
+                            "valid": false
+                        }
+                    ],
+                    "phantomProp": {
+                        "cost": 1,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1749626027884.png",
+                        "name": "苦信者的作俑",
+                        "phantomId": 6000110,
+                        "phantomPropId": 60001105,
+                        "quality": 5,
+                        "skillDescription": ""
+                    },
+                    "quality": 5,
+                    "subProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "11.6%",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "10.5%",
+                            "key": "8-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "普攻伤害加成",
+                            "attributeValue": "11.6%",
+                            "key": "10010-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "21.0%",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "580",
+                            "key": "10002-1",
+                            "valid": false
+                        }
+                    ]
+                },
+                {
+                    "cost": 1,
+                    "fetterDetail": {
+                        "firstDescription": "气动伤害提升10%",
+                        "groupId": 17,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1749626319815.png",
+                        "name": "愿戴荣光之旅",
+                        "num": 5,
+                        "secondDescription": "",
+                        "tripleDescription": "",
+                        "type": 0
+                    },
+                    "level": 25,
+                    "mainProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "22.8%",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625602025.png",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "2280",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+                            "key": "10002-1",
+                            "valid": false
+                        }
+                    ],
+                    "phantomProp": {
+                        "cost": 1,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1742894473833.png",
+                        "name": "慈悲节使",
+                        "phantomId": 6000100,
+                        "phantomPropId": 60001005,
+                        "quality": 5,
+                        "skillDescription": ""
+                    },
+                    "quality": 5,
+                    "subProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "11.6%",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "普攻伤害加成",
+                            "attributeValue": "11.6%",
+                            "key": "19-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "580",
+                            "key": "10002-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "21%",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "10.5%",
+                            "key": "8-1",
+                            "valid": true
+                        }
+                    ]
+                },
+                {
+                    "cost": 1,
+                    "fetterDetail": {
+                        "firstDescription": "气动伤害提升10%",
+                        "groupId": 17,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1749626319815.png",
+                        "name": "愿戴荣光之旅",
+                        "num": 5,
+                        "secondDescription": "",
+                        "tripleDescription": "",
+                        "type": 0
+                    },
+                    "level": 25,
+                    "mainProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "22.8%",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625602025.png",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "2280",
+                            "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+                            "key": "10002-1",
+                            "valid": false
+                        }
+                    ],
+                    "phantomProp": {
+                        "cost": 1,
+                        "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1749626061986.png",
+                        "name": "小翼龙·热熔",
+                        "phantomId": 6000107,
+                        "phantomPropId": 60001075,
+                        "quality": 5,
+                        "skillDescription": ""
+                    },
+                    "quality": 5,
+                    "subProps": [
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "11.6%",
+                            "key": "10007-2",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "暴击伤害",
+                            "attributeValue": "21.0%",
+                            "key": "9-1",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "普攻伤害加成",
+                            "attributeValue": "11.6%",
+                            "key": "10010-1",
+                            "valid": false
+                        },
+                        {
+                            "attributeName": "生命",
+                            "attributeValue": "580",
+                            "key": "10002-2",
+                            "valid": true
+                        },
+                        {
+                            "attributeName": "暴击",
+                            "attributeValue": "10.5%",
+                            "key": "8-1",
+                            "valid": true
+                        }
+                    ]
+                }
+            ]
+        },
+        "skillList": [
+            {
+                "activeBranch": false,
+                "level": 10,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749626124707.png",
+                    "id": 545,
+                    "name": "以剑奉读此身",
+                    "skillBranches": [],
+                    "type": "常态攻击"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 10,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749625939793.png",
+                    "id": 546,
+                    "name": "此剑以人之名",
+                    "skillBranches": [],
+                    "type": "共鸣技能"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 10,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749625840023.png",
+                    "id": 547,
+                    "name": "听骑士从心祈愿",
+                    "skillBranches": [],
+                    "type": "共鸣解放"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 10,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749625767517.png",
+                    "id": 550,
+                    "name": "此剑，为潮水的过去",
+                    "skillBranches": [],
+                    "type": "变奏技能"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 10,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749626083383.png",
+                    "id": 551,
+                    "name": "暴风雨",
+                    "skillBranches": [],
+                    "type": "共鸣回路"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 1,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1749626201051.png",
+                    "id": 552,
+                    "name": "听风潮为你祝颂",
+                    "skillBranches": [],
+                    "type": "延奏技能"
+                }
+            },
+            {
+                "activeBranch": false,
+                "level": 1,
+                "skill": {
+                    "description": "",
+                    "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1766623954394.png",
+                    "id": 1409000,
+                    "name": "谐度破坏·迅刀",
+                    "skillBranches": [],
+                    "type": "谐度破坏"
+                }
+            }
+        ]
+    }
+}

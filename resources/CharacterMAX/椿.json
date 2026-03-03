@@ -1,0 +1,773 @@
+{
+  "code": 200,
+  "msg": "请求成功",
+  "success": true,
+  "data": {
+    "activeBranchId": 0,
+    "chainList": [
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399817749.png",
+        "name": "在无人知晓的秘密小径",
+        "order": 1,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399289334.png",
+        "name": "呼唤那沉默之花的芬芳",
+        "order": 2,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399748187.png",
+        "name": "一根荆棘胜过千颗花种",
+        "order": 3,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399662075.png",
+        "name": "它的根茎持续到永恒中",
+        "order": 4,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399190949.png",
+        "name": "将那无限置于你的手掌",
+        "order": 5,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1731399662087.png",
+        "name": "为你的千千万万次盛放",
+        "order": 6,
+        "unlocked": true
+      }
+    ],
+    "equipPhantomAddPropList": [
+      {
+        "attributeName": "生命",
+        "attributeValue": "0",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625484466.png"
+      },
+      {
+        "attributeName": "攻击",
+        "attributeValue": "1045",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625429754.png"
+      },
+      {
+        "attributeName": "防御",
+        "attributeValue": "0",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625832584.png"
+      },
+      {
+        "attributeName": "暴击",
+        "attributeValue": "52.5%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625901965.png"
+      },
+      {
+        "attributeName": "暴击伤害",
+        "attributeValue": "105.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625791807.png"
+      },
+      {
+        "attributeName": "共鸣效率",
+        "attributeValue": "0.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625923096.png"
+      },
+      {
+        "attributeName": "共鸣技能伤害加成",
+        "attributeValue": "0.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626039468.png"
+      },
+      {
+        "attributeName": "普攻伤害加成",
+        "attributeValue": "58.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625543277.png"
+      },
+      {
+        "attributeName": "重击伤害加成",
+        "attributeValue": "0.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625563297.png"
+      },
+      {
+        "attributeName": "湮灭伤害加成",
+        "attributeValue": "70.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626079657.png"
+      }
+    ],
+    "equipPhantomAttributeList": [
+      {
+        "attributeName": "生命",
+        "attributeValue": "5030",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625411169.png",
+        "key": "10002-1",
+        "valid": false
+      },
+      {
+        "attributeName": "生命",
+        "attributeValue": "15.8%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766626198393.png",
+        "key": "10002-2",
+        "valid": false
+      },
+      {
+        "attributeName": "攻击",
+        "attributeValue": "390",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625640635.png",
+        "key": "10007-1",
+        "valid": false
+      },
+      {
+        "attributeName": "攻击",
+        "attributeValue": "55.5%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625513563.png",
+        "key": "10007-2",
+        "valid": true
+      },
+      {
+        "attributeName": "防御",
+        "attributeValue": "20.9%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625989439.png",
+        "key": "10010-2",
+        "valid": false
+      },
+      {
+        "attributeName": "暴击",
+        "attributeValue": "40.5%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625349422.png",
+        "key": "8-1",
+        "valid": true
+      },
+      {
+        "attributeName": "暴击伤害",
+        "attributeValue": "116.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766626216694.png",
+        "key": "9-1",
+        "valid": true
+      },
+      {
+        "attributeName": "共鸣效率",
+        "attributeValue": "7.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625583038.png",
+        "key": "11-1",
+        "valid": false
+      },
+      {
+        "attributeName": "共鸣技能伤害加成",
+        "attributeValue": "26.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625392298.png",
+        "key": "14-1",
+        "valid": false
+      },
+      {
+        "attributeName": "普攻伤害加成",
+        "attributeValue": "18.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766626100523.png",
+        "key": "17-1",
+        "valid": true
+      },
+      {
+        "attributeName": "重击伤害加成",
+        "attributeValue": "8.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625385461.png",
+        "key": "18-1",
+        "valid": false
+      },
+      {
+        "attributeName": "湮灭伤害加成",
+        "attributeValue": "60.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/115/equip_phantom_attribute_icon/1766625542210.png",
+        "key": "27-1",
+        "valid": true
+      }
+    ],
+    "level": 90,
+    "phantomData": {
+      "cost": 12,
+      "equipPhantomList": [
+        {
+          "cost": 4,
+          "fetterDetail": {
+            "firstDescription": "湮灭伤害提升10%",
+            "groupId": 6,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735783267440.png",
+            "name": "沉日劫明",
+            "num": 5,
+            "secondDescription": "使用普攻或重击时，湮灭伤害提升7.5%，该效果可叠加四层，持续15秒",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "44.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626001915.png",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "150",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": false
+            }
+          ],
+          "phantomProp": {
+            "cost": 4,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031670741.png",
+            "name": "无冠者",
+            "phantomId": 6000042,
+            "phantomPropId": 60000425,
+            "quality": 5,
+            "skillDescription": ""
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "14-1",
+              "valid": false
+            },
+            {
+              "attributeName": "普攻伤害加成",
+              "attributeValue": "11.6%",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10002-2",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 3,
+          "fetterDetail": {
+            "firstDescription": "湮灭伤害提升10%",
+            "groupId": 6,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735783267440.png",
+            "name": "沉日劫明",
+            "num": 5,
+            "secondDescription": "使用普攻或重击时，湮灭伤害提升7.5%，该效果可叠加四层，持续15秒",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "湮灭伤害加成",
+              "attributeValue": "30.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626016577.png",
+              "key": "27-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "100",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": false
+            }
+          ],
+          "phantomProp": {
+            "cost": 3,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716032171754.png",
+            "name": "暗鬃狼",
+            "phantomId": 390077033,
+            "phantomPropId": 60000355,
+            "quality": 5,
+            "skillDescription": ""
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "14-1",
+              "valid": false
+            },
+            {
+              "attributeName": "普攻伤害加成",
+              "attributeValue": "11.6%",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10002-2",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 3,
+          "fetterDetail": {
+            "firstDescription": "湮灭伤害提升10%",
+            "groupId": 6,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735783267440.png",
+            "name": "沉日劫明",
+            "num": 5,
+            "secondDescription": "使用普攻或重击时，湮灭伤害提升7.5%，该效果可叠加四层，持续15秒",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "湮灭伤害加成",
+              "attributeValue": "30.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626016577.png",
+              "key": "27-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "100",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": false
+            }
+          ],
+          "phantomProp": {
+            "cost": 3,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031946152.png",
+            "name": "刺玫菇",
+            "phantomId": 390077029,
+            "phantomPropId": 60000315,
+            "quality": 5,
+            "skillDescription": ""
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "14-1",
+              "valid": false
+            },
+            {
+              "attributeName": "普攻伤害加成",
+              "attributeValue": "11.6%",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10002-2",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 1,
+          "fetterDetail": {
+            "firstDescription": "湮灭伤害提升10%",
+            "groupId": 6,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735783267440.png",
+            "name": "沉日劫明",
+            "num": 5,
+            "secondDescription": "使用普攻或重击时，湮灭伤害提升7.5%，该效果可叠加四层，持续15秒",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "18.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+              "key": "10007-2",
+              "valid": true
+            },
+            {
+              "attributeName": "生命",
+              "attributeValue": "2280",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+              "key": "10002-1",
+              "valid": false
+            }
+          ],
+          "phantomProp": {
+            "cost": 1,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031396447.png",
+            "name": "呜咔咔",
+            "phantomId": 390070069,
+            "phantomPropId": 60000095,
+            "quality": 5,
+            "skillDescription": ""
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "14-1",
+              "valid": false
+            },
+            {
+              "attributeName": "普攻伤害加成",
+              "attributeValue": "11.6%",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10002-2",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 1,
+          "fetterDetail": {
+            "firstDescription": "湮灭伤害提升10%",
+            "groupId": 6,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735783267440.png",
+            "name": "沉日劫明",
+            "num": 5,
+            "secondDescription": "使用普攻或重击时，湮灭伤害提升7.5%，该效果可叠加四层，持续15秒",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "18.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+              "key": "10007-2",
+              "valid": true
+            },
+            {
+              "attributeName": "生命",
+              "attributeValue": "2280",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+              "key": "10002-1",
+              "valid": false
+            }
+          ],
+          "phantomProp": {
+            "cost": 1,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716032225346.png",
+            "name": "冷凝棱镜",
+            "phantomId": 390077013,
+            "phantomPropId": 60000145,
+            "quality": 5,
+            "skillDescription": ""
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "14-1",
+              "valid": false
+            },
+            {
+              "attributeName": "普攻伤害加成",
+              "attributeValue": "11.6%",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10002-2",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            }
+          ]
+        }
+      ]
+    },
+    "role": {
+      "acronym": "c",
+      "attributeId": 6,
+      "attributeName": "湮灭",
+      "breach": 6,
+      "chainUnlockNum": 6,
+      "isMainRole": false,
+      "level": 90,
+      "roleIconUrl": "https://web-static.kurobbs.com/adminConfig/27/role_icon/1731399428460.png",
+      "roleId": 1603,
+      "roleName": "椿",
+      "rolePicUrl": "https://web-static.kurobbs.com/adminConfig/27/role_pic/1766623574376.png",
+      "starLevel": 5,
+      "weaponTypeId": 2,
+      "weaponTypeName": "迅刀"
+    },
+    "roleAttributeList": [
+      {
+        "attributeId": 2,
+        "attributeName": "生命",
+        "attributeValue": "12925",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625484466.png",
+        "sort": 1000
+      },
+      {
+        "attributeId": 7,
+        "attributeName": "攻击",
+        "attributeValue": "2330",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625429754.png",
+        "sort": 2000
+      },
+      {
+        "attributeId": 10,
+        "attributeName": "防御",
+        "attributeValue": "1161",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625832584.png",
+        "sort": 3000
+      },
+      {
+        "attributeId": 8,
+        "attributeName": "暴击",
+        "attributeValue": "81.8%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625901965.png",
+        "sort": 5000
+      },
+      {
+        "attributeId": 9,
+        "attributeName": "暴击伤害",
+        "attributeValue": "347.1%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625791807.png",
+        "sort": 6000
+      },
+      {
+        "attributeId": 11,
+        "attributeName": "共鸣效率",
+        "attributeValue": "100.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625923096.png",
+        "sort": 7000
+      },
+      {
+        "attributeId": 141,
+        "attributeName": "偏谐值累积效率",
+        "attributeValue": "100.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625821120.png",
+        "sort": 7500
+      },
+      {
+        "attributeId": 14,
+        "attributeName": "共鸣技能伤害加成",
+        "attributeValue": "26.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626039468.png",
+        "sort": 8000
+      },
+      {
+        "attributeId": 17,
+        "attributeName": "普攻伤害加成",
+        "attributeValue": "76.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625543277.png",
+        "sort": 9000
+      },
+      {
+        "attributeId": 18,
+        "attributeName": "重击伤害加成",
+        "attributeValue": "8.6%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625563297.png",
+        "sort": 10000
+      },
+      {
+        "attributeId": 27,
+        "attributeName": "湮灭伤害加成",
+        "attributeValue": "70.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626079657.png",
+        "sort": 18000
+      }
+    ],
+    "roleSkin": {
+      "isAddition": false,
+      "picUrl": "https://web-static.kurobbs.com/adminConfig/90/skin_pic/1766623801175.png",
+      "priority": 1,
+      "quality": 3,
+      "qualityName": "初始服饰",
+      "skinIcon": "https://web-static.kurobbs.com/adminConfig/90/skin_icon/1735782867856.png",
+      "skinId": 81001603,
+      "skinName": "烂漫时"
+    },
+    "skillList": [
+      {
+        "activeBranch": false,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399433262.png",
+          "id": 257,
+          "name": "育种",
+          "skillBranches": [],
+          "type": "常态攻击"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399400038.png",
+          "id": 258,
+          "name": "盛放与凋零的轮舞",
+          "skillBranches": [],
+          "type": "共鸣技能"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399067946.png",
+          "id": 259,
+          "name": "芳华绽烬",
+          "skillBranches": [],
+          "type": "共鸣解放"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399210890.png",
+          "id": 262,
+          "name": "八千春秋",
+          "skillBranches": [],
+          "type": "变奏技能"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399624740.png",
+          "id": 263,
+          "name": "植物性宇宙",
+          "skillBranches": [],
+          "type": "共鸣回路"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 1,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1731399327249.png",
+          "id": 264,
+          "name": "缠绕",
+          "skillBranches": [],
+          "type": "延奏技能"
+        }
+      },
+      {
+        "activeBranch": false,
+        "level": 1,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1766624078185.png",
+          "id": 1603000,
+          "name": "谐度破坏·迅刀",
+          "skillBranches": [],
+          "type": "谐度破坏"
+        }
+      }
+    ],
+    "weaponData": {
+      "breach": 6,
+      "level": 90,
+      "mainPropList": [
+        {
+          "attributeName": "攻击",
+          "attributeValue": "587",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766626065937.png"
+        },
+        {
+          "attributeName": "暴击",
+          "attributeValue": "24.3%",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766625606167.png"
+        }
+      ],
+      "resonLevel": 5,
+      "weapon": {
+        "effectDescription": "攻击提升12%。造成普攻伤害时，自身普攻伤害加成提升10%，持续14秒，每秒可触发1次，可叠加3层；自身的协奏能量消耗时，自身普攻伤害加成提升40%，持续10秒，每秒可触发1次，若切换至其他角色则该效果提前结束。",
+        "weaponEffectName": "终始之外",
+        "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1731399381159.png",
+        "weaponId": 21020026,
+        "weaponName": "裁春",
+        "weaponStarLevel": 5,
+        "weaponType": 2
+      }
+    }
+  }
+}

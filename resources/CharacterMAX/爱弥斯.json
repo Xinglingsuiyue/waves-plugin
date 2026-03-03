@@ -1,0 +1,652 @@
+{
+  "code": 200,
+  "msg": "请求成功",
+  "success": true,
+  "data": {
+    "chainList": [
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770106117260.png",
+        "name": "如金粉般洒落的初煦",
+        "order": 1,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770106359812.png",
+        "name": "如雪绒般漂浮的音符",
+        "order": 2,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770106129136.png",
+        "name": "炽烈在静默间延展如初",
+        "order": 3,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770105967232.png",
+        "name": "于无垠电子海间轻舞",
+        "order": 4,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770105705866.png",
+        "name": "远航至那星海尽处",
+        "order": 5,
+        "unlocked": true
+      },
+      {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1770105721665.png",
+        "name": "春风祝颂你的旅途",
+        "order": 6,
+        "unlocked": true
+      }
+    ],
+    "level": 90,
+    "roleAttributeList": [
+      {
+        "attributeId": 2,
+        "attributeName": "生命",
+        "attributeValue": "15585",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625484466.png",
+        "sort": 1000
+      },
+      {
+        "attributeId": 7,
+        "attributeName": "攻击",
+        "attributeValue": "3244",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625429754.png",
+        "sort": 2000
+      },
+      {
+        "attributeId": 10,
+        "attributeName": "防御",
+        "attributeValue": "1534",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625832584.png",
+        "sort": 3000
+      },
+      {
+        "attributeId": 142,
+        "attributeName": "谐度破坏增幅",
+        "attributeValue": "10",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625818246.png",
+        "sort": 3500
+      },
+      {
+        "attributeId": 8,
+        "attributeName": "暴击",
+        "attributeValue": "98.8%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625901965.png",
+        "sort": 5000
+      },
+      {
+        "attributeId": 9,
+        "attributeName": "暴击伤害",
+        "attributeValue": "299%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625791807.png",
+        "sort": 6000
+      },
+      {
+        "attributeId": 11,
+        "attributeName": "共鸣效率",
+        "attributeValue": "100%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625923096.png",
+        "sort": 7000
+      },
+      {
+        "attributeId": 141,
+        "attributeName": "偏谐值累积效率",
+        "attributeValue": "100.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625821120.png",
+        "sort": 7500
+      },
+      {
+        "attributeId": 19,
+        "attributeName": "共鸣解放伤害加成",
+        "attributeValue": "83.9%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625855579.png",
+        "sort": 11000
+      },
+      {
+        "attributeId": 22,
+        "attributeName": "冷凝伤害加成",
+        "attributeValue": "12.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626002604.png",
+        "sort": 13000
+      },
+      {
+        "attributeId": 23,
+        "attributeName": "热熔伤害加成",
+        "attributeValue": "82.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625261763.png",
+        "sort": 14000
+      },
+      {
+        "attributeId": 24,
+        "attributeName": "导电伤害加成",
+        "attributeValue": "12.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625358151.png",
+        "sort": 15000
+      },
+      {
+        "attributeId": 25,
+        "attributeName": "气动伤害加成",
+        "attributeValue": "12.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625723554.png",
+        "sort": 16000
+      },
+      {
+        "attributeId": 26,
+        "attributeName": "衍射伤害加成",
+        "attributeValue": "12.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625298084.png",
+        "sort": 17000
+      },
+      {
+        "attributeId": 27,
+        "attributeName": "湮灭伤害加成",
+        "attributeValue": "12.0%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626079657.png",
+        "sort": 18000
+      }
+    ],
+    "weaponData": {
+      "breach": 6,
+      "level": 90,
+      "mainPropList": [
+        {
+          "attributeName": "攻击",
+          "attributeValue": "587",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766626065937.png"
+        },
+        {
+          "attributeName": "暴击",
+          "attributeValue": "24.3%",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766625606167.png"
+        }
+      ],
+      "resonLevel": 5,
+      "weapon": {
+        "effectDescription": "全属性伤害加成提升12%。附加震谐·偏移或聚爆效应时，共鸣解放伤害无视目标32%防御，共鸣解放伤害无视目标10%热熔抗性，持续8秒。",
+        "weaponEffectName": "逐星",
+        "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1769504093397.png",
+        "weaponId": 21020076,
+        "weaponName": "永远的启明星",
+        "weaponStarLevel": 5,
+        "weaponType": 2
+      }
+    },
+    "role": {
+      "acronym": "ams",
+      "attributeId": 2,
+      "attributeName": "热熔",
+      "breach": 6,
+      "chainUnlockNum": 0,
+      "isMainRole": true,
+      "level": 90,
+      "roleIconUrl": "https://web-static.kurobbs.com/adminConfig/27/role_icon/1770105796057.png",
+      "roleId": 1210,
+      "roleName": "爱弥斯",
+      "rolePicUrl": "https://web-static.kurobbs.com/adminConfig/27/role_pic/1770105613669.png",
+      "starLevel": 5,
+      "weaponTypeId": 2,
+      "weaponTypeName": "迅刀"
+    },
+    "phantomData": {
+      "cost": 12,
+      "equipPhantomList": [
+        {
+          "cost": 4,
+          "fetterDetail": {
+            "firstDescription": "热熔伤害提升10%",
+            "groupId": 27,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1769504476259.png",
+            "name": "长路启航之星",
+            "num": 5,
+            "secondDescription": "角色为敌人添加【聚爆效应】或【震谐·偏移】时，自身暴击提升20%，热熔伤害提升20%，持续8秒。",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "44.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626001915.png",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "150",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": true
+            }
+          ],
+          "phantomProp": {
+            "cost": 4,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1770106461087.png",
+            "name": "辛吉勒姆",
+            "phantomId": 6000191,
+            "phantomPropId": 60001915,
+            "quality": 5,
+            "skillDescription": "使用声骸技能，召唤辛吉勒姆，对敌人造成一段68.40%和一段205.20%的热熔伤害。\n在首位装配该声骸技能时，若装配角色为爱弥斯，则自身共鸣解放伤害加成提升25.00%。\n技能冷却：20秒"
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "共鸣解放伤害加成",
+              "attributeValue": "11.6%",
+              "key": "18-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10007-2",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 3,
+          "fetterDetail": {
+            "firstDescription": "热熔伤害提升10%",
+            "groupId": 27,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1769504476259.png",
+            "name": "长路启航之星",
+            "num": 5,
+            "secondDescription": "角色为敌人添加【聚爆效应】或【震谐·偏移】时，自身暴击提升20%，热熔伤害提升20%，持续8秒。",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "热熔伤害加成",
+              "attributeValue": "30.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625582611.png",
+              "key": "23-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "100",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": true
+            }
+          ],
+          "phantomProp": {
+            "cost": 3,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1766625236201.png",
+            "name": "双极·渊陨重锋",
+            "phantomId": 6000180,
+            "phantomPropId": 60001809,
+            "quality": 5,
+            "skillDescription": "使用声骸技能，幻形为双极·渊陨重锋，快速射击敌人，持续5秒，每段攻击造成2.01%的导电伤害。\n在首位装配该声骸技能时，自身导电伤害加成提升12.00%，普攻伤害加成提升12.00%。\n技能冷却：8秒\n自身同时装配双极·星升辉铳时：\n·使用声骸技能后，声骸技能在双极·星升辉铳、双极·渊陨重锋中交替更变，但视为同名声骸技能。\n·双极·渊陨重锋的伤害类型将变为衍射伤害，且首位装配该声骸技能时获得的导电伤害加成将变为衍射伤害加成。\n·施放普攻时获得1层【双极律动】，施放共鸣技能时获得3层【双极律动】，可叠加6层，持续8秒，每层可以使该声骸技能造成的伤害提升10%，该声骸技能效果结束后清除全部层数。\n·可使用次数上限变为2次，初始拥有2次可使用次数，每8秒可使用次数增加1次。"
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "共鸣解放伤害加成",
+              "attributeValue": "11.6%",
+              "key": "18-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10007-2",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 3,
+          "fetterDetail": {
+            "firstDescription": "热熔伤害提升10%",
+            "groupId": 27,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1769504476259.png",
+            "name": "长路启航之星",
+            "num": 5,
+            "secondDescription": "角色为敌人添加【聚爆效应】或【震谐·偏移】时，自身暴击提升20%，热熔伤害提升20%，持续8秒。",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "热熔伤害加成",
+              "attributeValue": "30.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625582611.png",
+              "key": "23-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "100",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+              "key": "10007-1",
+              "valid": true
+            }
+          ],
+          "phantomProp": {
+            "cost": 3,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1770106927003.png",
+            "name": "格洛犸图",
+            "phantomId": 6000195,
+            "phantomPropId": 60001955,
+            "quality": 5,
+            "skillDescription": "使用声骸技能，召唤格洛犸图，践踏敌人造成273.60%的冷凝伤害。\n在此后15秒内，若自身施放延奏技能，使下一个变奏技能登场的角色冷凝伤害加成提升12.00%，持续15秒。\n技能冷却：20秒"
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "共鸣解放伤害加成",
+              "attributeValue": "11.6%",
+              "key": "18-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10007-2",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 1,
+          "fetterDetail": {
+            "firstDescription": "热熔伤害提升10%",
+            "groupId": 27,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1769504476259.png",
+            "name": "长路启航之星",
+            "num": 5,
+            "secondDescription": "角色为敌人添加【聚爆效应】或【震谐·偏移】时，自身暴击提升20%，热熔伤害提升20%，持续8秒。",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "18.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+              "key": "10007-2",
+              "valid": true
+            },
+            {
+              "attributeName": "生命",
+              "attributeValue": "2280",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+              "key": "10002-1",
+              "valid": true
+            }
+          ],
+          "phantomProp": {
+            "cost": 1,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1770106447673.png",
+            "name": "影烁者",
+            "phantomId": 6000197,
+            "phantomPropId": 60001975,
+            "quality": 5,
+            "skillDescription": "使用声骸技能，召唤影烁者，对敌人造成129.60%的湮灭伤害。\n技能冷却：8秒"
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "共鸣解放伤害加成",
+              "attributeValue": "11.6%",
+              "key": "18-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10007-2",
+              "valid": true
+            }
+          ]
+        },
+        {
+          "cost": 1,
+          "fetterDetail": {
+            "firstDescription": "热熔伤害提升10%",
+            "groupId": 27,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1769504476259.png",
+            "name": "长路启航之星",
+            "num": 5,
+            "secondDescription": "角色为敌人添加【聚爆效应】或【震谐·偏移】时，自身暴击提升20%，热熔伤害提升20%，持续8秒。",
+            "tripleDescription": "",
+            "type": 0
+          },
+          "level": 25,
+          "mainProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "18.0%",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+              "key": "10007-2",
+              "valid": true
+            },
+            {
+              "attributeName": "生命",
+              "attributeValue": "2280",
+              "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+              "key": "10002-1",
+              "valid": true
+            }
+          ],
+          "phantomProp": {
+            "cost": 1,
+            "iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1766625271695.png",
+            "name": "岩蛛S4型",
+            "phantomId": 6000177,
+            "phantomPropId": 60001775,
+            "quality": 5,
+            "skillDescription": "使用声骸技能，召唤岩蛛S4型，对敌人造成一段51.84%和一段77.76%的衍射伤害。\n技能冷却：8秒"
+          },
+          "quality": 5,
+          "subProps": [
+            {
+              "attributeName": "攻击",
+              "attributeValue": "60",
+              "key": "17-1",
+              "valid": true
+            },
+            {
+              "attributeName": "共鸣解放伤害加成",
+              "attributeValue": "11.6%",
+              "key": "18-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击",
+              "attributeValue": "10.5%",
+              "key": "8-1",
+              "valid": true
+            },
+            {
+              "attributeName": "暴击伤害",
+              "attributeValue": "21%",
+              "key": "9-1",
+              "valid": true
+            },
+            {
+              "attributeName": "攻击",
+              "attributeValue": "11.6%",
+              "key": "10007-2",
+              "valid": true
+            }
+          ]
+        }
+      ]
+    },
+    "skillList": [
+      {
+        "activeBranch": true,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770106021422.png",
+          "id": 738,
+          "name": "校准无垠",
+          "skillBranches": [],
+          "type": "常态攻击"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770105914226.png",
+          "id": 739,
+          "name": "共赴长航",
+          "skillBranches": [],
+          "type": "共鸣技能"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770106389147.png",
+          "id": 740,
+          "name": "飞至启明之时",
+          "skillBranches": [],
+          "type": "共鸣解放"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770106524951.png",
+          "id": 743,
+          "name": "航程伊始的预兆",
+          "skillBranches": [],
+          "type": "变奏技能"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 10,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770105699734.png",
+          "id": 744,
+          "name": "为寂静赋形",
+          "skillBranches": [121001, 121002],
+          "type": "共鸣回路"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 1,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770106039074.png",
+          "id": 745,
+          "name": "不可见的守候",
+          "skillBranches": [121001, 121002],
+          "type": "延奏技能"
+        }
+      },
+      {
+        "activeBranch": true,
+        "level": 1,
+        "skill": {
+          "description": "",
+          "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1770106133176.png",
+          "id": 1210000,
+          "name": "尚未落地的旋律",
+          "skillBranches": [121001, 121002],
+          "type": "谐度破坏"
+        }
+      }
+    ]
+  }
+}

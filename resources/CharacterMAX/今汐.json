@@ -1,1 +1,645 @@
-
+{
+    "code": 200,
+    "msg": "请求成功",
+    "success": true,
+    "data": {
+        "chainList": [
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547823498.png",
+    "name": "沉海洄天溯",
+    "order": 1,
+    "unlocked": true
+},
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547722461.png",
+    "name": "绒雪凝屏息",
+    "order": 2,
+    "unlocked": true
+},
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547315972.png",
+    "name": "天定神子身",
+    "order": 3,
+    "unlocked": true
+},
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547595040.png",
+    "name": "自甘佑凡尘",
+    "order": 4,
+    "unlocked": true
+},
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547007341.png",
+    "name": "流光化霜雪",
+    "order": 5,
+    "unlocked": true
+},
+{
+    "description": "",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/37/chain_icon/1719547031899.png",
+    "name": "寒尽又逢春",
+    "order": 6,
+    "unlocked": true
+}
+        ],
+        "level": 90,
+        "roleAttributeList": [
+{
+    "attributeId": 2,
+    "attributeName": "生命",
+    "attributeValue": "15383",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625484466.png",
+    "sort": 1000
+},
+{
+    "attributeId": 7,
+    "attributeName": "攻击",
+    "attributeValue": "2723",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625429754.png",
+    "sort": 2000
+},
+{
+    "attributeId": 10,
+    "attributeName": "防御",
+    "attributeValue": "1257",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625832584.png",
+    "sort": 3000
+},
+{
+    "attributeId": 8,
+    "attributeName": "暴击",
+    "attributeValue": "89.8%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625901965.png",
+    "sort": 5000
+},
+{
+    "attributeId": 9,
+    "attributeName": "暴击伤害",
+    "attributeValue": "299%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625791807.png",
+    "sort": 6000
+},
+{
+    "attributeId": 11,
+    "attributeName": "共鸣效率",
+    "attributeValue": "100%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625923096.png",
+    "sort": 7000
+},
+{
+    "attributeId": 141,
+    "attributeName": "偏谐值累积效率",
+    "attributeValue": "100.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625821120.png",
+    "sort": 7500
+},
+{
+    "attributeId": 14,
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "58%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626039468.png",
+    "sort": 8000
+},
+{
+    "attributeId": 22,
+    "attributeName": "冷凝伤害加成",
+    "attributeValue": "12.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626002604.png",
+    "sort": 13000
+},
+{
+    "attributeId": 23,
+    "attributeName": "热熔伤害加成",
+    "attributeValue": "12.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625261763.png",
+    "sort": 14000
+},
+{
+    "attributeId": 24,
+    "attributeName": "导电伤害加成",
+    "attributeValue": "12.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625358151.png",
+    "sort": 15000
+},
+{
+    "attributeId": 25,
+    "attributeName": "气动伤害加成",
+    "attributeValue": "12.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625723554.png",
+    "sort": 16000
+},
+{
+    "attributeId": 26,
+    "attributeName": "衍射伤害加成",
+    "attributeValue": "82.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766625298084.png",
+    "sort": 17000
+},
+{
+    "attributeId": 27,
+    "attributeName": "湮灭伤害加成",
+    "attributeValue": "12.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/114/role_attribute_icon/1766626079657.png",
+    "sort": 18000
+}
+        ],
+        "weaponData": {
+"breach": 6,
+"level": 90,
+"mainPropList": [
+    {
+        "attributeName": "攻击",
+        "attributeValue": "587",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766626065937.png"
+    },
+    {
+        "attributeName": "暴击",
+        "attributeValue": "24.3%",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/131/weapon_attribute_icon/1766625606167.png"
+    }
+],
+"resonLevel": 5,
+"weapon": {
+    "effectDescription": "全属性伤害加成提升12%。施放变奏技能时，自身获得【岁蕴】，使共鸣技能伤害加成提升24%，持续12秒。施放共鸣技能时，自身获得【福泽】，使共鸣技能伤害加成提升24%，持续12秒。",
+    "weaponEffectName": "承天之祐",
+    "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1719544657375.png",
+    "weaponId": 21010026,
+    "weaponName": "时和岁稔",
+    "weaponStarLevel": 5,
+    "weaponType": 1
+}
+        },
+        "role": {
+"acronym": "jx",
+"attributeId": 5,
+"attributeName": "衍射",
+"breach": 6,
+"chainUnlockNum": 0,
+"isMainRole": true,
+"level": 90,
+"roleIconUrl": "https://web-static.kurobbs.com/adminConfig/27/role_icon/1733902394552.png",
+"roleId": 1304,
+"roleName": "今汐",
+"rolePicUrl": "https://web-static.kurobbs.com/adminConfig/27/role_pic/1766623662111.png",
+"starLevel": 5,
+"weaponTypeId": 1,
+"weaponTypeName": "长刃"
+        },
+        "phantomData": {
+"cost": 12,
+"equipPhantomList": [
+    {
+        "cost": 4,
+        "fetterDetail": {
+"firstDescription": "衍射伤害提升10%",
+"groupId": 5,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735782637184.png",
+"name": "浮星祛暗",
+"num": 5,
+"secondDescription": "使用变奏技能登场时，衍射伤害提升30%，持续15秒",
+"tripleDescription": "",
+"type": 0
+        },
+        "level": 25,
+        "mainProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "44.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626001915.png",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "150",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+    "key": "10007-1",
+    "valid": true
+}
+        ],
+        "phantomProp": {
+"cost": 4,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1719545053756.png",
+"name": "角",
+"phantomId": 6000059,
+"phantomPropId": 60000595,
+"quality": 5,
+"skillDescription": ""
+        },
+        "quality": 5,
+        "subProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "21%",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "暴击",
+    "attributeValue": "10.5%",
+    "key": "8-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "60",
+    "key": "10007-1",
+    "valid": true
+},
+{
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "11.6%",
+    "key": "18-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "11.6%",
+    "key": "10007-2",
+    "valid": true
+}
+        ]
+    },
+    {
+        "cost": 3,
+        "fetterDetail": {
+"firstDescription": "衍射伤害提升10%",
+"groupId": 5,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735782637184.png",
+"name": "浮星祛暗",
+"num": 5,
+"secondDescription": "使用变奏技能登场时，衍射伤害提升30%，持续15秒",
+"tripleDescription": "",
+"type": 0
+        },
+        "level": 25,
+        "mainProps": [
+{
+    "attributeName": "衍射伤害加成",
+    "attributeValue": "30.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625425145.png",
+    "key": "26-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "100",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+    "key": "10007-1",
+    "valid": true
+}
+        ],
+        "phantomProp": {
+"cost": 3,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716032202751.png",
+"name": "青羽鹭",
+"phantomId": 390077005,
+"phantomPropId": 60000135,
+"quality": 5,
+"skillDescription": ""
+        },
+        "quality": 5,
+        "subProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "21%",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "暴击",
+    "attributeValue": "10.5%",
+    "key": "8-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "60",
+    "key": "10007-1",
+    "valid": true
+},
+{
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "11.6%",
+    "key": "18-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "11.6%",
+    "key": "10007-2",
+    "valid": true
+}
+        ]
+    },
+    {
+        "cost": 3,
+        "fetterDetail": {
+"firstDescription": "衍射伤害提升10%",
+"groupId": 5,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735782637184.png",
+"name": "浮星祛暗",
+"num": 5,
+"secondDescription": "使用变奏技能登场时，衍射伤害提升30%，持续15秒",
+"tripleDescription": "",
+"type": 0
+        },
+        "level": 25,
+        "mainProps": [
+{
+    "attributeName": "衍射伤害加成",
+    "attributeValue": "30.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625425145.png",
+    "key": "26-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "100",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766626168865.png",
+    "key": "10007-1",
+    "valid": true
+}
+        ],
+        "phantomProp": {
+"cost": 3,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031952813.png",
+"name": "巡哨机傀",
+"phantomId": 6000049,
+"phantomPropId": 60000495,
+"quality": 5,
+"skillDescription": ""
+        },
+        "quality": 5,
+        "subProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "21%",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "暴击",
+    "attributeValue": "10.5%",
+    "key": "8-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "60",
+    "key": "10007-1",
+    "valid": true
+},
+{
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "11.6%",
+    "key": "18-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "11.6%",
+    "key": "10007-2",
+    "valid": true
+}
+        ]
+    },
+    {
+        "cost": 1,
+        "fetterDetail": {
+"firstDescription": "衍射伤害提升10%",
+"groupId": 5,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735782637184.png",
+"name": "浮星祛暗",
+"num": 5,
+"secondDescription": "使用变奏技能登场时，衍射伤害提升30%，持续15秒",
+"tripleDescription": "",
+"type": 0
+        },
+        "level": 25,
+        "mainProps": [
+{
+    "attributeName": "攻击",
+    "attributeValue": "18.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+    "key": "10007-2",
+    "valid": true
+},
+{
+    "attributeName": "生命",
+    "attributeValue": "2280",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+    "key": "10002-1",
+    "valid": true
+}
+        ],
+        "phantomProp": {
+"cost": 1,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031984877.png",
+"name": "游弋蝶",
+"phantomId": 390070074,
+"phantomPropId": 60000255,
+"quality": 5,
+"skillDescription": ""
+        },
+        "quality": 5,
+        "subProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "21%",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "暴击",
+    "attributeValue": "10.5%",
+    "key": "8-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "60",
+    "key": "10007-1",
+    "valid": true
+},
+{
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "11.6%",
+    "key": "18-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "11.6%",
+    "key": "10007-2",
+    "valid": true
+}
+        ]
+    },
+    {
+        "cost": 1,
+        "fetterDetail": {
+"firstDescription": "衍射伤害提升10%",
+"groupId": 5,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/88/element_group_pic/1735782637184.png",
+"name": "浮星祛暗",
+"num": 5,
+"secondDescription": "使用变奏技能登场时，衍射伤害提升30%，持续15秒",
+"tripleDescription": "",
+"type": 0
+        },
+        "level": 25,
+        "mainProps": [
+{
+    "attributeName": "攻击",
+    "attributeValue": "18.0%",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625555859.png",
+    "key": "10007-2",
+    "valid": true
+},
+{
+    "attributeName": "生命",
+    "attributeValue": "2280",
+    "iconUrl": "https://web-static.kurobbs.com/adminConfig/66/phantom_attribute_icon_two/1766625604410.png",
+    "key": "10002-1",
+    "valid": true
+}
+        ],
+        "phantomProp": {
+"cost": 1,
+"iconUrl": "https://web-static.kurobbs.com/adminConfig/30/phantom_icon/1716031865819.png",
+"name": "审判战士",
+"phantomId": 390070065,
+"phantomPropId": 60000055,
+"quality": 5,
+"skillDescription": ""
+        },
+        "quality": 5,
+        "subProps": [
+{
+    "attributeName": "暴击伤害",
+    "attributeValue": "21%",
+    "key": "9-1",
+    "valid": true
+},
+{
+    "attributeName": "暴击",
+    "attributeValue": "10.5%",
+    "key": "8-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "60",
+    "key": "10007-1",
+    "valid": true
+},
+{
+    "attributeName": "共鸣技能伤害加成",
+    "attributeValue": "11.6%",
+    "key": "18-1",
+    "valid": true
+},
+{
+    "attributeName": "攻击",
+    "attributeValue": "11.6%",
+    "key": "10007-2",
+    "valid": true
+}
+        ]
+    }
+]
+        },
+        "skillList": [
+{
+    "activeBranch": true,
+    "level": 10,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546296126.png",
+        "id": 305,
+        "name": "浮光霁寒",
+        "skillBranches": [],
+        "type": "常态攻击"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 10,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546739515.png",
+        "id": 306,
+        "name": "流光夕影",
+        "skillBranches": [],
+        "type": "共鸣技能"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 10,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546768438.png",
+        "id": 307,
+        "name": "移岁诛邪",
+        "skillBranches": [],
+        "type": "共鸣解放"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 10,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546920973.png",
+        "id": 310,
+        "name": "蟠龙清辉",
+        "skillBranches": [],
+        "type": "变奏技能"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 10,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546968528.png",
+        "id": 311,
+        "name": "万物一心",
+        "skillBranches": [],
+        "type": "共鸣回路"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 1,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1719546685940.png",
+        "id": 312,
+        "name": "驭时",
+        "skillBranches": [],
+        "type": "延奏技能"
+    }
+},
+{
+    "activeBranch": true,
+    "level": 1,
+    "skill": {
+        "description": "",
+        "iconUrl": "https://web-static.kurobbs.com/adminConfig/36/role_skill_icon/1769485385429.png",
+        "id": 1304000,
+        "name": "谐度破坏·长刃",
+        "skillBranches": [],
+        "type": "谐度破坏"
+    }
+}
+        ]
+    }
+}
