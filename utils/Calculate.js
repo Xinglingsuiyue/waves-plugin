@@ -130,53 +130,54 @@ class WeightCalculator {
         if (!phantom) return;
 
         let totalScore = 0;
+        const formatNum = (string) => Number(string.replace("%", ""));
 
-        const formatNum = (string) =>
-            Number(string.replace("%", ""));
-
-        phantom.subProps?.forEach(tag => {
-            const subprop = roleWeight.subProps.find(item => item.name === tag.attributeName);
-            tag.color = this.calStyle(subprop.weight);
-            totalScore += formatNum(tag.attributeValue) /
-                baseWeight.subProps.find(item => item.name === tag.attributeName).max *
-                subprop.theoreticalValue;
-        });
+        // 记录成功计入的主属性，用于计算 mainPropsFactor
+        const usedMainProps = [];
 
         const calMainProps = (COST) => {
             phantom.mainProps.forEach(tag => {
                 const name = tag.attributeName.includes("伤害加成") ? "伤害加成" : tag.attributeName;
-                try {
-                    totalScore += formatNum(tag.attributeValue) /
-                        baseWeight.mainProps[COST].find(item => item.name === name).max *
-                        roleWeight.mainProps[COST].find(item => item.name === name).theoreticalValue;
-                } catch (error) {
-                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`疑似该声骸属性异常`), logger.red(JSON.stringify(phantom)));
-                }
+                const baseProp = baseWeight.mainProps[COST]?.find(item => item.name === name);
+                if (!baseProp) return; // 基础最大值不存在，跳过此项
+                const roleProp = roleWeight.mainProps[COST]?.find(item => item.name === name);
+                if (!roleProp) return; // 角色权重中无此属性，跳过
+                totalScore += formatNum(tag.attributeValue) / baseProp.max * roleProp.theoreticalValue;
+                usedMainProps.push(roleProp);
             });
         };
 
-        const mainPropsFactorMap = {
-            4: () => {
-                calMainProps("C4");
-                return 22 + roleWeight.mainProps.C4.find(tag => tag.name === "攻击").weight *
-                    roleWeight.mainProps.C3.find(tag => tag.name === "攻击百分比").theoreticalValue;
-            },
-            3: () => {
-                calMainProps("C3");
-                return 22.5 + roleWeight.mainProps.C3.find(tag => tag.name === "攻击").theoreticalValue;
-            },
-            1: () => {
-                calMainProps("C1");
-                return 18 + roleWeight.mainProps.C1.find(tag => tag.name === "生命").theoreticalValue;
-            }
-        };
+        // 处理副属性
+        phantom.subProps?.forEach(tag => {
+            const baseProp = baseWeight.subProps?.find(item => item.name === tag.attributeName);
+            if (!baseProp) return;
+            const roleProp = roleWeight.subProps?.find(item => item.name === tag.attributeName);
+            if (!roleProp) return;
+            tag.color = this.calStyle(roleProp.weight);
+            totalScore += formatNum(tag.attributeValue) / baseProp.max * roleProp.theoreticalValue;
+        });
 
         const subPropsFactor = _.orderBy(roleWeight.subProps, ['theoreticalValue'], ['desc'])
             .slice(0, 5)
             .reduce((sum, tag) => sum + tag.theoreticalValue, 0);
 
-        const mainPropsFactor = mainPropsFactorMap[phantom.cost]?.() || 0;
+        // 根据cost计算 mainPropsFactor（只包含被成功计入的主属性理论值之和）
+        const mainPropsFactorMap = {
+            4: () => {
+                calMainProps("C4");
+                return usedMainProps.reduce((sum, prop) => sum + prop.theoreticalValue, 0);
+            },
+            3: () => {
+                calMainProps("C3");
+                return usedMainProps.reduce((sum, prop) => sum + prop.theoreticalValue, 0);
+            },
+            1: () => {
+                calMainProps("C1");
+                return usedMainProps.reduce((sum, prop) => sum + prop.theoreticalValue, 0);
+            }
+        };
 
+        const mainPropsFactor = mainPropsFactorMap[phantom.cost]?.() || 0;
         const factor = 25 / (subPropsFactor + mainPropsFactor);
         phantom.realScore = factor * totalScore;
         [phantom.rank, phantom.color] = this.calRank(phantom.realScore);
