@@ -32,7 +32,7 @@ export class CharacterMAX extends plugin {
         const [, message] = e.msg.match(this.rule[0].reg);
 
         if (!message) {
-            return await e.reply('请输入正确的命令格式，如：[~安可极限面板]');
+            return await e.reply('请输入正确的命令格式，如：[~今汐极限面板]');
         }
 
         const wiki = new Wiki();
@@ -51,7 +51,7 @@ export class CharacterMAX extends plugin {
 
         // 检查数据文件是否存在
         if (!fs.existsSync(dataFilePath)) {
-            return await e.reply(`暂未收录【${name}】的极限面板数据，请联系管理员添加。`);
+            return await e.reply(`暂未收录【${name}】的极限面板数据，请联系主人添加。`);
         }
 
         try {
