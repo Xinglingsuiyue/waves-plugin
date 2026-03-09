@@ -1,6 +1,6 @@
-baseAttack: 462
-baseDefense: 1112
-baseHP: 10300
+baseAttack: 1012
+baseDefense: 1148
+baseHP: 11025
 subProps:
   - name: 暴击伤害
     weight: 1
