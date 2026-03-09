@@ -1,5 +1,5 @@
-baseAttack: 288
-baseDefense: 1357
+baseAttack: 699
+baseDefense: 1356
 baseHP: 15375
 subProps:
   - name: 暴击伤害
