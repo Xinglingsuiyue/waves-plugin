@@ -265,7 +265,7 @@ export class Simulator extends plugin {
         
         // 加载本地角色数据
         let localData = {}
-        const localPath = pluginResources + '/local_characters.yaml'
+        const localPath = pluginResources + '/Simulator.yaml'
         if (fs.existsSync(localPath)) {
             localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {}
         }
@@ -392,7 +392,7 @@ export class Simulator extends plugin {
             }
             
             let localData = {}
-            const localPath = pluginResources + '/local_characters.yaml'
+            const localPath = pluginResources + '/Simulator.yaml'
             if (fs.existsSync(localPath)) {
                 localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {}
             }
@@ -449,7 +449,7 @@ export class Simulator extends plugin {
             const record = await wiki.getRecord(roleName)
             if (record.status) {
                 // 更新本地缓存
-                const localPath = pluginResources + '/local_characters.yaml'
+                const localPath = pluginResources + '/Simulator.yaml'
                 let localData = {}
                 if (fs.existsSync(localPath)) {
                     localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {}
