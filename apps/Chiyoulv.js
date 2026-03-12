@@ -230,7 +230,7 @@ export class HoldingRate extends plugin {
 
            
             let localData = {};
-            const localPath = path.join(pluginResources, 'local_characters.yaml');
+            const localPath = path.join(pluginResources, 'Simulator.yaml');
             if (fs.existsSync(localPath)) {
                 localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {};
             }
@@ -329,7 +329,7 @@ export class HoldingRate extends plugin {
         const id2Name = JSON.parse(fs.readFileSync(id2NamePath, 'utf-8'));
 
         let localData = {};
-        const localPath = path.join(pluginResources, 'local_characters.yaml');
+        const localPath = path.join(pluginResources, 'Simulator.yaml');
         if (fs.existsSync(localPath)) {
             localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {};
         }
