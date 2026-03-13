@@ -246,7 +246,7 @@ pnpm install --filter=waves-plugin
 
 如果你喜欢这个项目，请不妨点个 Star🌟，这是对开发者最大的动力， 当然，你可以对我 [爱发电](https://afdian.net/a/sumoqi) 赞助，呜咪~❤️
 
-有意见或者建议也欢迎提交 [Issues](https://github.com/erzaozi/waves-plugin/issues) 和 [Pull requests](https://github.com/erzaozi/waves-plugin/pulls)。
+有意见或者建议也欢迎提交 [Issues](https://github.com/Xinglingsuiyue/waves-plugin/issues) 和 [Pull requests](https://github.com/Xinglingsuiyue/waves-plugin/pulls)。
 
 ## 资源
 
