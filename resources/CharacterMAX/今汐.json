@@ -165,7 +165,7 @@
 ],
 "resonLevel": 5,
 "weapon": {
-    "effectDescription": "全属性伤害加成提升12%。施放变奏技能时，自身获得【岁蕴】，使共鸣技能伤害加成提升24%，持续12秒。施放共鸣技能时，自身获得【福泽】，使共鸣技能伤害加成提升24%，持续12秒。",
+    "effectDescription": "全属性伤害加成提升24%。施放变奏技能时，自身获得【岁蕴】，使共鸣技能伤害加成提升48%，持续12秒。施放共鸣技能时，自身获得【福泽】，使共鸣技能伤害加成提升48%，持续12秒。",
     "weaponEffectName": "承天之祐",
     "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1719544657375.png",
     "weaponId": 21010026,

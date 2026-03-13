@@ -130,7 +130,7 @@
       ],
       "resonLevel": 5,
       "weapon": {
-        "effectDescription": "攻击提升12%。造成声骸技能伤害后12秒内，共鸣技能伤害加成提升32%，声骸技能伤害加深32%，且造成伤害时无视目标8%防御。",
+        "effectDescription": "攻击提升24%。造成声骸技能伤害后12秒内，共鸣技能伤害加成提升64%，声骸技能伤害加深64%，且造成伤害时无视目标16%防御。",
         "weaponEffectName": "安魂曲",
         "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1753085136770.png",
         "weaponId": 21050066,

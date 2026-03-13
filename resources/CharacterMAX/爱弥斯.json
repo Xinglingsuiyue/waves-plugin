@@ -172,7 +172,7 @@
       ],
       "resonLevel": 5,
       "weapon": {
-        "effectDescription": "全属性伤害加成提升12%。附加震谐·偏移或聚爆效应时，共鸣解放伤害无视目标32%防御，共鸣解放伤害无视目标10%热熔抗性，持续8秒。",
+        "effectDescription": "全属性伤害加成提升24%。附加震谐·偏移或聚爆效应时，共鸣解放伤害无视目标64%防御，共鸣解放伤害无视目标30%热熔抗性，持续8秒。",
         "weaponEffectName": "逐星",
         "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1769504093397.png",
         "weaponId": 21020076,

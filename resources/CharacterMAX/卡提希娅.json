@@ -130,7 +130,7 @@
             ],
             "resonLevel": 5,
             "weapon": {
-                "effectDescription": "生命提升12%。施放变奏技能或普攻后15秒内，自身造成伤害无视目标8%防御，当目标的风蚀效应不少于1层时，对目标造成的伤害加深20%。",
+                "effectDescription": "生命提升24%。施放变奏技能或普攻后15秒内，自身造成伤害无视目标16%防御，当目标的风蚀效应不少于1层时，对目标造成的伤害加深40%。",
                 "weaponEffectName": "自由骑士之舞",
                 "weaponIcon": "https://web-static.kurobbs.com/adminConfig/29/weapon_icon/1749626115345.png",
                 "weaponId": 21020056,
