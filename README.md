@@ -4,7 +4,7 @@
 
 # WAVES-PLUGIN
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（作者一个已上岸一个在学业上有事了，目前是暂停维护状态）后面readme已经魔改，原版请前往https://github.com/erzaozi/waves-plugin.git 查看
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（原版目前是暂停维护状态）原版请前往https://github.com/erzaozi/waves-plugin.git 查看
 
 先把更新地址替换一下
 
