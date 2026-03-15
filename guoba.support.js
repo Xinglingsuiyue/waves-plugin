@@ -8,9 +8,9 @@ export function supportGuoba() {
     pluginInfo: {
       name: 'waves-plugin',
       title: '鸣潮插件',
-      author: ['@CikeyQi', '@erzaozi'],
-      authorLink: ['https://github.com/CikeyQi', 'https://github.com/erzaozi'],
-      link: 'https://github.com/erzaozi/waves-plugin',
+      author: ['@CikeyQi', '@erzaozi', '@Xinglingsuiyue'],
+      authorLink: ['https://github.com/CikeyQi', 'https://github.com/erzaozi', 'https://github.com/Xinglingsuiyue'],
+      link: 'https://github.com/Xinglingsuiyue/waves-plugin',
       isV3: true,
       isV2: false,
       showInMenu: true,
@@ -407,6 +407,30 @@ export function supportGuoba() {
           required: true,
           componentProps: {
             placeholder: '请输入反向代理地址，例：https://api.kurobbs.com',
+          },
+        },
+        {
+          component: "SOFT_GROUP_BEGIN",
+          label: "OCR Key配置"
+        },
+        {
+          field: "config.ocr_keys",
+          label: "OCR API Key 列表",
+          bottomHelpMessage: "用于角色评分识别。可填写多个 Key，将自动轮询使用，有效分摊免费额度限制。前往 https://ocr.space/ocrapi 免费申请。",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "key",
+                label: "API Key",
+                component: "Input",
+                required: true,
+                componentProps: {
+                  placeholder: '请输入 OCR.space API Key，例：K88888888888888',
+                },
+              },
+            ],
           },
         },
       ],
