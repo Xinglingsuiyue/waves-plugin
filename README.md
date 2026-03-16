@@ -92,6 +92,18 @@ pnpm install --filter=waves-plugin
 
 ## 插件配置
 
+#### 支持的 OCR 服务
+
+| 服务商 | 官网地址 | 特点 |
+| ------ | ---------- | ------ |
+| **OCRSpace** | [官方网站](https://ocr.space) | 免费额度丰富 |
+
+#### 配置步骤
+
+1. **申请 API Key**: 前往对应官网注册并获取密钥
+2. **填写配置**: 非常不建议手动修改配置文件，本插件已兼容 [Guoba-plugin](https://github.com/guoba-yunzai/guoba-plugin) ，请使用锅巴插件对配置项进行修改
+
+
 > [!WARNING]
 > 非常不建议手动修改配置文件，本插件已兼容 [Guoba-plugin](https://github.com/guoba-yunzai/guoba-plugin) ，请使用锅巴插件对配置项进行修改
 > 
@@ -215,6 +227,7 @@ pnpm install --filter=waves-plugin
 - [x] 角色持有率
 - [x] 角色评级排名
 - [x] Cosplay
+- [x] 角色评分
 - [ ] 伤害计算
 - [ ] 卡池倒计时
 
