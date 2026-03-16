@@ -100,7 +100,7 @@ pnpm install --filter=waves-plugin
 
 #### 配置步骤
 
-1. **申请 API Key**: 前往对应官网注册并获取密钥
+1. **申请 API Key**: 前往对应官网注册并获取密钥（支持多个Key）
 2. **填写配置**: 非常不建议手动修改配置文件，本插件已兼容 [Guoba-plugin](https://github.com/guoba-yunzai/guoba-plugin) ，请使用锅巴插件对配置项进行修改
 
 
