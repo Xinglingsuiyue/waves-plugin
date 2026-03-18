@@ -1,7 +1,7 @@
-pool_name: 「逾此长冬」
+pool_name: 「符文烁醒之刻」
 five_star:
   up_pool:
-    - name: 陆·赫斯
+    - name: 西格莉卡
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -14,8 +14,8 @@ five_star:
 four_star:
   up_pool:
     - name: 散华
-    - name: 灯灯
-    - name: 渊武
+    - name: 卜灵
+    - name: 秧秧
   other_pool:
     # 4星角色
     - name: 桃祈
