@@ -95,8 +95,35 @@ function extractPhantomDataFromOCR(rawText) {
     const replacements = [
         [/＆/g, ''],
         [/&/g, ''],
-        [/[，,•×]/g, ' '],
+        [/[，*,•×]/g, ' '],
         [/e/g, ''],
+        [/◎/g, ''],
+        [/縱/g, ''],
+        [/器/g, ''],
+        [/ *暴击/g, '暴击'],
+        [/①/g, ''],
+        [/②/g, ''],
+        [/③/g, ''],
+        [/④/g, ''],
+        [/⑤/g, ''],
+        [/⑥/g, ''],
+        [/⑦/g, ''],
+        [/⑧/g, ''],
+        [/⑨/g, ''],
+        [/⑩/g, ''],
+        [/多/g, ''],
+        [/暴擊/g, '暴击'],
+        [/暴擊傷害/g, '暴击伤害'],
+        [/共鳴效率/g, '共鸣效率'],
+        [/共鳴解放/g, '共鸣解放伤害加成'],
+        [/共鳴技能/g, '共鸣技能伤害加成'],
+        [/攻擊/g, '攻击'],
+        [/湮滅/g, '湮灭伤害加成'],
+        [/熱熔/g, '热熔伤害加成'],
+        [/氣動/g, '气动伤害加成'],
+        [/導電/g, '导电伤害加成'],
+        [/重擊/g, '重击'],
+        [/防禦/g, '防御'],
         [/主印/g, '生命'],
         [/其鸣/g, '共鸣'],
         [/共呜/g, '共鸣'],
@@ -147,16 +174,25 @@ function extractPhantomDataFromOCR(rawText) {
     }
     text = text.trim();
 
-    // 拆分并过滤无意义行
-    let lines = text.split('\n')
-        .map(l => l.trim())
-        .filter(l => l && l.length > 1 &&
-            !/^\d+\/\d+$/.test(l) &&
-            !l.includes('15100') &&
-            !l.includes('0/50'));
+    // 属性关键词列表
+    const statKeywords = [
+        '热熔伤害加成', '熱熔傷害加成', '导电伤害加成', '導電傷害加成', '冷凝伤害加成', '冷凝傷害加成', '氣動傷害加成', '气动伤害加成',
+        '湮灭伤害加成', '湮滅傷害加成', '衍射伤害加成', '衍射傷害加成', '共鸣解放伤害加成', '共鳴解放傷害加成', '共鸣技能伤害加成', '共鳴技能傷害加成',
+        '普攻伤害加成', '普攻傷害加成', '重击伤害加成', '重擊傷害加成', '治疗效果加成', '治療效果加成', '暴击伤害', '暴擊傷害', '暴击', '暴擊',
+        '攻击百分比', '攻擊百分比', '攻击', '攻擊', '防御百分比', '防禦百分比', '防御', '防禦', '生命百分比', '共鳴效率', '生命', '共鸣效率'
+    ];
+
+    // 拆分行，保留所有行以便后续精准提取
+    let lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    // 过滤无意义行
+    lines = lines.filter(l => l && l.length > 1 &&
+        !/^\d+\/\d+$/.test(l) &&
+        !l.includes('15100') &&
+        !l.includes('0/50'));
 
     // 过滤明显无关的关键词行
-    const ignoreLineKeywords = ['特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '不限'];
+    const ignoreLineKeywords = ['特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功', '我銷製讀伤實加', 'X成通', '不限'];
     lines = lines.filter(l => !ignoreLineKeywords.some(kw => l.includes(kw)));
 
     // 过滤表格符号行
@@ -167,14 +203,6 @@ function extractPhantomDataFromOCR(rawText) {
 
     const scoreLineRegex = /^\d+\.\d+[-A-Za-z]+$/;
 
-    // 属性关键词列表
-    const statKeywords = [
-        '热熔伤害加成', '导电伤害加成', '冷凝伤害加成', '气动伤害加成',
-        '湮灭伤害加成', '衍射伤害加成', '共鸣解放伤害加成', '共鸣技能伤害加成',
-        '普攻伤害加成', '重击伤害加成', '治疗效果加成', '暴击伤害', '暴击',
-        '攻击百分比', '攻击', '防御百分比', '防御', '生命百分比', '生命', '共鸣效率'
-    ];
-
     const phantomData = {
         name: '',
         level: '',
@@ -184,23 +212,23 @@ function extractPhantomDataFromOCR(rawText) {
 
     const usedLines = new Set();
 
-    // 提取声骸强化等级
+    // 提取声骸名称和强化等级
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (!phantomData.name && (line.includes('·') || 
-            line.includes('冠顶') || line.includes('辛吉勒姆') || 
-            line.includes('共鸣回响') || line.includes('苍隼') || 
-            line.includes('双极') || line.includes('渊陨重锋') || 
-            line.includes('格洛犸图') || line.includes('影烁者') || 
-            line.includes('岩蛛'))) {
-            let isStat = false;
-            for (const kw of statKeywords) {
-                if (line.includes(kw)) { isStat = true; break; }
-            }
-            if (!isStat) {
-                phantomData.name = line.replace(/\s+/g, '');
-                usedLines.add(i);
-                continue;
+        
+        // 增强名称识别
+        if (!phantomData.name) {
+            const nameKeywords = ['·', '冠顶', '辛吉勒姆', '共鸣回响', '苍隼', '双极', '渊陨重锋', '格洛犸图', '影烁者', '岩蛛', '象', '无冠者', '角', '钟', '龟', '鹭', '猿', '猩', '虎', '狼', '鸟', '蜂', '蝎', '蛛', '蜥', '蟹', '鱼', '蝶', '蕈', '傀', '偶', '兵', '将', '士'];
+            if (nameKeywords.some(kw => line.includes(kw))) {
+                let isStat = false;
+                for (const kw of statKeywords) {
+                    if (line.includes(kw)) { isStat = true; break; }
+                }
+                if (!isStat && line.length <= 15) { // 名称通常不会太长
+                    phantomData.name = line.replace(/\s+/g, '');
+                    usedLines.add(i);
+                    continue;
+                }
             }
         }
 
@@ -225,32 +253,56 @@ function extractPhantomDataFromOCR(rawText) {
         return true;
     });
 
-    // 解析属性-数值对
-    const allPairs = [];
+    // --- 解析属性-数值对 ---
+    const mainPairs = []; // 存放主次词条 (带有 >> 的)
+    const otherPairs = []; // 存放其他对 (不带 >> 的)
     let pendingAttrs = [];
 
     for (let line of remainingLines) {
-        // 尝试匹配混合行
+        // 1. 优先处理带有 >> 的主次词条行
+        if (line.includes('>>')) {
+            const parts = line.split('>>');
+            const lastPart = parts[parts.length - 1].trim();
+            const valMatch = lastPart.match(/[\d.]+%?/);
+            if (valMatch) {
+                const val = valMatch[0];
+                let attr = '';
+                for (const kw of statKeywords) {
+                    if (line.includes(kw)) { attr = kw; break; }
+                }
+                if (!attr) {
+                    const beforeArrow = parts[0].replace(/[\d.%]/g, '').trim();
+                    if (beforeArrow) attr = beforeArrow;
+                }
+                if (attr) {
+                    mainPairs.push({ attributeName: cleanAttributeName(attr), attributeValue: val });
+                    continue;
+                }
+            }
+        }
+
+        // 2. 匹配普通的混合行 (属性+数值)
         const mixedMatch = line.match(/^([\u4e00-\u9fa5\s]+?)[\s:：]+([\d.]+%?)$/);
         if (mixedMatch) {
             let attr = mixedMatch[1].trim();
             const val = mixedMatch[2].trim();
             attr = cleanAttributeName(attr);
-            allPairs.push({ attributeName: attr, attributeValue: val });
+            otherPairs.push({ attributeName: attr, attributeValue: val });
             continue;
         }
 
+        // 3. 处理属性名和数值分离的情况
         const normalizedLine = normalizeNumber(line);
         const isValue = /^[\d.]+%?$/.test(normalizedLine);
 
         if (isValue && pendingAttrs.length > 0) {
             let attr = pendingAttrs.shift();
             attr = cleanAttributeName(attr);
-            allPairs.push({ attributeName: attr, attributeValue: normalizedLine });
+            otherPairs.push({ attributeName: attr, attributeValue: normalizedLine });
             continue;
         }
 
-        // 检查是否为属性名
+        // 4. 识别属性名
         let isAttribute = false;
         if (/[\u4e00-\u9fa5]/.test(line)) { 
             for (const keyword of statKeywords) {
@@ -267,9 +319,15 @@ function extractPhantomDataFromOCR(rawText) {
         }
     }
 
-    // --- 基于数值特征分配主词条/副词条
-    if (allPairs.length > 0) {
-        // 主词条1候选列表
+    // --- 分配主、次、副词条 ---
+    
+    // 如果识别到了带有 >> 的行，这些行强制作为主词条和次词条
+    if (mainPairs.length > 0) {
+        phantomData.mainStats = mainPairs.slice(0, 2); // 取前两个作为主词条1和主词条2
+        // 其余所有识别到的 otherPairs 以及 mainPairs 剩下的部分都作为副词条
+        phantomData.subStats = [...mainPairs.slice(2), ...otherPairs];
+    } else if (otherPairs.length > 0) {
+        // 如果没有 >> 标记，按原有的数值特征从 otherPairs 中匹配
         const main1Candidates = [
             { nameIncludes: '暴击伤害', value: 44, cost: 4 },
             { nameIncludes: '暴击', value: 22, cost: 4 },
@@ -277,7 +335,7 @@ function extractPhantomDataFromOCR(rawText) {
             { nameIncludes: '防御', value: 41.8, cost: 4 },
             { nameIncludes: '攻击', value: 33, cost: 4 },
             { nameIncludes: '生命', value: 33, cost: 4 },
-            { nameIncludes: '伤害加成', value: 30, cost: 3 }, // 各类伤害加成
+            { nameIncludes: '伤害加成', value: 30, cost: 3 },
             { nameIncludes: '共鸣效率', value: 32, cost: 3 },
             { nameIncludes: '生命', value: 30, cost: 3 },
             { nameIncludes: '攻击', value: 30, cost: 3 },
@@ -286,61 +344,55 @@ function extractPhantomDataFromOCR(rawText) {
             { nameIncludes: '生命', value: 22.8, cost: 1 },
             { nameIncludes: '防御', value: 18, cost: 1 }
         ];
-
-        // 主词条2固定值
         const main2Candidates = [
             { cost: 4, nameIncludes: '攻击', value: 150 },
             { cost: 3, nameIncludes: '攻击', value: 100 },
             { cost: 1, nameIncludes: '生命', value: 2280 }
         ];
 
-        let main1Index = -1;
-        let main2Index = -1;
+        let main1Idx = -1;
+        let main2Idx = -1;
         let detectedCost = 3;
 
-        // 查找主词条1
-        for (let i = 0; i < allPairs.length; i++) {
-            const pair = allPairs[i];
+        // 匹配主词条1
+        for (let i = 0; i < otherPairs.length; i++) {
+            const pair = otherPairs[i];
             const val = parseFloat(pair.attributeValue.replace('%', ''));
             if (isNaN(val)) continue;
             for (const cand of main1Candidates) {
                 if (pair.attributeName.includes(cand.nameIncludes) && Math.abs(val - cand.value) < 0.1) {
-                    main1Index = i;
+                    main1Idx = i;
                     detectedCost = cand.cost;
                     break;
                 }
             }
-            if (main1Index !== -1) break;
+            if (main1Idx !== -1) break;
         }
+        if (main1Idx === -1) main1Idx = 0;
 
-        if (main1Index === -1) {
-            main1Index = 0;
-            detectedCost = getCostByMainStat(allPairs[0].attributeName, allPairs[0].attributeValue);
-        }
+        phantomData.mainStats.push(otherPairs[main1Idx]);
+        const afterMain1 = otherPairs.filter((_, idx) => idx !== main1Idx);
 
-        phantomData.mainStats.push(allPairs[main1Index]);
-        const remainingPairs = allPairs.filter((_, idx) => idx !== main1Index);
-
-        // 查找主词条2
-        for (let i = 0; i < remainingPairs.length; i++) {
-            const pair = remainingPairs[i];
+        // 匹配主词条2
+        for (let i = 0; i < afterMain1.length; i++) {
+            const pair = afterMain1[i];
             const val = parseFloat(pair.attributeValue);
             if (isNaN(val)) continue;
             for (const cand of main2Candidates) {
                 if (cand.cost === detectedCost && pair.attributeName.includes(cand.nameIncludes) && Math.abs(val - cand.value) < (cand.cost === 1 ? 10 : 1)) {
-                    main2Index = i;
+                    main2Idx = i;
                     break;
                 }
             }
-            if (main2Index !== -1) break;
+            if (main2Idx !== -1) break;
         }
 
-        if (main2Index !== -1) {
-            phantomData.mainStats.push(remainingPairs[main2Index]);
-            remainingPairs.splice(main2Index, 1);
+        if (main2Idx !== -1) {
+            phantomData.mainStats.push(afterMain1[main2Idx]);
+            phantomData.subStats = afterMain1.filter((_, idx) => idx !== main2Idx);
+        } else {
+            phantomData.subStats = afterMain1;
         }
-
-        phantomData.subStats = remainingPairs;
     }
 
     if (!phantomData.name && phantomData.mainStats.length > 0) {
@@ -529,6 +581,9 @@ export class CharacterScore extends plugin {
                     if (phantomData.mainStats.length > 0) {
                         summary += `主词条: ${phantomData.mainStats[0].attributeName} ${phantomData.mainStats[0].attributeValue}\n`;
                     }
+                    if (phantomData.mainStats.length > 1) {
+                        summary += `次词条: ${phantomData.mainStats[1].attributeName} ${phantomData.mainStats[1].attributeValue}\n`;
+                    }
                     summary += `副词条(${phantomData.subStats.length}条):\n`;
                     phantomData.subStats.forEach((stat, i) => {
                         summary += `  ${i+1}. ${stat.attributeName} ${stat.attributeValue}\n`;
@@ -556,8 +611,10 @@ export class CharacterScore extends plugin {
 
         if (ocrResults.length === 0) {
             if (forwardMessages.length > 0) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
-                await e.reply(forward);
+                if (!e.isGroup) {
+                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    await e.reply(forward);
+                }
             } else {
                 await e.reply('未成功识别到任何声骸信息，请检查图片清晰度');
             }
@@ -578,8 +635,11 @@ export class CharacterScore extends plugin {
         if (!fs.existsSync(dataFilePath)) {
             const errMsg = `暂未收录【${name}】的面板数据`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-            const forward = await e.bot.makeForwardMsg(forwardMessages);
-            return await e.reply(forward);
+            if (!e.isGroup) {
+                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                await e.reply(forward);
+            }
+            return true;
         }
 
         let roleDetail;
@@ -597,8 +657,11 @@ export class CharacterScore extends plugin {
             if (phantomList.length === 0) {
                 const errMsg = '角色面板数据中没有找到配置';
                 forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
-                return await e.reply(forward);
+                if (!e.isGroup) {
+                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    await e.reply(forward);
+                }
+                return true;
             }
 
             const replacementLog = [];
@@ -619,6 +682,7 @@ export class CharacterScore extends plugin {
                             phantomName: phantomData.name || `声骸${i+1}`,
                             cost: cost,
                             mainStat: phantomData.mainStats[0] ? `${phantomData.mainStats[0].attributeName} ${phantomData.mainStats[0].attributeValue}` : '未知',
+                            subStat: phantomData.mainStats[1] ? `${phantomData.mainStats[1].attributeName} ${phantomData.mainStats[1].attributeValue}` : null,
                             subStatCount: phantomData.subStats.length
                         });
                     }
@@ -687,13 +751,18 @@ export class CharacterScore extends plugin {
             replacementLog.forEach(log => {
                 summaryMsg += `${log.index}. ${log.phantomName} (${log.cost}cost)\n`;
                 summaryMsg += `   主: ${log.mainStat}\n`;
+                if (log.subStat) {
+                    summaryMsg += `   次: ${log.subStat}\n`;
+                }
                 summaryMsg += `   副: ${log.subStatCount}条词条\n`;
             });
             forwardMessages.push({ message: summaryMsg, nickname: e.bot?.nickname || 'Bot' });
 
             // 发送合并转发消息
-            const forward = await e.bot.makeForwardMsg(forwardMessages);
-            await e.reply(forward);
+            if (!e.isGroup) {
+                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                await e.reply(forward);
+            }
 
             // ====================== 渲染评分 ======================
             const displayPhantomList = phantomList.filter(p => p.hasBeenReplaced);
@@ -736,8 +805,10 @@ export class CharacterScore extends plugin {
             console.error('处理评分时出错:', error);
             const errMsg = `处理【${name}】评分时发生错误：${error.message}`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-            const forward = await e.bot.makeForwardMsg(forwardMessages);
-            await e.reply(forward);
+            if (!e.isGroup) {
+                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                await e.reply(forward);
+            }
         }
         
         return true;
