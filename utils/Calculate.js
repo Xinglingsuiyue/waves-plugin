@@ -180,6 +180,10 @@ class WeightCalculator {
         const mainPropsFactor = mainPropsFactorMap[phantom.cost]?.() || 0;
         const factor = 25 / (subPropsFactor + mainPropsFactor);
         phantom.realScore = factor * totalScore;
+
+        // 修复浮点误差导致的分数略超25的问题
+        if (phantom.realScore > 25) phantom.realScore = 25;
+
         [phantom.rank, phantom.color] = this.calRank(phantom.realScore);
     }
 
