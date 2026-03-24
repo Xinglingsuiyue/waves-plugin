@@ -104,14 +104,12 @@ export class Character extends plugin {
 
             imgListSet.add(rolePicUrl);
 
-            // 保留原始角色详情给伤害计算使用
             const rawRoleDetailData = JSON.parse(JSON.stringify(roleDetail.data));
 
             // 角色面板评分
             const calculated = new WeightCalculator(roleDetail.data).calculate();
             roleDetail.data = calculated;
 
-            // 伤害计算必须使用原始详情数据，不能用 calculate() 之后的对象
             const damageResult = await Zhinengshanghai.calc(rawRoleDetailData, {
                 enemyName: '无妄者',
                 enemyLevel: 90,
