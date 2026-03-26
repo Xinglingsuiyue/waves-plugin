@@ -23,6 +23,8 @@ const CONSTANTS = {
     OTHER_TOWER_DATA_URL: '/aki/roleBox/akiBox/towerIndex',
     HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashDetail',
     OTHER_HAIXU_DATA_URL: '/aki/roleBox/akiBox/slashIndex',
+    NEW_TOWER_DETAIL_URL: '/aki/roleBox/akiBox/newTowerDetail',
+    NEW_TOWER_INDEX_URL: '/aki/roleBox/akiBox/newTowerIndex',
     RESOURCE_PERIOD_LIST_URL: '/aki/resource/period/list',
     RESOURCE_WEEK_URL: '/aki/resource/week',
     RESOURCE_MONTH_URL: '/aki/resource/month',
@@ -528,6 +530,74 @@ async getTowerData(serverId, roleId, token, did = null) {
         } catch (error) {
             logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取逆境深塔数据失败，疑似网络问题`), logger.red(error));
             return { status: false, msg: '获取数据失败' };
+        }
+    }
+
+//终焉矩阵
+    async getNewTowerIndex(serverId, roleId, token, did = null, userId = null) {
+        await this.refreshData(serverId, roleId, token, did);
+        const headers = await this.buildHeaders('ios', token, did);
+        const requestData = {
+            roleId,
+            serverId,
+            userId: userId || ''
+        };
+
+        try {
+            const response = await wavesApi.post(CONSTANTS.NEW_TOWER_INDEX_URL, qs.stringify(requestData), { headers });
+            if (response.data.code === 10902 || response.data.code === 200) {
+                if (!response.data.data || response.data.data === 'null') {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`获取终焉矩阵概览数据失败，返回空数据`));
+                    return {
+                        status: false,
+                        msg: "查询信息失败，请检查库街区数据终端中对应板块的对外展示开关是否打开"
+                    };
+                }
+
+                const parsedData = JSON.parse(response.data.data);
+                if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取终焉矩阵概览数据成功`));
+                return { status: true, data: parsedData };
+            } else {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取终焉矩阵概览数据失败`), logger.red(response.data.msg));
+                return { status: false, msg: response.data.msg };
+            }
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取终焉矩阵概览数据异常`), logger.red(error));
+            return { status: false, msg: '获取终焉矩阵概览数据失败，疑似网络问题' };
+        }
+    }
+
+//终焉矩阵
+    async getNewTowerDetail(serverId, roleId, token, did = null, userId = null) {
+        await this.refreshData(serverId, roleId, token, did);
+        const headers = await this.buildHeaders('ios', token, did);
+        const requestData = {
+            roleId,
+            serverId,
+            userId: userId || ''
+        };
+
+        try {
+            const response = await wavesApi.post(CONSTANTS.NEW_TOWER_DETAIL_URL, qs.stringify(requestData), { headers });
+            if (response.data.code === 10902 || response.data.code === 200) {
+                if (!response.data.data || response.data.data === 'null') {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`获取终焉矩阵详情数据失败，返回空数据`));
+                    return {
+                        status: false,
+                        msg: "查询信息失败，请检查库街区数据终端中对应板块的对外展示开关是否打开"
+                    };
+                }
+
+                const parsedData = JSON.parse(response.data.data);
+                if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`获取终焉矩阵详情数据成功`));
+                return { status: true, data: parsedData };
+            } else {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取终焉矩阵详情数据失败`), logger.red(response.data.msg));
+                return { status: false, msg: response.data.msg };
+            }
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`获取终焉矩阵详情数据异常`), logger.red(error));
+            return { status: false, msg: '获取终焉矩阵详情数据失败，疑似网络问题' };
         }
     }
 
