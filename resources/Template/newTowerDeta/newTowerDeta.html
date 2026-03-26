@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>终焉矩阵</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/newTowerDeta/newTowerDeta.css">
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div>
+        <div id="account">
+            {{if userInfo.avatar}}<img src="{{userInfo.avatar}}" id="user-avatar">{{/if}}
+            <div id="user-name">{{userInfo.name}}</div>
+            <div id="user-uid">{{userInfo.uid}}</div>
+        </div>
+
+        <div class="tower-body">
+            <div class="info-bar">
+                <div>剩余时间: {{leftTime}}</div>
+                <div>奖励进度: {{reward}}/{{totalReward}}</div>
+                <div>总积分: {{totalScore}}</div>
+            </div>
+
+            {{each modeDetails mode}}
+            <div class="tower-area">
+                <span class="tower-name">{{mode.modeName}}</span>
+                <span class="tower-star">
+                    <span class="rank">{{mode.rankText}}</span>
+                    积分: <span class="score">{{mode.score || 0}}</span>
+                </span>
+            </div>
+
+            {{if mode.teams && mode.teams.length > 0}}
+                {{each mode.teams team idx}}
+                <div class="floor-list">
+                    <div class="team-head">
+                        <div class="floor-name">队伍{{idx + 1}}</div>
+
+                        <div class="team-roles">
+                            {{each team.roleIcons roleIcon}}
+                            <div class="avatar-frame">
+                                <img src="{{roleIcon}}" class="avatar">
+                            </div>
+                            {{/each}}
+                        </div>
+
+                        <div class="team-info">
+                            <div class="team-stat">轮次: {{team.round || mode.round || 0}}</div>
+                            <div class="team-stat">击败: {{team.passBoss || 0}} / {{team.bossCount || mode.bossCount || 0}}</div>
+                            <div class="team-stat">积分: {{team.score || 0}}</div>
+                        </div>
+                    </div>
+
+                    {{if team.buffs && team.buffs.length > 0}}
+                    <div class="buff-list">
+                        {{each team.buffs buff}}
+                        <div class="buff-item">
+                            <img src="{{buff.buffIcon}}" class="buff-icon">
+                            <div class="buff-text">
+                                <div class="buff-name">{{buff.buffName}}</div>
+                                <div class="buff-desc">{{buff.desc}}</div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            {{/if}}
+            {{/each}}
+        </div>
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+
+</html>

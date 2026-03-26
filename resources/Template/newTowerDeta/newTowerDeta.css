@@ -1,0 +1,240 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    font-family: "Guruwords", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+#body {
+    transform-origin: top left;
+    width: 1220px;
+    height: auto;
+}
+
+#body > div {
+    width: 100%;
+    background: url(imgs/background.png) no-repeat;
+    background-size: cover;
+}
+
+#account {
+    height: 424px;
+    position: relative;
+}
+
+#user-avatar {
+    position: absolute;
+    height: 200px;
+    width: 200px;
+    left: 73px;
+    top: 105px;
+    z-index: 1;
+    border-radius: 50%;
+    border: 3px solid #d6a64e;
+    object-fit: cover;
+}
+
+#user-name {
+    position: relative;
+    left: 323px;
+    top: 132px;
+    color: white;
+    font-size: 58px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#user-uid {
+    position: relative;
+    left: 462px;
+    top: 143px;
+    color: white;
+    font-size: 39px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tower-body {
+    padding: 0 61px;
+}
+
+.info-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 40px;
+    margin: 30px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    font-size: 32px;
+    color: #e1e1e1;
+    border: 2px solid #85857c;
+    backdrop-filter: blur(10px);
+}
+
+.tower-area {
+    margin-top: 60px;
+    padding: 24px 40px 0 40px;
+    background: url(imgs/area-bg.png) no-repeat;
+    background-size: cover;
+    width: 1098px;
+    height: 114px;
+}
+
+.tower-name {
+    font-size: 50px;
+    color: #e1e1e1;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tower-star {
+    float: right;
+    font-size: 42px;
+    color: #e1e1e1;
+    font-weight: 700;
+}
+
+.rank {
+    color: gold;
+    font-size: 50px;
+    margin-right: 8px;
+}
+
+.score {
+    color: gold;
+    font-weight: 700;
+}
+
+.floor-list {
+    width: 1098px;
+    margin: 20px 0;
+    padding: 22px 26px;
+    background: rgba(20, 20, 20, 0.65);
+    border: 2px solid rgba(214, 166, 78, 0.5);
+    border-radius: 18px;
+    backdrop-filter: blur(6px);
+}
+
+.team-head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.floor-name {
+    color: #fff;
+    font-size: 40px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 120px;
+}
+
+.team-roles {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    margin-left: 20px;
+}
+
+.team-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.team-stat {
+    font-size: 24px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 6px 12px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.avatar-frame {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f6df9b 0%, #c7943f 100%);
+    box-shadow: 0 4px 12px rgba(214, 166, 78, 0.35);
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff3c2;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.buff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.buff-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 14px 16px;
+    border-radius: 12px;
+}
+
+.buff-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.buff-text {
+    flex: 1;
+}
+
+.buff-name {
+    color: #f3d38b;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.buff-desc {
+    color: #e8e8e8;
+    font-size: 22px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+#copyright {
+    position: relative;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 10px;
+}
+
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}
