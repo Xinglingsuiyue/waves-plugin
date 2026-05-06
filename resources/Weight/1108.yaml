@@ -27,7 +27,7 @@ mainProps:
     - name: 暴击伤害
       weight: 0.5
     - name: 暴击
-      weight: 0.25
+      weight: 0.4
     - name: 治疗效果加成
       weight: 0
     - name: 生命百分比
