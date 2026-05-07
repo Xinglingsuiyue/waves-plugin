@@ -1,7 +1,7 @@
 pool_name: 「浮声沉兵」
 five_star:
   up_pool:
-    - name: 昭日译注
+    - name: 價作的矮星
   other_pool: []
   basic: 0.008
   increase: 0.0902
@@ -9,9 +9,9 @@ five_star:
 four_star:
   up_pool:
     
-    - name: 尘云旋臂
-    - name: 永续坍缩
-    - name: 西升
+    - name: 核熔星盘
+    - name: 凋亡频移
+    - name: 飞逝
   other_pool:
     # 4星角色
     - name: 秧秧
