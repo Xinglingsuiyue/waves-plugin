@@ -22,7 +22,6 @@ export class NewTowerDeta extends plugin {
         const waves = new Waves();
         let [, , roleId] = e.msg.match(this.rule[0].reg);
 
-        // 指定UID查询
         if (roleId) {
             const publicCookie = await waves.pubCookie();
             if (!publicCookie) {
@@ -41,7 +40,6 @@ export class NewTowerDeta extends plugin {
         let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         const bindUid = await redis.get(`Yunzai:waves:bind:${e.user_id}`);
 
-        //登录账号
         if (accountList.length) {
             let data = [];
             let deleteroleId = [];
@@ -219,17 +217,6 @@ export class NewTowerDeta extends plugin {
                 1: '奇点扩张'
             };
 
-            const rankMap = {
-                0: '暂无',
-                1: 'C',
-                2: 'B',
-                3: 'A',
-                4: 'S',
-                5: 'SS',
-                6: 'SSS',
-                7: 'Ω'
-            };
-
             const modeDetails = (matrixData.modeDetails || []).map(mode => {
                 const teams = (mode.teams || []).map(team => ({
                     ...team,
@@ -237,11 +224,43 @@ export class NewTowerDeta extends plugin {
                     roleIcons: team.roleIcons || []
                 }));
 
+                let bossProgress = '';
+                let progressPercent = 0;
+                let roundNum = 0;
+
+                if (!isOther && teams.length > 0) {
+                    const lastTeam = teams[teams.length - 1];
+                    const bossDenominator = mode.modeId === 0 ? 4 : 5;
+                    const bossNumerator = lastTeam.passBoss || 0;
+                    bossProgress = `${bossNumerator}/${bossDenominator}`;
+                    progressPercent = Math.min((bossNumerator / bossDenominator) * 100, 100);
+                    roundNum = lastTeam.round || mode.round || 0;
+                }
+
+                let areaIcon = 'Template/newTowerDeta/imgs/area/0.png';
+                const score = mode.score || 0;
+                if (mode.modeId === 0) {
+                    if (score >= 10000) areaIcon = 'Template/newTowerDeta/imgs/area/S.png';
+                    else if (score >= 7200) areaIcon = 'Template/newTowerDeta/imgs/area/A.png';
+                    else if (score >= 4800) areaIcon = 'Template/newTowerDeta/imgs/area/B.png';
+                } else if (mode.modeId === 1) {
+                    if (score >= 58000) areaIcon = 'Template/newTowerDeta/imgs/area/MAXC.png';
+                    else if (score >= 45000) areaIcon = 'Template/newTowerDeta/imgs/area/MAXY.png';
+                    else if (score >= 37000) areaIcon = 'Template/newTowerDeta/imgs/area/SSS.png';
+                    else if (score >= 29000) areaIcon = 'Template/newTowerDeta/imgs/area/SS.png';
+                    else if (score >= 21000) areaIcon = 'Template/newTowerDeta/imgs/area/S.png';
+                    else if (score >= 16000) areaIcon = 'Template/newTowerDeta/imgs/area/A.png';
+                    else if (score >= 12000) areaIcon = 'Template/newTowerDeta/imgs/area/B.png';
+                }
+
                 return {
                     ...mode,
                     modeName: modeNameMap[mode.modeId] || `模式${mode.modeId}`,
-                    rankText: rankMap[mode.rank] || `${mode.rank}`,
-                    teams
+                    areaIcon,
+                    teams,
+                    bossProgress,
+                    progressPercent,
+                    roundNum
                 };
             }).sort((a, b) => (a.modeId || 0) - (b.modeId || 0));
 
