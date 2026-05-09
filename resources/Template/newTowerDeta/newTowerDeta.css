@@ -67,6 +67,7 @@
 .info-bar {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 20px;
     padding: 20px 40px;
     margin: 30px 0;
@@ -78,37 +79,188 @@
     backdrop-filter: blur(10px);
 }
 
+.info-bar > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-icon {
+    height: 45px;
+    width: auto;
+    vertical-align: middle;
+}
+
 .tower-area {
     margin-top: 60px;
     padding: 24px 40px 0 40px;
-    background: url(imgs/area-bg.png) no-repeat;
-    background-size: cover;
     width: 1098px;
-    height: 114px;
+    height: 130px;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.tower-area.mode-w {
+    background-image: url(imgs/area-w.png);
+}
+
+.tower-area.mode-j {
+    background-image: url(imgs/area-j.png);
 }
 
 .tower-name {
     font-size: 50px;
-    color: #e1e1e1;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    padding-left: 90px;
 }
 
-.tower-star {
-    float: right;
-    font-size: 42px;
-    color: #e1e1e1;
-    font-weight: 700;
+.tower-area.mode-w .tower-name {
+    color: #5fd9e8;
 }
 
-.rank {
-    color: gold;
-    font-size: 50px;
-    margin-right: 8px;
+.tower-area.mode-j .tower-name {
+    color: #ff5a73;
+}
+
+.overview-section {
+    position: relative;
+    width: 1098px;
+    margin: 20px 0;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.overview-bg-img {
+    width: 100%;
+    height: 300px;
+    display: block;
+    object-fit: cover;
+    border-radius: 18px;
+}
+
+.overview-rating-icon {
+    position: absolute;
+    top: 50%;
+    left: -110px;
+    transform: translateY(-50%);
+    height: 700px;
+    width: auto;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.overview-icon-b {
+    position: absolute;
+    top: 45%;
+    right: 40px;
+    height: 13px;
+    width: auto;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.overview-score {
+    position: absolute;
+    top: 10%;
+    left: 550px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 2;
+}
+
+.score-icon-large {
+    height: 80px;
+    width: auto;
 }
 
 .score {
-    color: gold;
+    font-size: 50px;
+    color: #f6df9b;
     font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.progress-container {
+    position: absolute;
+    top: 80%;
+    right: 40px;
+    width: 517px;
+    height: 18px;
+    z-index: 3;
+}
+
+.progress-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    border-radius: 9px;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #f6df9b, #d6a64e);
+    border-radius: 9px;
+    transition: width 0.3s ease;
+    z-index: 1;
+}
+
+.defeat-info {
+    position: absolute;
+    bottom: 70px;
+    right: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 3;
+}
+
+.round-text {
+    font-size: 40px;
+    color: #f6df9b;
+    text-shadow: 1px 1px 2px black;
+    white-space: nowrap;
+}
+
+.defeat-icon {
+    height: 50px;
+    width: auto;
+}
+
+.defeat-num {
+    font-size: 40px;
+    color: #f6df9b;
+    text-shadow: 1px 1px 2px black;
+    white-space: nowrap;
+}
+
+.team-stat {
+    font-size: 24px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 6px 12px;
+    border-radius: 10px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.team-boss-icon {
+    height: 28px;
+    width: auto;
+}
+
+.team-stat .score-icon {
+    height: 33px;
+    vertical-align: middle;
+    margin-right: 2px;
 }
 
 .floor-list {
@@ -150,15 +302,6 @@
     gap: 12px;
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-.team-stat {
-    font-size: 24px;
-    color: #f2f2f2;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 6px 12px;
-    border-radius: 10px;
-    white-space: nowrap;
 }
 
 .avatar-frame {
