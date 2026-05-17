@@ -213,3 +213,22 @@
     display: inline-block;
     padding: 0 3px;
 }
+
+.boss-container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 1220px;
+    padding-left: 35px;
+}
+
+.boss-wrapper {
+    width: 580px;
+    height: 305px;
+    overflow: hidden;
+}
+
+.boss-wrapper > .boss {
+    transform: scale(0.5);
+    transform-origin: top left;
+    margin: 15px 0 0 5px;
+}
