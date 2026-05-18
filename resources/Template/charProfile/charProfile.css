@@ -267,6 +267,34 @@
   font-size: 15px;
 }
 
+.damage-item.heal-item {
+  background: linear-gradient(180deg, #edf5ee 0%, #dfece1 100%);
+}
+
+.damage-row.heal-row span:first-child {
+  color: #4d7a55;
+  font-weight: bold;
+}
+
+.damage-row.heal-row span:last-child {
+  color: #2f8a43;
+  font-size: 16px;
+}
+
+.damage-item.shield-item {
+  background: linear-gradient(180deg, #eef3fb 0%, #dde7f5 100%);
+}
+
+.damage-row.shield-row span:first-child {
+  color: #3f638d;
+  font-weight: bold;
+}
+
+.damage-row.shield-row span:last-child {
+  color: #245d9a;
+  font-size: 16px;
+}
+
 .damage-empty {
   text-align: center;
   color: #888;

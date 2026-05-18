@@ -65,9 +65,20 @@
                         {{if data.damageResult && data.damageResult.items && data.damageResult.items.length}}
                         <div class="damage-list">
                             {{each data.damageResult.items item}}
-                            <div class="damage-item">
+                            <div class="damage-item {{if item.type === 'heal'}}heal-item{{/if}}{{if item.type === 'shield'}}shield-item{{/if}}">
                                 <div class="damage-skill-name">{{item.name}}</div>
                                 <div class="damage-values">
+                                    {{if item.type === 'heal'}}
+                                    <div class="damage-row heal-row expected">
+                                        <span>治疗量</span>
+                                        <span>{{item.heal || item.expected}}</span>
+                                    </div>
+                                    {{else if item.type === 'shield'}}
+                                    <div class="damage-row shield-row expected">
+                                        <span>护盾量</span>
+                                        <span>{{item.shield || item.expected}}</span>
+                                    </div>
+                                    {{else}}
                                     <div class="damage-row">
                                         <span>非暴击</span>
                                         <span>{{item.nonCrit}}</span>
@@ -80,6 +91,7 @@
                                         <span>期望</span>
                                         <span>{{item.expected}}</span>
                                     </div>
+                                    {{/if}}
                                 </div>
                             </div>
                             {{/each}}
