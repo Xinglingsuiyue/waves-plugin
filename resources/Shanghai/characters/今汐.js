@@ -36,16 +36,16 @@ const JINHSI_SKILLS = {
     name: '共鸣解放·移岁诛邪',
     type: 'liberation',
     levelMap: {
-      1: { part1: 2.5140, part2: 5.8660 },
-      2: { part1: 2.7202, part2: 6.3471 },
-      3: { part1: 2.9263, part2: 6.8281 },
-      4: { part1: 3.2150, part2: 7.5015 },
-      5: { part1: 3.4211, part2: 7.9825 },
-      6: { part1: 3.6582, part2: 8.5357 },
-      7: { part1: 3.9880, part2: 9.3053 },
-      8: { part1: 4.3178, part2: 10.0749 },
-      9: { part1: 4.6477, part2: 10.8445 },
-      10: { part1: 4.9981, part2: 11.6622 }
+      1: 2.5140 + 5.8660,
+      2: 2.7202 + 6.3471,
+      3: 2.9263 + 6.8281,
+      4: 3.2150 + 7.5015,
+      5: 3.4211 + 7.9825,
+      6: 3.6582 + 8.5357,
+      7: 3.9880 + 9.3053,
+      8: 4.3178 + 10.0749,
+      9: 4.6477 + 10.8445,
+      10: 4.9981 + 11.6622
     }
   },
   dragon: {
@@ -106,84 +106,38 @@ function getDragonMultiplier(level = 10, shaoGuang = 50, chainCount = 0) {
   return base + perStack * Math.min(shaoGuang, 50);
 }
 
-function getPanelBonusDetail(attrMap, skillType) {
-  const elementBonus = getPercentAttr(attrMap, '衍射伤害加成');
+function getPanelDamageBonus(attrMap, skillType) {
+  let total = 0;
 
-  let skillTypeBonus = 0;
+  total += getPercentAttr(attrMap, '衍射伤害加成');
+
   if (skillType === 'skill') {
-    skillTypeBonus = getPercentAttr(attrMap, '共鸣技能伤害加成');
+    total += getPercentAttr(attrMap, '共鸣技能伤害加成');
   } else if (skillType === 'liberation') {
-    skillTypeBonus = getPercentAttr(attrMap, '共鸣解放伤害加成');
+    total += getPercentAttr(attrMap, '共鸣解放伤害加成');
   } else if (skillType === 'intro') {
-    skillTypeBonus = getPercentAttr(attrMap, '变奏技能伤害加成');
+    total += getPercentAttr(attrMap, '变奏技能伤害加成');
   }
 
-  return {
-    elementBonus,
-    skillTypeBonus,
-    total: elementBonus + skillTypeBonus
-  };
+  return total;
 }
 
 function getRoleSelfBuff(roleDetailData, skillType, chainCount) {
   const buff = {
     damageBonus: 0,
-    elementDamageBonus: 0,
-    skillDamageBonus: 0,
     deepen: 0,
     multiplierBonus: 0,
-    ignoreDefense: 0,
-    source: 'character:今汐'
+    ignoreDefense: 0
   };
 
   // 固有技能：沐光（常驻）不在这里重复计算
 
-  // 1链：惊蛰
-  // 第一版展示口径：默认按 1 层惊蛰展示，仅作用于惊龙破空
-  if (chainCount >= 1 && skillType === 'skill') {
-    buff.damageBonus += 0.20;
-    buff.source = 'character:今汐(1链惊蛰默认1层)';
-  }
-
-  // 4链：施放共鸣解放或惊龙破空时，全属性伤害加成提升20%
+  // 4链：施放共鸣解放或惊龙破空时，全属性伤害+20%
   if (chainCount >= 4 && (skillType === 'skill' || skillType === 'liberation')) {
     buff.damageBonus += 0.20;
-    buff.source = (chainCount >= 1 && skillType === 'skill')
-      ? 'character:今汐(1链惊蛰默认1层+4链)'
-      : 'character:今汐(4链)';
   }
 
   return buff;
-}
-
-function buildSourceDetail({
-  skillName,
-  skillType,
-  panelBonus,
-  mergedBuff,
-  chainCount,
-  extra = {}
-}) {
-  return {
-    skillName,
-    skillType,
-    chainCount,
-    panel: {
-      elementDamageBonus: Number(panelBonus.elementBonus || 0),
-      skillDamageBonus: Number(panelBonus.skillTypeBonus || 0),
-      total: Number(panelBonus.total || 0)
-    },
-    buffs: {
-      damageBonus: Number(mergedBuff.damageBonus || 0),
-      elementDamageBonus: Number(mergedBuff.elementDamageBonus || 0),
-      skillDamageBonus: Number(mergedBuff.skillDamageBonus || 0),
-      deepen: Number(mergedBuff.deepen || 0),
-      multiplierBonus: Number(mergedBuff.multiplierBonus || 0),
-      ignoreDefense: Number(mergedBuff.ignoreDefense || 0)
-    },
-    mergedSources: mergedBuff.sources || [],
-    ...extra
-  };
 }
 
 function calcOneSkill({
@@ -209,148 +163,28 @@ function calcOneSkill({
     ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType })
     : {};
 
-  console.log('[伤害计算][skillBuffRaw]', skillName, JSON.stringify({
-    roleBuff,
-    weaponBuff,
-    phantomBuff,
-    groupBuff
-  }, null, 2));
-
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
 
   const attrMap = panel.attrMap || {};
-  const panelBonus = getPanelBonusDetail(attrMap, skillType);
-
-  const totalDamageBonus =
-    Number(panelBonus.total || 0) +
-    Number(mergedBuff.damageBonus || 0) +
-    Number(mergedBuff.elementDamageBonus || 0) +
-    Number(mergedBuff.skillDamageBonus || 0);
-
-  const sourceDetail = buildSourceDetail({
-    skillName,
-    skillType,
-    panelBonus,
-    mergedBuff,
-    chainCount
-  });
+  const panelBonus = getPanelDamageBonus(attrMap, skillType);
 
   const result = calcSingleDamage({
     attack: panel.attack,
     skillMultiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
-    damageBonus: totalDamageBonus,
+    damageBonus: panelBonus + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
     critRate: panel.critRate,
     critDamage: panel.critDamage,
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
-    sourceDetail
+    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0
   });
 
   return {
     name: skillName,
     ...result
-  };
-}
-
-function calcMultiPartSkill({
-  roleDetailData,
-  panel,
-  equipment,
-  enemy,
-  modules,
-  skillName,
-  skillType,
-  multipliers = [],
-  partNames = []
-}) {
-  const chainCount = getChainUnlockedCount(roleDetailData);
-
-  const roleBuff = getRoleSelfBuff(roleDetailData, skillType, chainCount);
-  const weaponBuff = modules.weapon?.apply
-    ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType })
-    : {};
-  const phantomBuff = modules.phantom?.apply
-    ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType })
-    : {};
-  const groupBuff = modules.group?.apply
-    ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType })
-    : {};
-
-  console.log('[伤害计算][skillBuffRaw]', skillName, JSON.stringify({
-    roleBuff,
-    weaponBuff,
-    phantomBuff,
-    groupBuff
-  }, null, 2));
-
-  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
-
-  const attrMap = panel.attrMap || {};
-  const panelBonus = getPanelBonusDetail(attrMap, skillType);
-
-  const totalDamageBonus =
-    Number(panelBonus.total || 0) +
-    Number(mergedBuff.damageBonus || 0) +
-    Number(mergedBuff.elementDamageBonus || 0) +
-    Number(mergedBuff.skillDamageBonus || 0);
-
-  const parts = multipliers.map((multiplier, index) => {
-    const partName = partNames[index] || `part${index + 1}`;
-    return calcSingleDamage({
-      attack: panel.attack,
-      skillMultiplier: multiplier,
-      multiplierBonus: mergedBuff.multiplierBonus || 0,
-      damageBonus: totalDamageBonus,
-      deepen: mergedBuff.deepen || 0,
-      critRate: panel.critRate,
-      critDamage: panel.critDamage,
-      attackerLevel: panel.level || 90,
-      enemyLevel: enemy?.level || 90,
-      resistance: enemy?.resistance ?? 0.1,
-      ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
-      sourceDetail: {
-        partName,
-        skillName,
-        skillType
-      }
-    });
-  });
-
-  const sourceDetail = buildSourceDetail({
-    skillName,
-    skillType,
-    panelBonus,
-    mergedBuff,
-    chainCount,
-    extra: {
-      parts: parts.map((part, index) => ({
-        name: partNames[index] || `part${index + 1}`,
-        nonCrit: part.nonCrit,
-        crit: part.crit,
-        expected: part.expected,
-        detail: part.detail
-      }))
-    }
-  });
-
-  return {
-    name: skillName,
-    nonCrit: parts.reduce((sum, p) => sum + Number(p.nonCrit || 0), 0),
-    crit: parts.reduce((sum, p) => sum + Number(p.crit || 0), 0),
-    expected: parts.reduce((sum, p) => sum + Number(p.expected || 0), 0),
-    detail: {
-      attack: panel.attack,
-      skillMultiplier: multipliers.reduce((sum, v) => sum + Number(v || 0), 0),
-      damageBonusArea: parts[0]?.detail?.damageBonusArea ?? 1,
-      deepenArea: parts[0]?.detail?.deepenArea ?? 1,
-      defenseArea: parts[0]?.detail?.defenseArea ?? 1,
-      resistanceArea: parts[0]?.detail?.resistanceArea ?? 1
-    },
-    sources: sourceDetail
   };
 }
 
@@ -365,18 +199,12 @@ export default {
     const circuitLevel = getSkillLevel(roleDetailData, '共鸣回路');
 
     const introMul = JINHSI_SKILLS.intro.levelMap[introLevel] || JINHSI_SKILLS.intro.levelMap[10];
-
-    let liberationData = JINHSI_SKILLS.liberation.levelMap[liberationLevel] || JINHSI_SKILLS.liberation.levelMap[10];
-    let liberationPart1 = liberationData.part1;
-    let liberationPart2 = liberationData.part2;
-
+    let liberationMul = JINHSI_SKILLS.liberation.levelMap[liberationLevel] || JINHSI_SKILLS.liberation.levelMap[10];
     const dragonMul = getDragonMultiplier(circuitLevel, 50, chainCount);
 
     // 5链：共鸣解放伤害倍率提升120%
-    // 这里按两段都提升处理
     if (chainCount >= 5) {
-      liberationPart1 *= 2.2;
-      liberationPart2 *= 2.2;
+      liberationMul *= 2.2;
     }
 
     const intro = calcOneSkill({
@@ -390,7 +218,7 @@ export default {
       skillMultiplier: introMul
     });
 
-    const liberation = calcMultiPartSkill({
+    const liberation = calcOneSkill({
       roleDetailData,
       panel,
       equipment,
@@ -398,8 +226,7 @@ export default {
       modules,
       skillName: JINHSI_SKILLS.liberation.name,
       skillType: 'liberation',
-      multipliers: [liberationPart1, liberationPart2],
-      partNames: ['一段', '二段']
+      skillMultiplier: liberationMul
     });
 
     const dragon = calcOneSkill({
