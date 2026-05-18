@@ -95,7 +95,8 @@ function extractPhantomDataFromOCR(rawText) {
     const replacements = [
         [/＆/g, ''],
         [/&/g, ''],
-        [/[，*,•×+-]/g, ' '],
+        [/[，:：*,•×+-]/g, ' '],
+        [/G/g, ''],
         [/然/g, ''],
         [/©/g, ''],
         [/沒/g, ''],
