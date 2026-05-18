@@ -627,13 +627,7 @@ async getTowerData(serverId, roleId, token, did = null) {
     async pubCookie() {
         try {
             if (!Config.getConfig().use_public_cookie) return false;
-            const keys = [];
-            let cursor = '0';
-            do {
-                const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', 'Yunzai:waves:users:*', 'COUNT', '100');
-                cursor = nextCursor;
-                keys.push(...batch);
-            } while (cursor !== '0');
+            const keys = await redis.keys('Yunzai:waves:users:*');
             if (!keys || keys.length === 0) return false;
 
             const values = await Promise.all(keys.map(key => redis.get(key)));

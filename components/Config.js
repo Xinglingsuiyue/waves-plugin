@@ -168,11 +168,7 @@ class Config {
     }
 
     setUserConfig(user_data) {
-        if (this.saveConfig(this.fileMaps.user, user_data)) {
-            this.cache.user = user_data;
-            return true;
-        }
-        return false;
+        return this.saveConfig(this.fileMaps.user, user_data);
     }
 
     getUserData(userId) {
