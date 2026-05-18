@@ -82,6 +82,7 @@ export function calcSingleDamage({
   const expected = nonCrit * calcExpectedCritMultiplier(critRate, critDamage);
 
   return {
+    type: 'damage',
     nonCrit: round(nonCrit),
     crit: round(crit),
     expected: round(expected),
@@ -91,7 +92,87 @@ export function calcSingleDamage({
       damageBonusArea: roundFixed(damageBonusArea, 4),
       deepenArea: roundFixed(deepenArea, 4),
       defenseArea: roundFixed(defenseArea, 12),
-      resistanceArea: roundFixed(resistanceArea, 4)
+      resistanceArea: roundFixed(resistanceArea, 4),
+      critRate: roundFixed(clamp(critRate, 0, 1), 4),
+      critDamage: roundFixed(critDamage, 4)
+    },
+    sources: sourceDetail || null
+  };
+}
+
+/**
+ * 单段治疗/回血计算
+ * 治疗通常不吃防御、抗性、暴击；为兼容现有模板和日志，
+ * nonCrit / crit / expected 均填入同一治疗量，真实治疗值使用 heal 字段读取。
+ */
+export function calcSingleHeal({
+  base = 0,
+  skillMultiplier = 0,
+  multiplierBonus = 0,
+  flatHeal = 0,
+  healingBonus = 0,
+  deepen = 0,
+  sourceDetail = null
+} = {}) {
+  const baseArea = Number(base) || 0;
+  const multiArea = (Number(skillMultiplier) || 0) * (1 + (Number(multiplierBonus) || 0));
+  const flatArea = Number(flatHeal) || 0;
+  const healingBonusArea = 1 + (Number(healingBonus) || 0);
+  const deepenArea = 1 + (Number(deepen) || 0);
+  const heal = (baseArea * multiArea + flatArea) * healingBonusArea * deepenArea;
+  const roundedHeal = round(heal);
+
+  return {
+    type: 'heal',
+    heal: roundedHeal,
+    nonCrit: roundedHeal,
+    crit: roundedHeal,
+    expected: roundedHeal,
+    detail: {
+      base: round(baseArea),
+      skillMultiplier: roundFixed(multiArea, 4),
+      flatHeal: round(flatArea),
+      healingBonusArea: roundFixed(healingBonusArea, 4),
+      deepenArea: roundFixed(deepenArea, 4)
+    },
+    sources: sourceDetail || null
+  };
+}
+
+/**
+ * 单段护盾计算
+ * 护盾通常不吃防御、抗性、暴击；为兼容现有模板和日志，
+ * nonCrit / crit / expected 均填入同一护盾量，真实护盾值使用 shield 字段读取。
+ */
+export function calcSingleShield({
+  base = 0,
+  skillMultiplier = 0,
+  multiplierBonus = 0,
+  flatShield = 0,
+  shieldBonus = 0,
+  deepen = 0,
+  sourceDetail = null
+} = {}) {
+  const baseArea = Number(base) || 0;
+  const multiArea = (Number(skillMultiplier) || 0) * (1 + (Number(multiplierBonus) || 0));
+  const flatArea = Number(flatShield) || 0;
+  const shieldBonusArea = 1 + (Number(shieldBonus) || 0);
+  const deepenArea = 1 + (Number(deepen) || 0);
+  const shield = (baseArea * multiArea + flatArea) * shieldBonusArea * deepenArea;
+  const roundedShield = round(shield);
+
+  return {
+    type: 'shield',
+    shield: roundedShield,
+    nonCrit: roundedShield,
+    crit: roundedShield,
+    expected: roundedShield,
+    detail: {
+      base: round(baseArea),
+      skillMultiplier: roundFixed(multiArea, 4),
+      flatShield: round(flatArea),
+      shieldBonusArea: roundFixed(shieldBonusArea, 4),
+      deepenArea: roundFixed(deepenArea, 4)
     },
     sources: sourceDetail || null
   };
