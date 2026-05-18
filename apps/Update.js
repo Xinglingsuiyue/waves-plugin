@@ -136,7 +136,7 @@ export class Update extends plugin {
 
     let end = ''
     end =
-      '更多详细信息，请前往github查看\nhttps://github.com/erzaozi/waves-plugin/commits/main'
+      '更多详细信息，请前往github查看\nhttps://github.com/Xinglingsuiyue/waves-plugin/commits/main'
 
     log = await this.makeForwardMsg(`waves-plugin更新日志，共${line}条`, log, end)
 
