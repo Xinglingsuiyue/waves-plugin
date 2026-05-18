@@ -19,13 +19,14 @@ function getChainUnlockedCount(roleDetailData) {
 // 菲比（5★ 衍射 音感仪 共鸣回路型 / 重击星辉主输出）
 // 数据来源：库街区 wiki entryId=1309523456688947200。
 //
-// 计算范围（默认 3 个核心输出）：
+// 计算范围（默认 4 个核心输出）：
 //   1) 夏弥尔之星·闪避反击（10级 43.84%×6）
 //   2) 夏弥尔之星第三段（10级 28.93%×6）
 //   3) 重击伤害（重击星辉前置；本模块取主页"重击伤害"段，10级 41.35%×4）
+//   4) 共鸣解放·圣祷赦罪伤害（10级 638.19%）
 //
 // 共鸣链：
-//   S1：赦罪状态共鸣解放伤害倍率提升 480%；告解状态共鸣解放 +90%（本模块不计算解放）
+//   S1：赦罪状态共鸣解放伤害倍率提升 480%；告解状态共鸣解放 +90%（默认按赦罪状态计算）
 //   S3：赦罪状态重击星辉倍率 +91%；告解状态 +249%
 //   S4：普攻/普攻夏弥尔之星/闪反/夏弥尔之星闪反 命中目标时，
 //       目标衍射伤害抗性 -10%（持续 30s）→ 按抗性区近似 +damageBonus
@@ -76,6 +77,16 @@ const PHOEBE_SKILLS = {
       5: 0.3001 * 6, 6: 0.3209 * 6, 7: 0.3498 * 6, 8: 0.3788 * 6,
       9: 0.4077 * 6, 10: 0.4384 * 6
     }
+  },
+  // 圣祷赦罪伤害：321.00% → 638.19% (10级)
+  liberationAbsolution: {
+    name: '共鸣解放·圣祷赦罪伤害',
+    type: 'liberation',
+    levelFrom: '共鸣解放',
+    levelMap: {
+      1: 3.2100, 2: 3.4733, 3: 3.7365, 4: 4.1050, 5: 4.3682,
+      6: 4.6709, 7: 5.0921, 8: 5.5132, 9: 5.9344, 10: 6.3819
+    }
   }
 };
 
@@ -85,10 +96,13 @@ function getPanelDamageBonus(attrMap, skillType) {
     total += getPercentAttr(attrMap, '普攻伤害加成');
     total += getPercentAttr(attrMap, '重击伤害加成');
   }
+  if (skillType === 'liberation') {
+    total += getPercentAttr(attrMap, '共鸣解放伤害加成');
+  }
   return total;
 }
 
-function getRoleSelfBuff({ skillName, chainCount }) {
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
   const buff = {
     damageBonus: 0,
     multiplierBonus: 0,
@@ -99,6 +113,10 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     source: '菲比·自身'
   };
 
+  // S1：赦罪状态下共鸣解放启明之誓愿伤害倍率提升 480%
+  if (chainCount >= 1 && skillName === '共鸣解放·圣祷赦罪伤害') {
+    buff.multiplierBonus += 4.80;
+  }
   // S4：目标衍射抗性 -10%，按 baseRes=0.1 近似折算为 +11.1% damageBonus
   if (chainCount >= 4) {
     buff.damageBonus += 0.10 / 0.9;
@@ -121,7 +139,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const multiplier = skill.levelMap[level] || skill.levelMap[10];
 
-  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -165,7 +183,7 @@ export default {
 
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
-    const items = ['starDodge', 'chamuelStarThree', 'heavy'].map(k =>
+    const items = ['starDodge', 'chamuelStarThree', 'heavy', 'liberationAbsolution'].map(k =>
       calcOneSkill({ ...args, skillKey: k })
     );
     return { enemyName: enemy?.name || '无妄者', items };

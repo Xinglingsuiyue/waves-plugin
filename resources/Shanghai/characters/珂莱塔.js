@@ -20,13 +20,13 @@ function getChainUnlockedCount(roleDetailData) {
 // 数据来源：库街区 wiki entryId=1321977849344999424。
 //
 // 计算范围（默认 3 个代表输出）：
-//   1) 礼节性问候
-//   2) 必要性手段第三段（主要爆发段）
-//   3) 限制性策略
+//   1) 致死以终
+//   2) 示我璀璨
+//   3) 重击限制性策略
 //
 // 共鸣链：
 //   S1：解离效果目标暴击 +12.5%（默认开启）
-//   S2：共鸣解放致死以终倍率 +126%（本模块不计算解放）
+//   S2：共鸣解放致死以终倍率 +126%
 //   S3：共鸣技能暴力美学/示我璀璨 倍率 +93%
 //   S4：施放重击/限制性策略/末路见行时，全队共鸣技能伤害 +25%
 //   S5：重击末路见行倍率 +47%（本模块不计算末路见行）
@@ -45,6 +45,34 @@ const CARLOTTA_SKILLS = {
       10: 1.3993 + 0.2333 * 4
     }
   },
+  // 致死以终：324.09% → 644.33% (10级)
+  fatalFinale: {
+    name: '致死以终',
+    type: 'liberation',
+    levelFrom: '共鸣解放',
+    levelMap: {
+      1: 3.2409, 2: 3.5067, 3: 3.7724, 4: 4.1445, 5: 4.4103,
+      6: 4.7159, 7: 5.1411, 8: 5.5663, 9: 5.9915, 10: 6.4433
+    }
+  },
+  // 示我璀璨：56.70% + 56.70% + 170.10% → 112.73% + 112.73% + 338.18% (10级)
+  showMeBrilliance: {
+    name: '示我璀璨',
+    type: 'skill',
+    levelFrom: '共鸣技能',
+    levelMap: {
+      1: 0.5670 + 0.5670 + 1.7010,
+      2: 0.6135 + 0.6135 + 1.8405,
+      3: 0.6600 + 0.6600 + 1.9800,
+      4: 0.7251 + 0.7251 + 2.1753,
+      5: 0.7716 + 0.7716 + 2.3148,
+      6: 0.8251 + 0.8251 + 2.4752,
+      7: 0.8995 + 0.8995 + 2.6983,
+      8: 0.9739 + 0.9739 + 2.9215,
+      9: 1.0483 + 1.0483 + 3.1447,
+      10: 1.1273 + 1.1273 + 3.3818
+    }
+  },
   // 重击伤害：11.48%*2 + 11.48%*2 + 30.60% → 22.82%*2 + 22.82%*2 + 60.84% (10级)
   heavy: {
     name: '重击伤害',
@@ -59,7 +87,7 @@ const CARLOTTA_SKILLS = {
   },
   // 限制性策略：17.22%*2 + 17.22%*2 + 45.90% → 34.23%*2 + 34.23%*2 + 91.26% (10级)
   restriction: {
-    name: '限制性策略',
+    name: '重击限制性策略',
     type: 'skill',
     levelFrom: '共鸣技能',
     levelMap: {
@@ -88,6 +116,9 @@ function getPanelDamageBonus(attrMap, skillType) {
   if (skillType === 'skill') {
     total += getPercentAttr(attrMap, '共鸣技能伤害加成');
   }
+  if (skillType === 'liberation') {
+    total += getPercentAttr(attrMap, '共鸣解放伤害加成');
+  }
   return total;
 }
 
@@ -101,15 +132,19 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     source: '珂莱塔·自身'
   };
 
+  // 目标默认处于解离状态：攻击造成伤害时忽视目标 18% 防御
+  buff.ignoreDefense = 0.18;
   // S1：解离效果目标 暴击 +12.5%（默认目标处于解离状态）
   if (chainCount >= 1) buff.critRate += 0.125;
-  // S3：共鸣技能暴力美学/示我璀璨 倍率 +93%（限制性策略本质上不是共鸣技能；不加）
-  // 共鸣技能本体的爆发不在本模块条目里直接列示，但若 skill 类型 = 共鸣技能，
-  // 按主输出段（限制性策略也接共鸣技能伤害归类）整体加。这里仅给"限制性策略"加 +93%。
-  if (chainCount >= 3 && skillName === '限制性策略') {
+  // S2：共鸣解放致死以终倍率 +126%
+  if (chainCount >= 2 && skillName === '致死以终') {
+    buff.multiplierBonus += 1.26;
+  }
+  // S3：共鸣技能暴力美学/示我璀璨 倍率 +93%
+  if (chainCount >= 3 && skillName === '示我璀璨') {
     buff.multiplierBonus += 0.93;
   }
-  // S4：施放重击/限制性策略时，全队共鸣技能伤害 +25%
+  // S4：施放重击/重击限制性策略时，全队共鸣技能伤害 +25%
   if (chainCount >= 4) buff.damageBonus += 0.25;
 
   return buff;
@@ -165,7 +200,7 @@ export default {
 
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
-    const items = ['greeting', 'necessityThree', 'restriction'].map(k =>
+    const items = ['fatalFinale', 'showMeBrilliance', 'restriction'].map(k =>
       calcOneSkill({ ...args, skillKey: k })
     );
     return { enemyName: enemy?.name || '无妄者', items };
