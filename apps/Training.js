@@ -91,8 +91,6 @@ export class Training extends plugin {
                     
                     const charInfo = {
                         roleIcon: role.roleIconUrl,
-                        weaponIcon: role.weaponData?.weapon?.iconUrl,
-                        phantomIcon: role.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
                         roleName: roleName,
                         roleId: role.roleId, // 保留角色ID用于属性区分
                         level: role.level,
@@ -102,18 +100,19 @@ export class Training extends plugin {
                             level: role.weaponData?.level || 0,
                             rank: role.weaponData?.rank || 0,
                             resonLevel: role.weaponData?.resonLevel || 0,
-                            icon: role.weaponData?.weapon?.iconUrl || ""
+                            icon: role.weaponData?.weapon?.weaponIcon || ""
                         },
                         phantom: {
                             rank: role.phantomData?.statistic?.rank || "N",
-                            color: role.phantomData?.statistic?.color || "#a0a0a0"
+                            color: role.phantomData?.statistic?.color || "#a0a0a0",
+                            icon: role.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl || ""
                         }
                     };
                     
                     // 全局排名
                     await RankUtil.updateRankData(roleName, uid, phantomScore, 'global', charInfo);
                     
-                    // 群排名（如果是群聊）
+                    // 群排名
                     if (groupId !== 'private') {
                         await RankUtil.updateRankData(roleName, uid, phantomScore, groupId, charInfo);
                     }

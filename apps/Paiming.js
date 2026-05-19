@@ -159,6 +159,7 @@ export class CharacterRanking extends plugin {
                     level: charInfo.level || 0,
                     chainCount: charInfo.chainCount || 0,
                     roleName: charInfo.roleName || '未知角色',
+                    roleIconUrl: charInfo.roleIcon || "",
                     weaponData: {
                         level: weaponInfo.level || 0,
                         resonLevel: weaponInfo.resonLevel || 0,
@@ -173,8 +174,8 @@ export class CharacterRanking extends plugin {
                             rank: phantomInfo.rank || 'N',
                             color: phantomInfo.color || "#a0a0a0"
                         },
-                        equipPhantomList: phantomInfo.icon ? 
-                            [{ phantomProp: { iconUrl: phantomInfo.icon } }] : []
+                        equipPhantomList: (phantomInfo.icon || charInfo.phantomIcon) ?
+                            [{ phantomProp: { iconUrl: phantomInfo.icon || charInfo.phantomIcon } }] : []
                     },
                     uid: entry.uid,
                     isCurrentUser: entry.isCurrentUser
@@ -195,6 +196,7 @@ export class CharacterRanking extends plugin {
                     level: charInfo.level || 0,
                     chainCount: charInfo.chainCount || 0,
                     roleName: charInfo.roleName || '未知角色',
+                    roleIconUrl: charInfo.roleIcon || "",
                     weaponData: {
                         level: weaponInfo.level || 0,
                         resonLevel: weaponInfo.resonLevel || 0,
@@ -209,8 +211,8 @@ export class CharacterRanking extends plugin {
                             rank: phantomInfo.rank || 'N',
                             color: phantomInfo.color || "#a0a0a0"
                         },
-                        equipPhantomList: phantomInfo.icon ? 
-                            [{ phantomProp: { iconUrl: phantomInfo.icon } }] : []
+                        equipPhantomList: (phantomInfo.icon || charInfo.phantomIcon) ?
+                            [{ phantomProp: { iconUrl: phantomInfo.icon || charInfo.phantomIcon } }] : []
                     },
                     uid: currentUserEntry.uid,
                     isCurrentUser: true

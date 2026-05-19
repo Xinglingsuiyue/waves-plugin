@@ -127,8 +127,6 @@ export class Character extends plugin {
 
                 const charInfo = {
                     roleIcon: char.roleIconUrl,
-                    weaponIcon: calculated.weaponData?.weapon?.iconUrl,
-                    phantomIcon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl,
                     roleName: leaderboardName,
                     level: calculated.level,
                     chainCount: calculated.chainList 
@@ -139,11 +137,12 @@ export class Character extends plugin {
                         level: calculated.weaponData?.level || 0,
                         rank: calculated.weaponData?.rank || 0,
                         resonLevel: calculated.weaponData?.resonLevel || 0,
-                        icon: calculated.weaponData?.weapon?.iconUrl || ""
+                        icon: calculated.weaponData?.weapon?.weaponIcon || ""
                     },
                     phantom: {
                         rank: calculated.phantomData?.statistic?.rank || "N",
-                        color: calculated.phantomData?.statistic?.color || "#a0a0a0"
+                        color: calculated.phantomData?.statistic?.color || "#a0a0a0",
+                        icon: calculated.phantomData?.equipPhantomList?.[0]?.phantomProp?.iconUrl || ""
                     }
                 };
                 
