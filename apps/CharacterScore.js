@@ -96,7 +96,22 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•×+-]/g, ' '],
+        [/16%/g, ''],
+        [/51%/g, ''],
+        [/書/g, '害'],
+        [/政击/g, '攻击'],
+        [/25/g, ''],
+        [/生前/g, '生命'],
+        [/焱/g, ''],
+        [/土/g, ''],
+        [/誕/g, ''],
+        [/只/g, ''],
+        [/功率/g, ''],
         [/G/g, ''],
+        [/U/g, ''],
+        [/P/g, ''],
+        [/C/g, ''],
+        [/包/g, ''],
         [/然/g, ''],
         [/©/g, ''],
         [/沒/g, ''],
@@ -205,7 +220,7 @@ function extractPhantomDataFromOCR(rawText) {
         !l.includes('0/50'));
 
     // 过滤明显无关的关键词行
-    const ignoreLineKeywords = ['特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功', '我銷製讀伤實加', 'X成通', '不限'];
+    const ignoreLineKeywords = ['特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功', '技能使下个变奏技能登场的角', '我銷製讀伤實加', '颤樂战厘率', 'X成通', '不限'];
     lines = lines.filter(l => !ignoreLineKeywords.some(kw => l.includes(kw)));
 
     // 过滤表格符号行
