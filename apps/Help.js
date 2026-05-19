@@ -161,12 +161,32 @@ export class Help extends plugin {
                     },
                     {
                         "icon": 18,
-                        "title": "~安可面板",
+                        "title": "~今汐面板",
                         "desc": "查看角色面板"
                     },
                     {
+                        "icon": 19,
+                        "title": "~今汐极限面板",
+                        "desc": "查看角色极限面板"
+                    },
+                    {
+                        "icon": 17,
+                        "title": "~今汐评分",
+                        "desc": "OCR角色评分"
+                    },
+                    {
+                        "icon": 80,
+                        "title": "~今汐排名",
+                        "desc": "查看角色声骸群排名"
+                    },
+                    {
+                        "icon": 81,
+                        "title": "~今汐总排名",
+                        "desc": "查看角色声骸总排名"
+                    },
+                    {
                         "icon": 90,
-                        "title": "~吟霖图鉴",
+                        "title": "~今汐图鉴",
                         "desc": "万物图鉴"
                     },
                     {
@@ -183,6 +203,11 @@ export class Help extends plugin {
                         "icon": 59,
                         "title": "~日历",
                         "desc": "查看活动日历"
+                    },
+                    {
+                        "icon": 58,
+                        "title": "~当前卡池",
+                        "desc": "查看当前卡池信息"
                     },
                     {
                         "icon": 63,
@@ -202,17 +227,37 @@ export class Help extends plugin {
                     {
                         "icon": 73,
                         "title": "~查看卡池",
-                        "desc": "查看该机器人可抽取的卡池"
+                        "desc": "查看可抽取的卡池"
+                    },
+                    {
+                        "icon": 70,
+                        "title": "~切换卡池",
+                        "desc": "切换抽卡模拟器卡池"
+                    },
+                    {
+                        "icon": 68,
+                        "title": "~重置抽卡保底",
+                        "desc": "重置模拟器保底计数"
                     },
                     {
                         "icon": 74,
-                        "title": "~今日梭哈",
+                        "title": "~梭哈",
                         "desc": "声骇模拟"
                     },
                     {
                         "icon": 75,
                         "title": "~海墟",
                         "desc": "查询海墟相关服务"
+                    },
+                    {
+                        "icon": 61,
+                        "title": "~矩阵",
+                        "desc": "查看终焉矩阵信息"
+                    },
+                    {
+                        "icon": 62,
+                        "title": "~（当/下）期深塔",
+                        "desc": "查看深塔怪物/Buff"
                     },
                     {
                         "icon": 76,
@@ -223,6 +268,21 @@ export class Help extends plugin {
                         "icon": 77,
                         "title": "~兑换码",
                         "desc": "查看游戏兑换码"
+                    },
+                    {
+                        "icon": 83,
+                        "title": "~持有率",
+                        "desc": "查看角色持有率"
+                    },
+                    {
+                        "icon": 84,
+                        "title": "~表情包",
+                        "desc": "随机鸣潮表情包"
+                    },
+                    {
+                        "icon": 88,
+                        "title": "~cos",
+                        "desc": "随机Cosplay图片"
                     },
                     {
                         "icon": 78,
@@ -238,6 +298,39 @@ export class Help extends plugin {
                 "icon": 12,
                 "title": "~更新",
                 "desc": "更新插件"
+            })
+            helpList[0].list.push({
+                "icon": 91,
+                "title": "~开启/关闭总排名",
+                "desc": "总排名严格模式开关"
+            })
+        }
+
+        if (e.isMaster) {
+            helpList.push({
+                "group": "其他",
+                "list": [
+                    {
+                        "icon": 82,
+                        "title": "~排名状态",
+                        "desc": "查看排名录入模式"
+                    },
+                    {
+                        "icon": 91,
+                        "title": "~（开启/关闭）总排名",
+                        "desc": "总排名严格模式开关"
+                    },
+                    {
+                        "icon": 93,
+                        "title": "~（开启/关闭）群排名",
+                        "desc": "群排名严格模式开关"
+                    },
+                    {
+                        "icon": 92,
+                        "title": "~更新抽卡资源",
+                        "desc": "更新抽卡模拟器资源"
+                    }
+                ],
             })
         }
 
@@ -277,17 +370,17 @@ export class Help extends plugin {
 
                     {
                         "icon": 41,
-                        "title": "~添加炽霞别名马小芳",
+                        "title": "~添加今汐别名汐汐",
                         "desc": "添加别名"
                     },
                     {
                         "icon": 45,
-                        "title": "~炽霞别名",
+                        "title": "~今汐别名",
                         "desc": "获取别名列表"
                     },
                     {
                         "icon": 46,
-                        "title": "~删除炽霞别名马小芳",
+                        "title": "~删除今汐别名汐汐",
                         "desc": "删除别名"
                     }
                 ],
