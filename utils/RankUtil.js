@@ -108,13 +108,11 @@ export default class RankUtil {
             };
             rankData.push(userEntry);
         } else {
-            if (newScore > userEntry.score) {
-                userEntry.score = newScore;
-                userEntry.timestamp = now;
-            }
+            // 数据覆盖
+            userEntry.score = newScore;
+            userEntry.timestamp = now;
             if (charInfo) {
                 userEntry.charInfo = charInfo;
-                userEntry.timestamp = now;
             }
         }
         try {
