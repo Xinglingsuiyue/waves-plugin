@@ -34,7 +34,7 @@
                             Lv{{entry.level}}
                         </div>
                         <div class="role-pic">
-                            <!-- 角色图标 -->
+                            <img src="{{entry.roleIconUrl}}" onerror="this.style.display='none'">
                         </div>
                         <div class="reson reson-{{entry.chainCount}}">
                             {{entry.chainCount}}
@@ -48,7 +48,7 @@
                             Lv{{entry.weaponData.level}}
                         </div>
                         <div class="weapon-pic">
-                            <!-- 武器图标 -->
+                            <img src="{{entry.weaponData.weapon.iconUrl}}" onerror="this.style.display='none'">
                         </div>
                         <div class="reson reson-{{entry.weaponData.resonLevel}}">
                             {{entry.weaponData.resonLevel}}
@@ -63,9 +63,9 @@
                     <div class="phantom center">
                         <div class="phantom-pic">
                             {{if entry.phantomData.equipPhantomList[0]}}
-                                <!-- 声骸图标 -->
+                                <img src="{{entry.phantomData.equipPhantomList[0].phantomProp.iconUrl}}" onerror="this.style.display='none'">
                             {{else}}
-                                
+
                             {{/if}}
                         </div>
                         <div class="phantom-rank" style="background-color: {{entry.phantomData.statistic.color}};">
@@ -79,7 +79,6 @@
                 </li>
                 {{/each}}
                 
-                <!-- 新增：当前用户未进入前20名的显示行 -->
                 {{if showCurrentUserRow}}
                 <li class="highlighted-row">
                     <div class="rank-number center">
@@ -90,7 +89,7 @@
                             Lv{{currentUserRow.level}}
                         </div>
                         <div class="role-pic">
-                            <!-- 角色图标 -->
+                            <img src="{{currentUserRow.roleIconUrl}}" onerror="this.style.display='none'">
                         </div>
                         <div class="reson reson-{{currentUserRow.chainCount}}">
                             {{currentUserRow.chainCount}}
@@ -104,7 +103,7 @@
                             Lv{{currentUserRow.weaponData.level}}
                         </div>
                         <div class="weapon-pic">
-                            <!-- 武器图标 -->
+                            <img src="{{currentUserRow.weaponData.weapon.iconUrl}}" onerror="this.style.display='none'">
                         </div>
                         <div class="reson reson-{{currentUserRow.weaponData.resonLevel}}">
                             {{currentUserRow.weaponData.resonLevel}}
@@ -119,7 +118,7 @@
                     <div class="phantom center">
                         <div class="phantom-pic">
                             {{if currentUserRow.phantomData.equipPhantomList.length}}
-                                <!-- 声骸图标 -->
+                                <img src="{{currentUserRow.phantomData.equipPhantomList[0].phantomProp.iconUrl}}" onerror="this.style.display='none'">
                             {{/if}}
                         </div>
                         <div class="phantom-rank" style="background-color: {{currentUserRow.phantomData.statistic.color}};">
