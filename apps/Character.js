@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import RankUtil from '../utils/RankUtil.js';
 import Zhinengshanghai from '../utils/Zhinengshanghai.js';
+import { CharacterRanking } from './Paiming.js';
 
 // 漂泊者属性ID映射
 const WAVERIDER_ATTRIBUTES = {
@@ -54,7 +55,7 @@ export class Character extends plugin {
         const imgListSet = new Set();
 
         await Promise.all(accounts.map(async (acc) => {
-            const { uid, serverId, token, did } = acc;
+            const { uid, serverId, token, did, isPublicCookie } = acc;
 
             const roleData = await waves.getRoleData(serverId, uid, token, did);
 
@@ -146,10 +147,30 @@ export class Character extends plugin {
                     }
                 };
                 
-                await Promise.all([
-                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, groupId, charInfo),
-                    RankUtil.updateRankData(leaderboardName, uid, phantomScore, 'global', charInfo)
-                ]);
+                const promises = [];
+                
+                // 群排名
+                let groupStrictMode = false;
+                if (e.isGroup) {
+                    const groupEnabled = await CharacterRanking.isGroupRankingEnabled(groupId);
+                    const allowPublic = await CharacterRanking.isAllowPublicCookie(groupId, 'group');
+                    groupStrictMode = !allowPublic;
+                    if (groupEnabled && (allowPublic || !isPublicCookie)) {
+                        promises.push(RankUtil.updateRankData(leaderboardName, uid, phantomScore, groupId, charInfo));
+                    }
+                }
+                
+                // 总排名
+                const globalEnabled = await CharacterRanking.isGlobalRankingEnabled();
+                const allowPublicGlobal = await CharacterRanking.isAllowPublicCookie('global', 'global');
+                const allowGlobalPublic = allowPublicGlobal && !groupStrictMode;
+                if (globalEnabled && (allowGlobalPublic || !isPublicCookie)) {
+                    promises.push(RankUtil.updateRankData(leaderboardName, uid, phantomScore, 'global', charInfo));
+                }
+                
+                if (promises.length > 0) {
+                    await Promise.all(promises);
+                }
             }
 
             const imageCard = await Render.render('Template/charProfile/charProfile', {

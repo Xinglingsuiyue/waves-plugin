@@ -4,6 +4,7 @@ import Waves from "../components/Code.js";
 import Config from '../components/Config.js';
 import Render from '../components/Render.js';
 import RankUtil from '../utils/RankUtil.js';
+import { CharacterRanking } from './Paiming.js';
 
 // 漂泊者属性ID映射
 const WAVERIDER_ATTRIBUTES = {
@@ -43,7 +44,7 @@ export class Training extends plugin {
         let deleteroleId = [];
 
         await Promise.all(accounts.map(async (acc) => {
-            const { uid, serverId, token, did } = acc;
+            const { uid, serverId, token, did, isPublicCookie } = acc;
 
             const [baseData, roleData] = await Promise.all([
                 waves.getBaseData(serverId, uid, token, did),
@@ -76,7 +77,6 @@ export class Training extends plugin {
                 return calculatedRole;
             });
             
-            // 更新排行榜数据 - 添加武器图标
             await Promise.all(roleList.map(async (role) => {
                 const phantomScore = role?.phantomData?.statistic?.totalScore || 0;
                 if (phantomScore > 0) {
@@ -109,12 +109,21 @@ export class Training extends plugin {
                         }
                     };
                     
-                    // 全局排名
-                    await RankUtil.updateRankData(roleName, uid, phantomScore, 'global', charInfo);
-                    
-                    // 群排名
+                    let groupStrictMode = false;
                     if (groupId !== 'private') {
-                        await RankUtil.updateRankData(roleName, uid, phantomScore, groupId, charInfo);
+                        const groupEnabled = await CharacterRanking.isGroupRankingEnabled(groupId);
+                        const allowPublic = await CharacterRanking.isAllowPublicCookie(groupId, 'group');
+                        groupStrictMode = !allowPublic;
+                        if (groupEnabled && (allowPublic || !isPublicCookie)) {
+                            await RankUtil.updateRankData(roleName, uid, phantomScore, groupId, charInfo);
+                        }
+                    }
+                    
+                    const globalEnabled = await CharacterRanking.isGlobalRankingEnabled();
+                    const allowPublicGlobal = await CharacterRanking.isAllowPublicCookie('global', 'global');
+                    const allowGlobalPublic = allowPublicGlobal && !groupStrictMode;
+                    if (globalEnabled && (allowGlobalPublic || !isPublicCookie)) {
+                        await RankUtil.updateRankData(roleName, uid, phantomScore, 'global', charInfo);
                     }
                 }
             }));

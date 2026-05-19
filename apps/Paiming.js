@@ -13,13 +13,26 @@ export class CharacterRanking extends plugin {
             priority: 1010,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(.*?)(总)?(?:排行|排名|排名榜|排行榜)$",
+                    reg: "^(?:～|~|鸣潮)(?!(?:开启|关闭))(.*?)(总)?(?:排行|排名|排名榜|排行榜)$",
                     fnc: "characterRank"
                 },
                 {
                     reg: "^(?:～|~|鸣潮)(?:同步|数据)(?:排行|排名)(?:数据|同步)$",
                     fnc: "syncRankData",
                     permission: "master"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)总排名$",
+                    fnc: "toggleGlobalRanking",
+                    permission: "master"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)群排名$",
+                    fnc: "toggleGroupRanking"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)(?:排名|排行|排行榜|排名榜)(?:状态|开关)$",
+                    fnc: "checkRankStatus"
                 }
             ]
         });
@@ -325,5 +338,84 @@ export class CharacterRanking extends plugin {
         });
         
         return Array.from(uidMap.values()).sort((a, b) => b.score - a.score);
+    }
+
+    async toggleGlobalRanking(e) {
+        const isEnable = e.msg.includes('开启');
+        const config = Config.getConfig();
+        config.ranking_reject_public_cookie_global = isEnable;
+        await Config.setConfig(config);
+        return e.reply(`已${isEnable ? '开启' : '关闭'}总排名严格模式（${isEnable ? '仅~登录用户录入' : '允许未~登录用户录入'}）`, true);
+    }
+
+    async toggleGroupRanking(e) {
+        if (!e.isGroup) {
+            if (!e.isMaster) {
+                return e.reply('只有主人才能在私聊中操作排名开关', true);
+            }
+            const isEnable = e.msg.includes('开启');
+            const config = Config.getConfig();
+            config.ranking_reject_public_cookie_group = isEnable;
+            await Config.setConfig(config);
+            return e.reply(`已${isEnable ? '开启' : '关闭'}所有群排名严格模式（${isEnable ? '仅~登录用户录入' : '允许未~登录用户录入'}）`, true);
+        }
+
+        const member = e.group.pickMember(e.user_id);
+        if (!member.is_owner && !member.is_admin && !e.isMaster) {
+            return e.reply('只有群主、管理员或主人才能操作群排名开关', true);
+        }
+
+        const isEnable = e.msg.includes('开启');
+        const key = `Yunzai:waves:ranking_reject_public:${e.group_id}`;
+        await redis.set(key, isEnable ? '1' : '0');
+        return e.reply(`已${isEnable ? '开启' : '关闭'}本群排名严格模式（${isEnable ? '仅~登录用户录入' : '允许未~登录用户录入'}）`, true);
+    }
+
+    static async isGlobalRankingEnabled() {
+        return true;
+    }
+
+    static async isGroupRankingEnabled(groupId) {
+        return true;
+    }
+
+    static async isAllowPublicCookie(id, type) {
+        if (type === 'global') {
+            const config = Config.getConfig();
+            return config.ranking_reject_public_cookie_global === false;
+        } else {
+            const key = `Yunzai:waves:ranking_reject_public:${id}`;
+            const value = await redis.get(key);
+            return value === '0';
+        }
+    }
+
+    async checkRankStatus(e) {
+        const config = Config.getConfig();
+        
+        const globalStrict = config.ranking_reject_public_cookie_global !== false;
+        const globalStatus = globalStrict ? '严格模式（仅~登录）' : '宽松模式（允许未~登录）';
+        
+        let msg = `【排名状态】\n`;
+        msg += `━━━━━━━━━━━━━━\n`;
+        msg += `总排名：${globalStatus}\n`;
+        
+        // 群排名状态
+        if (e.isGroup) {
+            const groupId = e.group_id;
+            const key = `Yunzai:waves:ranking_reject_public:${groupId}`;
+            const value = await redis.get(key);
+            const groupStrict = value !== '0';
+            const groupStatus = groupStrict ? '严格模式（仅~登录）' : '宽松模式（允许未~登录）';
+            msg += `本群排名：${groupStatus}\n`;
+        } else {
+            msg += `本群排名：未在群聊中\n`;
+        }
+        
+        msg += `━━━━━━━━━━━━━━\n`;
+        msg += `严格模式：仅录入~登录用户数据\n`;
+        msg += `宽松模式：允许录入未~登录用户数据`;
+        
+        return e.reply(msg, true);
     }
 }
