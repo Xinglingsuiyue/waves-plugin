@@ -57,3 +57,9 @@ allow_set_alias: false
 # ---------- 角色评分 OCR 配置 ----------
 # OCR API Key 列表，支持多个 Key
 ocr_keys: []
+
+# ---------- 排名功能开关配置 ----------
+# 总排名严格模式：开启时仅自己~登录用户数据录入，关闭时允许未~登录用户数据录入（仅Bot主人可控制）
+ranking_reject_public_cookie_global: false
+# 群排名严格模式：开启时仅自己~登录用户数据录入，关闭时允许未~登录用户数据录入（群主/管理员可控制各自群，Bot 主人可控制所有群）
+ranking_reject_public_cookie_group: false
