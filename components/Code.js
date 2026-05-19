@@ -685,10 +685,12 @@ async getTowerData(serverId, roleId, token, did = null) {
                 if (forceUserCookie) {
                     await e.reply(`用户 ${uid} 未登录或登录失效，请使用[~登录]进行登录`);
                 } else if (publicCookie) {
-                    cookieInfo = { uid, serverId: publicCookie.serverId, token: publicCookie.token, did: publicCookie.did || '' };
+                    cookieInfo = { uid, serverId: publicCookie.serverId, token: publicCookie.token, did: publicCookie.did || '', isPublicCookie: true };
                 } else {
                     await e.reply(`没有可用的公共Cookie，请使用[~登录]进行登录`);
                 }
+            } else {
+                cookieInfo.isPublicCookie = false;
             }
             return cookieInfo;
         };
