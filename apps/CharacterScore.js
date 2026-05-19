@@ -74,9 +74,6 @@ function getCostByMainStat(mainStatName, mainStatValue) {
     return 3;
 }
 
-/**
- * 规范化可能为数值的行
- */
 function normalizeNumber(line) {
     let normalized = line.trim();
     normalized = normalized.replace(/[-–—]/g, '.');
@@ -87,20 +84,23 @@ function normalizeNumber(line) {
     return line;
 }
 
-/**
- * 提取声骸词条信息
- */
+//提取声骸词条信息
 function extractPhantomDataFromOCR(rawText) {
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本长度:', rawText?.length || 0);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本前200字符:', rawText?.substring(0, 200)?.replace(/\n/g, '\\n'));
+    
     // 常见错别字替换表
     const replacements = [
         [/＆/g, ''],
         [/&/g, ''],
-        [/[，:：*,•×+-]/g, ' '],
+        [/[，:：*,•+×]/g, ' '],
+        [/－/g, ''],
+        [/-/g, ''],
         [/16%/g, ''],
         [/51%/g, ''],
         [/書/g, '害'],
         [/政击/g, '攻击'],
-        [/25/g, ''],
+        [/(?<![\d+])25(?!\d)/g, ''],
         [/生前/g, '生命'],
         [/焱/g, ''],
         [/土/g, ''],
@@ -194,6 +194,23 @@ function extractPhantomDataFromOCR(rawText) {
         [/伤害加成伤害加成/g, '伤害加成'],
         [/暴击伤古/g, '暴击伤害'],
         [/火攻击/g, '攻击'],
+        // 缺字补全
+        [/攻击百分(?![比])/g, '攻击百分比'],
+        [/生命百分(?![比])/g, '生命百分比'],
+        [/防御百分(?![比])/g, '防御百分比'],
+        [/暴击伤(?![害])/g, '暴击伤害'],
+        [/治疗效果(?![加成])/g, '治疗效果加成'],
+        [/重击伤害(?![加成])/g, '重击伤害加成'],
+        [/普攻伤害(?![加成])/g, '普攻伤害加成'],
+        [/共鸣技能伤害(?![加成])/g, '共鸣技能伤害加成'],
+        [/共鸣解放伤害(?![加成])/g, '共鸣解放伤害加成'],
+        [/热熔伤害(?![加成])/g, '热熔伤害加成'],
+        [/导电伤害(?![加成])/g, '导电伤害加成'],
+        [/冷凝伤害(?![加成])/g, '冷凝伤害加成'],
+        [/气动伤害(?![加成])/g, '气动伤害加成'],
+        [/湮灭伤害(?![加成])/g, '湮灭伤害加成'],
+        [/衍射伤害(?![加成])/g, '衍射伤害加成'],
+        [/共鸣效(?![率])/g, '共鸣效率'],
     ];
 
     let text = rawText;
@@ -201,6 +218,8 @@ function extractPhantomDataFromOCR(rawText) {
         text = text.replace(pattern, replacement);
     }
     text = text.trim();
+    
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '替换后文本行数:', text.split('\n').length);
 
     // 属性关键词列表
     const statKeywords = [
@@ -210,18 +229,25 @@ function extractPhantomDataFromOCR(rawText) {
         '攻击百分比', '攻擊百分比', '攻击', '攻擊', '防御百分比', '防禦百分比', '防御', '防禦', '生命百分比', '共鳴效率', '生命', '共鸣效率'
     ];
 
-    // 拆分行，保留所有行以便后续精准提取
     let lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '初始行数:', lines.length);
 
-    // 过滤无意义行
     lines = lines.filter(l => l && l.length > 1 &&
         !/^\d+\/\d+$/.test(l) &&
         !l.includes('15100') &&
         !l.includes('0/50'));
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '过滤后行数:', lines.length);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '过滤后内容:', lines.slice(0, 20).join(' | '));
 
     // 过滤明显无关的关键词行
-    const ignoreLineKeywords = ['特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功', '技能使下个变奏技能登场的角', '我銷製讀伤實加', '颤樂战厘率', 'X成通', '不限'];
-    lines = lines.filter(l => !ignoreLineKeywords.some(kw => l.includes(kw)));
+    const ignoreLineKeywords = [
+        '特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功',
+        '技能使下个变奏技能登场的角', '我銷製讀伤實加', '颤樂战厘率', 'X成通', '不限',
+        'GPU', '温度', '功率', '利用率', 'FPS', '简述', '全部', '声骸推荐', '声骸调谐',
+        '使用声骸技能', '声骸技能', '对敌人造成', '在此后', '若自', '技能冷却',
+        '合鸣效果', '简述', '找码固峒', '角色为敌人添加', '聚爆效应'
+    ];
+    lines = lines.filter(l => !ignoreLineKeywords.some(kw => l.toLowerCase().includes(kw.toLowerCase())));
 
     // 过滤表格符号行
     lines = lines.filter(l => !/[\|\-—=]{2,}/.test(l));
@@ -252,7 +278,9 @@ function extractPhantomDataFromOCR(rawText) {
                 for (const kw of statKeywords) {
                     if (line.includes(kw)) { isStat = true; break; }
                 }
-                if (!isStat && line.length <= 15) { // 名称通常不会太长
+                const invalidNameKeywords = ['使用', '造成', '伤害', '敌人', '技能', '在此后', '若自', '角色为', '添加'];
+                const isInvalidName = invalidNameKeywords.some(kw => line.includes(kw));
+                if (!isStat && !isInvalidName && line.length <= 15) {
                     phantomData.name = line.replace(/\s+/g, '');
                     usedLines.add(i);
                     continue;
@@ -282,12 +310,11 @@ function extractPhantomDataFromOCR(rawText) {
     });
 
     // --- 解析属性-数值对 ---
-    const mainPairs = []; // 存放主次词条 (带有 >> 的)
-    const otherPairs = []; // 存放其他对 (不带 >> 的)
+    const mainPairs = [];
+    const otherPairs = [];
     let pendingAttrs = [];
 
     for (let line of remainingLines) {
-        // 1. 优先处理带有 >> 的主次词条行
         if (line.includes('>>')) {
             const parts = line.split('>>');
             const lastPart = parts[parts.length - 1].trim();
@@ -324,13 +351,37 @@ function extractPhantomDataFromOCR(rawText) {
         const isValue = /^[\d.]+%?$/.test(normalizedLine);
 
         if (isValue && pendingAttrs.length > 0) {
-            let attr = pendingAttrs.shift();
-            attr = cleanAttributeName(attr);
-            otherPairs.push({ attributeName: attr, attributeValue: normalizedLine });
+            // 特殊数值反推
+            const main2Reverse = [
+                { value: '150', name: '攻击', consume: '攻击' },
+                { value: '100', name: '攻击', consume: '攻击' },
+                { value: '2280', name: '生命', consume: '生命' }
+            ];
+            let isMain2Value = false;
+            for (const m2 of main2Reverse) {
+                if (normalizedLine === m2.value || normalizedLine === m2.value + '%') {
+                    const consumeIdx = pendingAttrs.findIndex(attr => attr.includes(m2.consume));
+                    if (consumeIdx !== -1) {
+                        pendingAttrs.splice(consumeIdx, 1);
+                        logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[反推]'), `数值 ${m2.value} 反推为 ${m2.name}，消耗 pendingAttrs[${consumeIdx}]`);
+                    } else {
+                        logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[反推]'), `数值 ${m2.value} 反推为 ${m2.name}，OCR未识别属性名，不消耗pendingAttrs`);
+                    }
+                    otherPairs.push({ attributeName: m2.name, attributeValue: m2.value });
+                    isMain2Value = true;
+                    break;
+                }
+            }
+            if (!isMain2Value) {
+                // 普通数值
+                let attr = pendingAttrs.shift();
+                attr = cleanAttributeName(attr);
+                otherPairs.push({ attributeName: attr, attributeValue: normalizedLine });
+            }
             continue;
         }
 
-        // 4. 识别属性名
+        // 识别属性名
         let isAttribute = false;
         if (/[\u4e00-\u9fa5]/.test(line)) { 
             for (const keyword of statKeywords) {
@@ -346,16 +397,33 @@ function extractPhantomDataFromOCR(rawText) {
             }
         }
     }
-
-    // --- 分配主、次、副词条 ---
     
-    // 如果识别到了带有 >> 的行，这些行强制作为主词条和次词条
+    // 过滤垃圾数据
+    for (let i = otherPairs.length - 1; i >= 0; i--) {
+        const pair = otherPairs[i];
+        // 过滤过长的属性
+        if (pair.attributeName.length > 15) {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '过长属性名:', pair.attributeName);
+            otherPairs.splice(i, 1);
+            continue;
+        }
+        // 过滤包含技能描述关键词的
+        const skillKeywords = ['造成', '伤害加成伤', '在此后', '若', '敌人', '使用', '召唤'];
+        if (skillKeywords.some(kw => pair.attributeName.includes(kw))) {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '技能描述:', pair.attributeName);
+            otherPairs.splice(i, 1);
+        }
+    }
+
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'mainPairs数量:', mainPairs.length, 'otherPairs数量:', otherPairs.length);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'mainPairs:', JSON.stringify(mainPairs));
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'otherPairs:', JSON.stringify(otherPairs.slice(0, 10)));
+    
+    // --- 分配主、次、副词条 ---
     if (mainPairs.length > 0) {
-        phantomData.mainStats = mainPairs.slice(0, 2); // 取前两个作为主词条1和主词条2
-        // 其余所有识别到的 otherPairs 以及 mainPairs 剩下的部分都作为副词条
+        phantomData.mainStats = mainPairs.slice(0, 2); 
         phantomData.subStats = [...mainPairs.slice(2), ...otherPairs];
     } else if (otherPairs.length > 0) {
-        // 如果没有 >> 标记，按原有的数值特征从 otherPairs 中匹配
         const main1Candidates = [
             { nameIncludes: '暴击伤害', value: 44, cost: 4 },
             { nameIncludes: '暴击', value: 22, cost: 4 },
@@ -422,6 +490,70 @@ function extractPhantomDataFromOCR(rawText) {
             phantomData.subStats = afterMain1;
         }
     }
+
+    // --- 副词条验证和修正 ---
+    // 基于数值范围验证副词条，修正明显错误的匹配
+    const verifiedSubStats = [];
+    for (const stat of phantomData.subStats) {
+        const val = parseFloat(stat.attributeValue.replace('%', ''));
+        const isPct = stat.attributeValue.includes('%');
+        let corrected = { ...stat };
+        
+        // 规则1
+        if (isPct && val >= 6.0 && val <= 12.0) {
+            if (stat.attributeName === '攻击') {
+                corrected.attributeName = '攻击百分比';
+                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), '攻击 → 攻击百分比:', stat.attributeValue);
+            } else if (stat.attributeName === '生命') {
+                corrected.attributeName = '生命百分比';
+                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), '生命 → 生命百分比:', stat.attributeValue);
+            } else if (stat.attributeName === '防御') {
+                corrected.attributeName = '防御百分比';
+                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), '防御 → 防御百分比:', stat.attributeValue);
+            }
+        }
+        
+        // 规则2
+        if (!isPct && val >= 300 && val <= 600 && stat.attributeName !== '生命') {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), stat.attributeName, '→ 生命:', stat.attributeValue);
+            corrected.attributeName = '生命';
+        }
+        
+        // 规则3
+        if (!isPct && val >= 30 && val <= 70) {
+            if (stat.attributeName === '暴击伤害' || stat.attributeName === '暴击') {
+                if (val >= 40 && val <= 70) {
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), stat.attributeName, '→ 防御:', stat.attributeValue);
+                    corrected.attributeName = '防御';
+                } else {
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), stat.attributeName, '→ 攻击:', stat.attributeValue);
+                    corrected.attributeName = '攻击';
+                }
+            }
+        }
+        
+        verifiedSubStats.push(corrected);
+    }
+    phantomData.subStats = verifiedSubStats;
+    
+    const seen = new Set();
+    phantomData.subStats = phantomData.subStats.filter(stat => {
+        const key = stat.attributeName + '|' + stat.attributeValue;
+        if (seen.has(key)) {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[去重]'), '重复词条:', stat.attributeName, stat.attributeValue);
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+    if (phantomData.subStats.length > 5) {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[截断]'), '副词条超过5条，截断为前5条');
+        phantomData.subStats = phantomData.subStats.slice(0, 5);
+    }
+
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '识别结果 - 名称:', phantomData.name, '等级:', phantomData.level);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '主词条:', JSON.stringify(phantomData.mainStats));
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '副词条数:', phantomData.subStats.length, '内容:', JSON.stringify(phantomData.subStats));
 
     if (!phantomData.name && phantomData.mainStats.length > 0) {
         const mainStat = phantomData.mainStats[0];
@@ -599,6 +731,18 @@ export class CharacterScore extends plugin {
                 });
 
                 const json = await res.json();
+                
+                // 调试日志：输出OCR API完整响应
+                logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), `第${idx + 1}张图片OCR响应:`);
+                logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'OCRExitCode:', json.OCRExitCode);
+                logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'IsErroredOnProcessing:', json.IsErroredOnProcessing);
+                logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ErrorMessage:', JSON.stringify(json.ErrorMessage));
+                logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedResults长度:', json.ParsedResults?.length || 0);
+                if (json.ParsedResults?.[0]) {
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedText存在:', !!json.ParsedResults[0].ParsedText);
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedText前100字符:', json.ParsedResults[0].ParsedText?.substring(0, 100)?.replace(/\n/g, '\\n'));
+                }
+                
                 if (json.ParsedResults?.[0]?.ParsedText) {
                     ocrText = json.ParsedResults[0].ParsedText.trim();
                     phantomData = extractPhantomDataFromOCR(ocrText);
