@@ -26,7 +26,7 @@ export default class RankUtil {
         }
     }
 
-    // 更新排行榜数据（添加角色信息参数）
+    // 更新排行榜数据
     static async updateRankData(charName, uid, score, groupId = 'private', charInfo = null) {
         try {
             // 处理漂泊者角色名
@@ -111,7 +111,10 @@ export default class RankUtil {
             if (newScore > userEntry.score) {
                 userEntry.score = newScore;
                 userEntry.timestamp = now;
-                userEntry.charInfo = charInfo || userEntry.charInfo;
+            }
+            if (charInfo) {
+                userEntry.charInfo = charInfo;
+                userEntry.timestamp = now;
             }
         }
         try {
