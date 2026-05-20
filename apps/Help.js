@@ -256,7 +256,7 @@ export class Help extends plugin {
                     },
                     {
                         "icon": 62,
-                        "title": "~（当/下）期深塔",
+                        "title": "~当/下期深塔",
                         "desc": "查看深塔怪物/Buff"
                     },
                     {
@@ -271,7 +271,7 @@ export class Help extends plugin {
                     },
                     {
                         "icon": 83,
-                        "title": "~持有率",
+                        "title": "~(群)持有率",
                         "desc": "查看角色持有率"
                     },
                     {
@@ -299,11 +299,6 @@ export class Help extends plugin {
                 "title": "~更新",
                 "desc": "更新插件"
             })
-            helpList[0].list.push({
-                "icon": 91,
-                "title": "~开启/关闭总排名",
-                "desc": "总排名严格模式开关"
-            })
         }
 
         if (e.isMaster) {
@@ -317,12 +312,12 @@ export class Help extends plugin {
                     },
                     {
                         "icon": 91,
-                        "title": "~（开启/关闭）总排名",
+                        "title": "~开启/关闭总排名",
                         "desc": "总排名严格模式开关"
                     },
                     {
                         "icon": 93,
-                        "title": "~（开启/关闭）群排名",
+                        "title": "~开启/关闭群排名",
                         "desc": "群排名严格模式开关"
                     },
                     {
