@@ -2,13 +2,10 @@ import plugin from '../../../lib/plugins/plugin.js'
 import { createRequire } from 'module'
 import lodash from 'lodash'
 import { Restart } from '../../other/restart.js'
-
 const require = createRequire(import.meta.url)
 const { exec, execSync } = require('child_process')
-
 // 是否在更新中
 let uping = false
-
 /**
  * 处理插件更新
  */
@@ -26,39 +23,31 @@ export class Update extends plugin {
       ]
     })
   }
-
   /**
    * rule - 更新插件
    * @returns
    */
   async update() {
     if (!this.e.isMaster) return false
-
     /** 检查是否正在更新中 */
     if (uping) {
       await this.reply('已有命令更新中..请勿重复操作')
       return
     }
-
     /** 检查git安装 */
     if (!(await this.checkGit())) return
-
     const isForce = this.e.msg.includes('强制')
-
     /** 执行更新 */
     await this.runUpdate(isForce)
-
     /** 是否需要重启 */
     if (this.isUp) {
       await this.reply('更新完毕，正在重启云崽以应用更新')
       setTimeout(() => this.restart(), 2000)
     }
   }
-
   restart() {
     new Restart(this.e).restart()
   }
-
   /**
    * 更新
    * @param {boolean} isForce 是否为强制更新
@@ -67,7 +56,7 @@ export class Update extends plugin {
   async runUpdate(isForce) {
     let command = `git -C ./plugins/waves-plugin/ pull`
     if (isForce) {
-      command = `git -C ./plugins/waves-plugin/ reset --hard origin/main && ${command} --rebase`
+      command = `git -C ./plugins/waves-plugin/ reset --hard origin/main`
       this.e.reply('正在执行强制更新操作，请稍等')
     } else {
       this.e.reply('正在执行更新操作，请稍等')
@@ -77,17 +66,16 @@ export class Update extends plugin {
     uping = true
     const ret = await this.execSync(command)
     uping = false
-
     if (ret.error) {
       logger.mark(`${this.e.logFnc} 更新失败：waves-plugin`)
       this.gitErr(ret.error, ret.stdout)
       return false
     }
-
+    /** 通过 commitId 变化判断是否实际更新了 */
+    const newCommitId = await this.getcommitId('waves-plugin')
     /** 获取插件提交的最新时间 */
     const time = await this.getTime('waves-plugin')
-
-    if (/(Already up[ -]to[ -]date|已经是最新的)/.test(ret.stdout)) {
+    if (newCommitId === this.oldCommitId) {
       await this.reply(`waves-plugin已经是最新版本\n最后更新时间：${time}`)
     } else {
       await this.reply(`waves-plugin\n最后更新时间：${time}`)
@@ -96,12 +84,9 @@ export class Update extends plugin {
       const log = await this.getLog('waves-plugin')
       await this.reply(log)
     }
-
     logger.mark(`${this.e.logFnc} 最后更新时间：${time}`)
-
     return true
   }
-
   /**
    * 获取waves-plugin的更新日志
    * @param {string} plugin 插件名称
@@ -109,7 +94,6 @@ export class Update extends plugin {
    */
   async getLog(plugin = '') {
     const cm = `cd ./plugins/${plugin}/ && git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"`
-
     let logAll
     try {
       logAll = await execSync(cm, { encoding: 'utf-8' })
@@ -117,11 +101,8 @@ export class Update extends plugin {
       logger.error(error.toString())
       this.reply(error.toString())
     }
-
     if (!logAll) return false
-
     logAll = logAll.split('\n')
-
     let log = []
     for (let str of logAll) {
       str = str.split('||')
@@ -131,18 +112,13 @@ export class Update extends plugin {
     }
     const line = log.length
     log = log.join('\n\n')
-
     if (log.length <= 0) return ''
-
     let end = ''
     end =
       '更多详细信息，请前往github查看\nhttps://github.com/Xinglingsuiyue/waves-plugin/commits/main'
-
     log = await this.makeForwardMsg(`waves-plugin更新日志，共${line}条`, log, end)
-
     return log
   }
-
   /**
    * 获取上次提交的commitId
    * @param {string} plugin 插件名称
@@ -150,13 +126,10 @@ export class Update extends plugin {
    */
   async getcommitId(plugin = '') {
     const cm = `git -C ./plugins/${plugin}/ rev-parse --short HEAD`
-
     let commitId = await execSync(cm, { encoding: 'utf-8' })
     commitId = lodash.trim(commitId)
-
     return commitId
   }
-
   /**
    * 获取本次更新插件的最后一次提交时间
    * @param {string} plugin 插件名称
@@ -164,7 +137,6 @@ export class Update extends plugin {
    */
   async getTime(plugin = '') {
     const cm = `cd ./plugins/${plugin}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
-
     let time = ''
     try {
       time = await execSync(cm, { encoding: 'utf-8' })
@@ -175,7 +147,6 @@ export class Update extends plugin {
     }
     return time
   }
-
   /**
    * 制作转发消息
    * @param {string} title 标题 - 首条消息
@@ -193,7 +164,6 @@ export class Update extends plugin {
       user_id: (this.e.bot ?? Bot).uin,
       nickname
     }
-
     let forwardMsg = [
       {
         ...userInfo,
@@ -204,14 +174,12 @@ export class Update extends plugin {
         message: msg
       }
     ]
-
     if (end) {
       forwardMsg.push({
         ...userInfo,
         message: end
       })
     }
-
     /** 制作转发内容 */
     if (this.e.group?.makeForwardMsg) {
       forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
@@ -220,7 +188,6 @@ export class Update extends plugin {
     } else {
       return msg.join('\n')
     }
-
     let dec = 'waves-plugin 更新日志'
     /** 处理描述 */
     if (typeof (forwardMsg.data) === 'object') {
@@ -234,10 +201,8 @@ export class Update extends plugin {
         .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
         .replace(/___+/, `<title color="#777777" size="26">${dec}</title>`)
     }
-
     return forwardMsg
   }
-
   /**
    * 处理更新失败的相关函数
    * @param {string} err
@@ -248,19 +213,16 @@ export class Update extends plugin {
     const msg = '更新失败！'
     const errMsg = err.toString()
     stdout = stdout.toString()
-
     if (errMsg.includes('Timed out')) {
       const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
       await this.reply(msg + `\n连接超时：${remote}`)
       return
     }
-
     if (/Failed to connect|unable to access/g.test(errMsg)) {
       const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
       await this.reply(msg + `\n连接失败：${remote}`)
       return
     }
-
     if (errMsg.includes('be overwritten by merge')) {
       await this.reply(
         msg +
@@ -269,7 +231,6 @@ export class Update extends plugin {
       )
       return
     }
-
     if (stdout.includes('CONFLICT')) {
       await this.reply([
         msg + '存在冲突\n',
@@ -279,10 +240,8 @@ export class Update extends plugin {
       ])
       return
     }
-
     await this.reply([errMsg, stdout])
   }
-
   /**
    * 异步执行git相关命令
    * @param {string} cmd git命令
@@ -295,7 +254,6 @@ export class Update extends plugin {
       })
     })
   }
-
   /**
    * 检查git是否安装
    * @returns
