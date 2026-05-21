@@ -2,6 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js';
 import { pluginResources } from '../model/path.js'
 import Wiki from '../components/Wiki.js';
 import Render from '../components/Render.js';
+import Waves from '../components/Code.js';
 
 export class Calendar extends plugin {
     constructor() {
@@ -20,11 +21,31 @@ export class Calendar extends plugin {
 
     async calendar(e) {
         const wiki = new Wiki();
+        const waves = new Waves();
         const pageData = await wiki.getHomePage();
         const currentDate = new Date();
 
         if (!pageData.status) {
             return e.reply(data.msg);
+        }
+
+        let newTowerData = null;
+        const publicCookie = await waves.pubCookie();
+        if (publicCookie) {
+            try {
+                const matrixData = await waves.getNewTowerIndex(
+                    publicCookie.serverId,
+                    publicCookie.roleId,
+                    publicCookie.token,
+                    publicCookie.did,
+                    publicCookie.userId
+                );
+                if (matrixData.status && matrixData.data) {
+                    newTowerData = matrixData.data;
+                }
+            } catch (err) {
+                logger.debug('[日历] 获取终焉矩阵数据失败:', err);
+            }
         }
 
         const role = {
@@ -109,6 +130,36 @@ export class Calendar extends plugin {
             progress: slashCurrentCycle.progress,
         });
 
+        if (newTowerData) {
+            const remainMs = newTowerData.endTime || newTowerData.seasonEndTime;
+            if (remainMs && remainMs > 0) {
+                const endDate = new Date(currentDate.getTime() + remainMs);
+                const activityDays = 28;
+                const gapDays = 7;
+                const totalCycleDays = activityDays + gapDays;
+                const startDate = new Date(endDate.getTime() - activityDays * 24 * 60 * 60 * 1000);
+                
+                const startTimeStr = `${startDate.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${startDate.toTimeString().slice(0, 5)}`;
+                const endTimeStr = `${endDate.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${endDate.toTimeString().slice(0, 5)}`;
+                
+                const remainSeconds = Math.floor(remainMs / 1000);
+                const remain = this.format(remainSeconds);
+                
+                const activityDuration = activityDays * 24 * 60 * 60 * 1000;
+                const elapsed = activityDuration - remainMs;
+                const progress = Math.max(0, Math.min(100, Math.round((elapsed / activityDuration) * 100)));
+                
+                activity.unshift({
+                    contentUrl: pluginResources + '/Template/calendar/imgs/newtower.png',
+                    title: '终焉矩阵',
+                    time: `${startTimeStr} - ${endTimeStr}`,
+                    active: '进行中',
+                    remain: remain,
+                    progress: progress,
+                });
+            }
+        }
+
         const imageCard = await Render.render('Template/calendar/calendar', {
             data: { activity, role, weapon },
         }, { e, retType: 'base64' });
@@ -124,7 +175,6 @@ export class Calendar extends plugin {
         const timeDiff = currentDate.getTime() - firstStart;
         const cycleNum = Math.floor(timeDiff / cycleDuration);
         
-        // 当前周期的开始和结束时间
         let currentCycleStart = new Date(firstStart + cycleNum * cycleDuration);
         let currentCycleEnd = new Date(firstStart + (cycleNum + 1) * cycleDuration);
         
@@ -136,7 +186,6 @@ export class Calendar extends plugin {
         const startTime = `${currentCycleStart.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${currentCycleStart.toTimeString().slice(0, 5)}`;
         const endTime = `${currentCycleEnd.toLocaleDateString('zh-CN').slice(5).replace('/', '.')} ${currentCycleEnd.toTimeString().slice(0, 5)}`;
         
-        // 计算状态
         let active = '';
         if (currentDate >= currentCycleEnd) {
             active = '已结束';
@@ -146,13 +195,11 @@ export class Calendar extends plugin {
             active = '未开始';
         }
         
-        // 计算剩余时间
         let remain = '';
         if (currentDate >= currentCycleStart && currentDate < currentCycleEnd) {
             remain = this.format(Math.round((currentCycleEnd.getTime() - currentDate.getTime()) / 1000));
         }
         
-        // 计算进度
         let progress = 0;
         if (currentDate >= currentCycleStart && currentDate < currentCycleEnd) {
             progress = Math.round(((currentDate.getTime() - currentCycleStart.getTime()) / 
