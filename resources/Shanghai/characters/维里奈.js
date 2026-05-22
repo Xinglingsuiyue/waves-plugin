@@ -1,4 +1,4 @@
-import { calcSingleHeal } from '../../../utils/damage/formula.js';
+import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
 import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
@@ -18,6 +18,15 @@ function getChainUnlockedCount(roleDetailData) {
 // 维里奈（5★ 衍射 治疗）
 // 数据来源：库街区 wiki 优先；本轮通过 BWiki 对库街区公开数据补充核对。
 // 默认展示治疗定位的 3 个代表治疗量：共鸣回路、共鸣解放、协同治疗。
+const VERINA_DAMAGES = {
+  liberation: {
+    name: '共鸣解放·草木生长伤害',
+    type: 'liberation',
+    levelFrom: '共鸣解放',
+    levelMap: { 1: 1.0, 2: 1.082, 3: 1.164, 4: 1.2788, 5: 1.3608, 6: 1.4551, 7: 1.5863, 8: 1.7175, 9: 1.8487, 10: 1.9881 }
+  }
+};
+
 const VERINA_HEALS = {
   circuit: {
     name: '共鸣回路·星星花绽放治疗',
@@ -38,6 +47,40 @@ const VERINA_HEALS = {
     percentMap: { 1: 0.0510, 2: 0.0587, 3: 0.0638, 4: 0.0714, 5: 0.0765, 6: 0.0816, 7: 0.0867, 8: 0.0918, 9: 0.0969, 10: 0.1071 }
   }
 };
+
+function getPanelDamageBonus(attrMap, skillType) {
+  let total = getPercentAttr(attrMap, '衍射伤害加成');
+  if (skillType === 'liberation') total += getPercentAttr(attrMap, '共鸣解放伤害加成');
+  if (skillType === 'skill') total += getPercentAttr(attrMap, '共鸣技能伤害加成');
+  if (skillType === 'intro') total += getPercentAttr(attrMap, '变奏技能伤害加成');
+  if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
+  if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
+  return total;
+}
+
+function calcOneDamage({ roleDetailData, panel, equipment, enemy, modules, damage }) {
+  const level = getSkillLevel(roleDetailData, damage.levelFrom);
+  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
+  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
+  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
+  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const result = calcSingleDamage({
+    attack: finalAttack,
+    skillMultiplier: damage.levelMap[level] || damage.levelMap[10],
+    multiplierBonus: mergedBuff.multiplierBonus || 0,
+    damageBonus: getPanelDamageBonus(panel.attrMap || {}, damage.type) + (mergedBuff.damageBonus || 0),
+    deepen: mergedBuff.deepen || 0,
+    critRate: panel.critRate,
+    critDamage: panel.critDamage,
+    attackerLevel: panel.level || 90,
+    enemyLevel: enemy?.level || 90,
+    resistance: enemy?.resistance ?? 0.1,
+    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    sourceDetail: mergedBuff.sources
+  });
+  return { name: damage.name, ...result };
+}
 
 function getHealingBonus(panel, mergedBuff) {
   const attrMap = panel.attrMap || {};
@@ -91,7 +134,8 @@ export default {
     const items = [
       calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.circuit }),
       calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.liberation }),
-      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.coordinated })
+      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.coordinated }),
+      calcOneDamage({ roleDetailData, panel, equipment, enemy, modules, damage: VERINA_DAMAGES.liberation })
     ];
 
     return {

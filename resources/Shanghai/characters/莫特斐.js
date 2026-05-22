@@ -160,7 +160,7 @@ export default {
     const displayKeys = [
       "skill12",
       "skill11",
-      "skill10"
+      "skill13"
     ];
     const items = displayKeys.map(skillKey => calcOneSkill({ ...args, skillKey })).filter(Boolean);
     return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1240157802556833792', items };
