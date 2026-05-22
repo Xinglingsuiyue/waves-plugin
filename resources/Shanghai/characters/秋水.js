@@ -89,13 +89,13 @@ const SKILLS = {
     levelMap: levelMap(0.3, 0.3246, 0.3492, 0.3837, 0.4083, 0.4366, 0.4759, 0.5153, 0.5547, 0.5965)
   },
   skill11: {
-    name: "技能",
+    name: "雾里观花",
     type: "liberation",
     levelFrom: "共鸣解放",
     levelMap: levelMap(2, 2.164, 2.328, 2.5576, 2.7216, 2.9102, 3.1726, 3.435, 3.6974, 3.9762)
   },
   skill12: {
-    name: "技能",
+    name: "虚晃一枪",
     type: "intro",
     levelFrom: "变奏技能",
     levelMap: levelMap(1.5201, 1.6449, 1.7694, 1.944, 2.0685, 2.2119, 2.4114, 2.6106, 2.8101, 3.0222)
