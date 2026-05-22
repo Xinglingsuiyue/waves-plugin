@@ -1,4 +1,4 @@
-import { calcSingleDamage } from '../../../utils/damage/formula.js';
+﻿import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
 import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
@@ -131,28 +131,42 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getPanelHealingBonus(attrMap) {
+  return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const isHeal = skill.name.includes('治疗');
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
   const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
-  const result = calcSingleDamage({
-    attack: finalAttack,
-    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
-    multiplierBonus: mergedBuff.multiplierBonus || 0,
-    damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
-    deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
-    attackerLevel: panel.level || 90,
-    enemyLevel: enemy?.level || 90,
-    resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
-    sourceDetail: mergedBuff.sources
-  });
+  const result = isHeal
+    ? calcSingleHeal({
+        base: panel.attack,
+        skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+        multiplierBonus: mergedBuff.multiplierBonus || 0,
+        healingBonus: getPanelHealingBonus(panel.attrMap || {}) + (mergedBuff.healingBonus || 0),
+        deepen: mergedBuff.deepen || 0,
+        sourceDetail: mergedBuff.sources
+      })
+    : calcSingleDamage({
+        attack: finalAttack,
+        skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+        multiplierBonus: mergedBuff.multiplierBonus || 0,
+        damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
+        deepen: mergedBuff.deepen || 0,
+        critRate: panel.critRate,
+        critDamage: panel.critDamage,
+        attackerLevel: panel.level || 90,
+        enemyLevel: enemy?.level || 90,
+        resistance: enemy?.resistance ?? 0.1,
+        ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+        sourceDetail: mergedBuff.sources
+      });
   return { name: skill.name, ...result };
 }
 
@@ -165,10 +179,13 @@ export default {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
     const displayKeys = [
       "skill12",
-      "skill13",
-      "skill14"
+      "skill9",
+      "skill15"
     ];
     const items = displayKeys.map(skillKey => calcOneSkill({ ...args, skillKey })).filter(Boolean);
     return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1429461100965666816', items };
   }
 };
+
+
+
