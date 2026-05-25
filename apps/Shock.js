@@ -33,12 +33,18 @@ export class Shock extends plugin {
             let nickName = `用户${userID}`;
             try {
                 if (e.isGroup) {
-                    const memberInfo = await e.group.getMemberMap();
-                    const member = memberInfo.get(userID);
-                    nickName = member?.card || member?.nickname || nickName;
+
+                    try {
+                        const memberInfo = await e.group.getMemberMap();
+                        const member = memberInfo.get(userID);
+                        nickName = member?.card || member?.nickname || nickName;
+                    } catch {
+
+                        nickName = e.sender?.card || e.sender?.nickname || nickName;
+                    }
                 } else {
-                    const friendInfo = await Bot.getFriendInfo(userID);
-                    nickName = friendInfo?.nickname || nickName;
+
+                    nickName = e.sender?.nickname || nickName;
                 }
             } catch (err) {
                 logger.error('获取用户信息失败：', err);
