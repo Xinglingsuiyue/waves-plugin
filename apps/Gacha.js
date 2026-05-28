@@ -5,9 +5,11 @@ import Waves from "../components/Code.js";
 import Wiki from "../components/Wiki.js";
 import Render from '../components/Render.js';
 import fs from 'fs';
+import YAML from 'yaml';
 import { createHash } from 'crypto';
 
 const resident = ["鉴心", "卡卡罗", "安可", "维里奈", "凌阳"];
+const residentSet = new Set(resident);
 
 export class Gacha extends plugin {
     constructor() {
@@ -29,150 +31,136 @@ export class Gacha extends plugin {
                     fnc: "exportGacha"
                 },
                 {
-                    reg: "^(～|~|鸣潮)更新角色数据$",
-                    fnc: "updateCharacterData"
-                },
-                {
                     reg: "^(～|~|鸣潮)抽卡帮助$",
                     fnc: "gachaHelp"
                 }
             ]
         });
 
-        this.checkLocalData();
+        this.simulatorData = this.loadSimulatorData();
+        this.simulatorDirty = false;
     }
 
-    async checkLocalData() {
-        const { auto_update_data, data_update_interval } = Config.getLocalDataConfig();
-        if (!auto_update_data) return;
-
-        const lastUpdateFile = `${pluginResources}/data/last_update.txt`;
-        let lastUpdate = 0;
-        
-        if (fs.existsSync(lastUpdateFile)) {
-            lastUpdate = parseInt(fs.readFileSync(lastUpdateFile, 'utf-8')) || 0;
-        }
-        
-        const now = Date.now();
-        if (now - lastUpdate > data_update_interval * 1000) {
-            logger.mark('自动更新角色数据...');
-            try {
-                await this.updateCharacterData();
-                logger.mark('角色数据自动更新完成');
-            } catch (error) {
-                logger.error('自动更新角色数据失败:', error);
-            }
-        }
-    }
-
-    async updateCharacterData(e = null) {
-        const { enable_wiki_fallback } = Config.getLocalDataConfig();
-        if (!enable_wiki_fallback) {
-            if (e) await e.reply('从Wiki获取数据功能已禁用，请在配置中启用');
-            return false;
-        }
-
-        if (e) await e.reply('正在从Wiki更新角色数据...');
-
+    loadSimulatorData() {
+        const simulatorFile = `${pluginResources}/Simulator.yaml`;
         try {
-            const wiki = new Wiki();
-            const characters = Config.getLocalCharacters();
-            let updatedCount = 0;
-
-            // 更新常驻角色
-            for (const name of resident) {
-                const result = await wiki.getRecord(name);
-                if (result.status) {
-                    characters[name] = {
-                        name,
-                        avatar: result.record.content.contentUrl,
-                        isResident: true,
-                        lastUpdate: Date.now()
-                    };
-                    updatedCount++;
-                }
-            }
-
-            if (updatedCount > 0) {
-                Config.updateLocalCharacters(characters);
-                if (e) await e.reply(`角色数据更新完成，共更新${updatedCount}条记录`);
-                return true;
-            } else {
-                if (e) await e.reply('没有可更新的角色数据');
-                return false;
+            if (fs.existsSync(simulatorFile)) {
+                return YAML.parse(fs.readFileSync(simulatorFile, 'utf-8')) || {};
             }
         } catch (error) {
-            logger.error('更新角色数据失败:', error);
-            if (e) await e.reply('更新角色数据失败: ' + error.message);
-            return false;
+            logger.error('加载 Simulator.yaml 失败:', error);
+        }
+        return {};
+    }
+
+    flushSimulatorData() {
+        if (!this.simulatorDirty) return;
+        try {
+            const simulatorFile = `${pluginResources}/Simulator.yaml`;
+            fs.writeFileSync(simulatorFile, YAML.stringify(this.simulatorData));
+            this.simulatorDirty = false;
+        } catch (error) {
+            logger.error('写入 Simulator.yaml 失败:', error);
         }
     }
 
-    async getCharacterAvatar(name) {
-        const characters = Config.getLocalCharacters();
-        
-        // 检查本地是否有数据且数据不是太旧（30天内）
-        if (characters[name]?.avatar) {
-            const lastUpdate = characters[name]?.lastUpdate || 0;
-            if (Date.now() - lastUpdate < 30 * 24 * 60 * 60 * 1000) {
-                return characters[name].avatar;
-            }
-        }
+    getCharacterAvatarSync(name) {
+        return this.simulatorData[name]?.image || '';
+    }
 
-        // 从Wiki获取
-        const { enable_wiki_fallback } = Config.getLocalDataConfig();
-        if (enable_wiki_fallback) {
+    async fetchMissingAvatars(names) {
+        const missing = [...new Set(names.filter(name => !this.simulatorData[name]?.image))];
+        if (missing.length === 0) return;
+
+        const wiki = new Wiki();
+        for (const name of missing) {
             try {
-                const wiki = new Wiki();
                 const result = await wiki.getRecord(name);
                 if (result.status) {
-                    const avatar = result.record.content.contentUrl;
-                    
-                    // 更新本地数据
-                    const updatedCharacter = {
+                    this.simulatorData[name] = {
                         name,
-                        avatar,
-                        lastUpdate: Date.now()
+                        image: result.record.content.contentUrl,
+                        star: 5
                     };
-                    Config.updateLocalCharacters({ [name]: updatedCharacter });
-                    
-                    return avatar;
+                    this.simulatorDirty = true;
                 }
             } catch (error) {
                 logger.error(`获取角色${name}头像失败:`, error);
             }
         }
 
-        return ''; // 返回空字符串表示获取失败
+        this.flushSimulatorData();
     }
 
     async dataFormat(array) {
-        const no5Star = ((idx => (idx === -1 ? array.length : idx))(array.findIndex(item => item.qualityLevel === 5)));
-        const no4Star = ((idx => (idx === -1 ? array.length : idx))(array.findIndex(item => item.qualityLevel === 4)));
-        const fiveStar = array.filter(item => item.qualityLevel === 5).length;
-        const fourStar = array.filter(item => item.qualityLevel === 4).length;
-        const std5Star = array.filter(item => item.qualityLevel === 5 && resident.includes(item.name)).length;
-        const fourStarWpn = array.filter(item => item.qualityLevel === 4 && item.resourceType === "武器").length;
-        const max4Star = Object.entries(array.filter(item => item.qualityLevel === 4).reduce((acc, item) => (acc[item.name] = (acc[item.name] || 0) + 1, acc), {})).reduce((max, curr) => curr[1] > max[1] ? curr : max, ['无', 0])[0];
-        const avg5Star = (fiveStar !== 0) ? Math.round((array.length - no5Star) / fiveStar) : 0;
-        const avg4Star = (fourStar !== 0) ? Math.round((array.length - no4Star) / fourStar) : 0;
-        const avgUP = (fiveStar - std5Star !== 0) ? Math.round((array.length - no5Star) / (fiveStar - std5Star)) : 0;
-        const minPit = ((fiveStar, std5Star) => (fiveStar === std5Star ? 0.0 : ((fiveStar - std5Star * 2) / (fiveStar - std5Star) * 100).toFixed(1)))((resident.includes(array.filter(item => item.qualityLevel === 5)[0]?.name) ? 1 : 0) + fiveStar, std5Star);
-        const upCost = (avgUP * 160 / 10000).toFixed(2);
-        const worstLuck = Math.max(...(array.map((item, index) => item.qualityLevel === 5 ? index : -1).filter(index => index !== -1).reduce((gaps, curr, i, arr) => (i > 0 ? [...gaps, curr - arr[i - 1]] : gaps), [])), array.length - (array.map((item, index) => item.qualityLevel === 5 ? index : -1).filter(index => index !== -1).slice(-1)[0] + 1)) || 0;
-        const bestLuck = Math.min(...(array.map((item, index) => item.qualityLevel === 5 ? index : -1).filter(index => index !== -1).reduce((gaps, curr, i, arr) => (i > 0 ? [...gaps, curr - arr[i - 1]] : gaps), [])), array.length - (array.map((item, index) => item.qualityLevel === 5 ? index : -1).filter(index => index !== -1).slice(-1)[0] + 1)) || 0;
+        const len = array.length;
 
-        const pool = await Promise.all(array.filter(item => item.qualityLevel === 5).map(async (item) => ({
-            name: item.name,
-            times: (array.slice(array.indexOf(item) + 1).findIndex(x => x.qualityLevel === 5) + 1) || (array.length - array.indexOf(item)),
-            isUp: !resident.includes(item.name),
-            avatar: await this.getCharacterAvatar(item.name)
-        })));
+        const fiveStarIndices = [];
+        const fourStarIndices = [];
+        for (let i = 0; i < len; i++) {
+            if (array[i].qualityLevel === 5) fiveStarIndices.push(i);
+            if (array[i].qualityLevel === 4) fourStarIndices.push(i);
+        }
+
+        const no5Star = fiveStarIndices[0] ?? len;
+        const no4Star = fourStarIndices[0] ?? len;
+        const fiveStar = fiveStarIndices.length;
+        const fourStar = fourStarIndices.length;
+
+        // 统计常驻五星
+        let std5Star = 0;
+        for (const idx of fiveStarIndices) {
+            if (residentSet.has(array[idx].name)) std5Star++;
+        }
+
+        // 统计四星武器
+        let fourStarWpn = 0;
+        for (const idx of fourStarIndices) {
+            if (array[idx].resourceType === "武器") fourStarWpn++;
+        }
+
+        // 最多四星
+        const fourStarCount = {};
+        for (const idx of fourStarIndices) {
+            fourStarCount[array[idx].name] = (fourStarCount[array[idx].name] || 0) + 1;
+        }
+        const max4Star = Object.entries(fourStarCount).reduce((max, curr) => curr[1] > max[1] ? curr : max, ['无', 0])[0];
+
+        const avg5Star = fiveStar !== 0 ? Math.round((len - no5Star) / fiveStar) : 0;
+        const avg4Star = fourStar !== 0 ? Math.round((len - no4Star) / fourStar) : 0;
+        const avgUP = (fiveStar - std5Star !== 0) ? Math.round((len - no5Star) / (fiveStar - std5Star)) : 0;
+        const minPit = (fiveStar === std5Star ? 0.0 : ((fiveStar - std5Star * 2) / (fiveStar - std5Star) * 100).toFixed(1));
+
+        // 计算最欧/最非
+        const gaps = [];
+        for (let i = 1; i < fiveStarIndices.length; i++) {
+            gaps.push(fiveStarIndices[i] - fiveStarIndices[i - 1]);
+        }
+        // 最后一个五星到末尾的间隔
+        if (fiveStarIndices.length > 0) {
+            gaps.push(len - fiveStarIndices[fiveStarIndices.length - 1]);
+        }
+        const worstLuck = gaps.length > 0 ? Math.max(...gaps) : 0;
+        const bestLuck = gaps.length > 0 ? Math.min(...gaps) : 0;
+
+        // 提前收集所有需要头像
+        const fiveStarNames = fiveStarIndices.map(idx => array[idx].name);
+        await this.fetchMissingAvatars(fiveStarNames);
+
+        const pool = fiveStarIndices.map((idx, i) => {
+            const nextIdx = i + 1 < fiveStarIndices.length ? fiveStarIndices[i + 1] : len;
+            return {
+                name: array[idx].name,
+                times: nextIdx - idx,
+                isUp: !residentSet.has(array[idx].name),
+                avatar: this.getCharacterAvatarSync(array[idx].name)
+            };
+        });
 
         return {
             info: {
-                total: array.length,
-                time: array.length > 0 ? [array[0].time, array[array.length - 1].time] : [null, null],
+                total: len,
+                time: len > 0 ? [array[0].time, array[len - 1].time] : [null, null],
                 no5Star: no5Star,
                 no4Star: no4Star,
                 fiveStar: fiveStar,
@@ -184,7 +172,7 @@ export class Gacha extends plugin {
                 avg4Star: avg4Star,
                 avgUP: avgUP,
                 minPit: minPit,
-                upCost: upCost,
+                upCost: (avgUP * 160 / 10000).toFixed(2),
                 worstLuck: worstLuck,
                 bestLuck: bestLuck,
             },
@@ -227,25 +215,25 @@ export class Gacha extends plugin {
         };
 
         // 生成唯一ID的函数
-        const generateId = (ts, poolId, drawNum) => 
+        const generateId = (ts, poolId, drawNum) =>
             `${String(ts).padStart(10, '0')}${String(poolId).padStart(4, '0')}000${String(drawNum).padStart(2, '0')}`;
-        
+
         if (toWWGF) {
             const timestampCount = {};
-            
+
             return dataArray.map(item => {
                 const ts = Math.floor(new Date(item.time).getTime() / 1000);
                 const poolId = mappings.forward.gacha[item.cardPoolType];
-                
+
                 // 处理同一秒内的多次抽取
-                timestampCount[ts] = timestampCount[ts] || 
-                    Math.min(dataArray.filter(record => 
+                timestampCount[ts] = timestampCount[ts] ||
+                    Math.min(dataArray.filter(record =>
                         Math.floor(new Date(record.time).getTime() / 1000) === ts
                     ).length, 10);
-                
+
                 const drawNum = timestampCount[ts]--;
                 const uniqueId = generateId(ts, poolId, drawNum);
-                
+
                 return {
                     gacha_id: poolId,
                     gacha_type: mappings.forward.type[poolId],
@@ -459,7 +447,7 @@ export class Gacha extends plugin {
                 )
                 // 过滤保留有重叠或6个月内的记录
                 .filter(group => {
-                    const hasOverlap = group.some(oldItem => 
+                    const hasOverlap = group.some(oldItem =>
                         json.list.some(newItem => newItem.id === oldItem.id)
                     );
                     return hasOverlap || isOldFileRecent;
@@ -609,13 +597,10 @@ export class Gacha extends plugin {
             "   - 导入: ~导入抽卡记录 (发送JSON文件)",
             "   - 导出: ~导出抽卡记录",
             "",
-            "4. 数据更新:",
-            "   - 更新角色数据: ~更新角色数据",
-            "",
             "注意: 部分功能可能需要管理员权限"
         ].join("\n");
 
         await e.reply(helpMessage);
         return true;
     }
-    }
+}
