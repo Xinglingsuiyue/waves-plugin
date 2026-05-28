@@ -60,6 +60,7 @@ export default class RankUtil {
             
             // 群排名更新
             if (groupId !== 'private') {
+                // 当前是群聊查询，更新该群的排名
                 const groupDirPath = paths.groupDir(groupId);
                 this.ensureDirectoryExists(groupDirPath);
                 await this.updateRankFile(
@@ -68,9 +69,63 @@ export default class RankUtil {
                     score,
                     charInfo
                 );
+            } else {
+                // 同步更新
+                await this.syncToAllGroups(finalCharName, uid, score, charInfo, paths);
             }
         } catch (err) {
             logger.error(`[排行榜工具] 更新排名错误: ${err.stack}`);
+        }
+    }
+
+    // 同步更新
+    static async syncToAllGroups(charName, uid, score, charInfo, paths) {
+        const groupsDir = path.join(paths.basePath, 'groups');
+        
+        if (!fs.existsSync(groupsDir)) {
+            return;
+        }
+        
+        try {
+            const groupDirs = fs.readdirSync(groupsDir);
+            
+            for (const groupDirName of groupDirs) {
+                if (!groupDirName.startsWith('group_')) {
+                    continue;
+                }
+                
+                const groupDirPath = path.join(groupsDir, groupDirName);
+                
+                // 确保是目录
+                if (!fs.statSync(groupDirPath).isDirectory()) {
+                    continue;
+                }
+                
+                const rankFilePath = path.join(groupDirPath, `${charName}.json`);
+                
+                if (fs.existsSync(rankFilePath)) {
+                    const hasRecord = this.checkUidInFile(rankFilePath, uid);
+                    
+                    if (hasRecord) {
+                        await this.updateRankFile(rankFilePath, uid, score, charInfo);
+                    }
+                }
+            }
+        } catch (err) {
+            logger.error(`[排行榜工具] 同步群排名错误: ${err.stack}`);
+        }
+    }
+
+    static checkUidInFile(filePath, uid) {
+        try {
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            if (!fileContent.trim()) {
+                return false;
+            }
+            const rankData = JSON.parse(fileContent);
+            return rankData.some(entry => entry.uid === uid);
+        } catch (err) {
+            return false;
         }
     }
 
@@ -115,6 +170,7 @@ export default class RankUtil {
                 userEntry.charInfo = charInfo;
             }
         }
+
         try {
             // 保存更新
             fs.writeFileSync(filePath, JSON.stringify(rankData, null, 2));
