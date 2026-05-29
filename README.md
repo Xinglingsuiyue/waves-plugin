@@ -227,6 +227,7 @@ pnpm install --filter=waves-plugin
 - [x] 角色评级排名
 - [x] Cosplay
 - [x] 声骸评分
+- [x] 声骸替换
 - [x] 矩阵数据查询
 - [ ] 伤害计算
 - [ ] 卡池倒计时
