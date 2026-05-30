@@ -231,6 +231,8 @@ export class PhantomReplace extends plugin {
         for (let i = 0; i < sourcePhantomList.length; i++) {
             const sourcePhantom = sourcePhantomList[i];
             
+            if (!sourcePhantom) continue;
+            
             // 拷贝声骸数据
             const newPhantom = JSON.parse(JSON.stringify(sourcePhantom));
             
