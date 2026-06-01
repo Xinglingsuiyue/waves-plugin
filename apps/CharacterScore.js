@@ -94,6 +94,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•+×]/g, ' '],
+        [/农/g, ''],
         [/－/g, ''],
         [/-/g, ''],
         [/16%/g, ''],
@@ -784,7 +785,7 @@ export class CharacterScore extends plugin {
         if (ocrResults.length === 0) {
             if (forwardMessages.length > 0) {
                 if (!e.isGroup) {
-                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    const forward = await Bot.makeForwardMsg(forwardMessages);
                     await e.reply(forward);
                 }
             } else {
@@ -808,7 +809,7 @@ export class CharacterScore extends plugin {
             const errMsg = `暂未收录【${name}】的面板数据`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
             return true;
@@ -830,7 +831,7 @@ export class CharacterScore extends plugin {
                 const errMsg = '角色面板数据中没有找到配置';
                 forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
                 if (!e.isGroup) {
-                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    const forward = await Bot.makeForwardMsg(forwardMessages);
                     await e.reply(forward);
                 }
                 return true;
@@ -932,7 +933,7 @@ export class CharacterScore extends plugin {
 
             // 发送合并转发消息
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
 
@@ -978,7 +979,7 @@ export class CharacterScore extends plugin {
             const errMsg = `处理【${name}】评分时发生错误：${error.message}`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
         }
