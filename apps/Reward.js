@@ -18,7 +18,12 @@ export class Reward extends plugin {
 
     async reward(e) {
         try {
-            const { data } = await axios.get("https://newsimg.5054399.com/comm/mlcxqcommon/static/wap/js/data_102.js?_=" + Date.now());
+            const { data } = await axios.get("https://newsimg.5054399.com/comm/mlcxqcommon/static/wap/js/data_102.js?_=" + Date.now(), {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+                    'Referer': 'https://www.5054399.com/'
+                }
+            });
             const result = JSON.parse(data.match(/var mlList=(.*);/)[1]);
 
             const isAll = e.msg.includes("全部");
