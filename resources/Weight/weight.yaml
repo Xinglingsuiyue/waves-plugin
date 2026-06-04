@@ -13,7 +13,7 @@ subProps:
   - name: 生命百分比
     max: 11.6
   - name: 防御
-    max: 60
+    max: 70
   - name: 防御百分比
     max: 14.7
   - name: 共鸣效率
