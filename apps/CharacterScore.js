@@ -94,6 +94,8 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•+×]/g, ' '],
+        [/森/g, ''],
+        [/点/g, ''],
         [/瑕/g, ''],
         [/农/g, ''],
         [/－/g, ''],
@@ -624,7 +626,7 @@ export class CharacterScore extends plugin {
         super({
             name: "鸣潮-角色评分",
             event: "message",
-            priority: 1006,
+            priority: 1008,
             rule: [
                 {
                     reg: "^(?:～|\~)(.*)评分",
@@ -641,7 +643,7 @@ export class CharacterScore extends plugin {
         const message = match ? match[1].trim() : '';
 
         if (!message) {
-            return await e.reply('请输入角色名，如：～爱弥斯评分');
+            return await e.reply('请输入角色名，如：～今汐评分');
         }
 
         // ====================== 检查 OCR Key 配置 ======================
