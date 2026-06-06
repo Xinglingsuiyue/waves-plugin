@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/Fuke/Fuke.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div>
+        <div id="main-box" style="width: 976px;">
+            <div class="user">
+                <img src="{{pluginResources}}/Template/gacha/imgs/card.png" class="user-bg">
+                <div class="user-avatar">
+                    {{if data.url}}
+                    <img src="{{data.url}}" alt="{{data.name}}">
+                    {{else}}
+                    <div class="avatar-placeholder">{{data.name[0]}}</div>
+                    {{/if}}
+                </div>
+                <div class="user-name">{{data.name}}</div>
+                <div class="user-count">{{data.rerunCount}}次共鸣</div>
+            </div>
+
+            <div class="box">
+                <div class="pool-type">历史</div>
+                <div class="box-rolelist">
+                    {{each data.history item idx}}
+                    <div class="role-box">
+                        <div class="history-version">{{item.version}}</div>
+                        <div class="history-date">{{item.startDate}}</div>
+                        <div class="history-date">{{item.endDate}}</div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+
+</html>
