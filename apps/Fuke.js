@@ -26,7 +26,9 @@ export class Fuke extends plugin {
             priority: 1009,
             rule: [
                 { reg: "^(～|~|鸣潮)(.*)复刻$", fnc: "queryRerun" },
-                { reg: "^(～|~|鸣潮)复刻(排行|排名|统计)$", fnc: "rerunRanking" }
+                { reg: "^(～|~|鸣潮)复刻(排行|排名|统计)$", fnc: "rerunRanking" },
+                { reg: "^(～|~|鸣潮)共鸣者记录$", fnc: "rerunRanking" },
+                { reg: "^(～|~|鸣潮)共鸣记录$", fnc: "rerunRanking" }
             ]
         });
     }
