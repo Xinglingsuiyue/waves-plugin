@@ -269,6 +269,7 @@ pnpm install --filter=waves-plugin
 3. 声骸评分：[燊林大火](https://github.com/SLDHshenlindahuo)
 4. 帮助背景图：[loong](https://x.com/loong_blo/status/1848708696521773257)
 5. 角色持有率数据：[WutheringWavesUID](https://github.com/tyql688/WutheringWavesUID) & [XutheringWavesUID](https://github.com/Loping151/XutheringWavesUID)
+6. 伤害计算：[Tangxinyan0904](https://github.com/Tangxinyan0904)
 
 ## 许可证
 
