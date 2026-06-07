@@ -94,6 +94,8 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•+×]/g, ' '],
+        [/衣/g, ''],
+        [/病/g, ''],
         [/森/g, ''],
         [/点/g, ''],
         [/瑕/g, ''],
