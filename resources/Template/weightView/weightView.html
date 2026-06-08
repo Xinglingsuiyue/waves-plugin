@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="{{pluginResources}}/Template/weightView/weightView.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body {{sys.scale}}>
+    <div class="container" id="container">
+        {{if data.mode === 'all'}}
+        <div class="header">
+            <div class="title">声骸评分权重一览</div>
+            <div class="subtitle">共 {{data.roles.length}} 个角色 · 权重 v{{data.baseWeight.version}}</div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="weight-table">
+                <thead>
+                    <tr>
+                        <th class="col-icon">角色</th>
+                        <th class="col-name">名称</th>
+                        {{each data.roles[0].subWeightList prop}}
+                        <th class="col-weight">{{prop.name}}</th>
+                        {{/each}}
+                        <th class="col-divider">4C主词条</th>
+                        {{each data.roles[0].mainWeightList.C4 prop}}
+                        <th class="col-weight">{{prop.name}}</th>
+                        {{/each}}
+                        <th class="col-divider">3C主词条</th>
+                        {{each data.roles[0].mainWeightList.C3 prop}}
+                        <th class="col-weight">{{prop.name}}</th>
+                        {{/each}}
+                        <th class="col-divider">1C主词条</th>
+                        {{each data.roles[0].mainWeightList.C1 prop}}
+                        <th class="col-weight">{{prop.name}}</th>
+                        {{/each}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{each data.roles role idx}}
+                    <tr class="{{idx % 2 === 0 ? 'row-even' : 'row-odd'}}">
+                        <td class="col-icon">
+                            {{if role.image}}
+                            <img class="role-icon" src="{{role.image}}" />
+                            {{else}}
+                            <div class="role-icon-placeholder">{{role.name.charAt(0)}}</div>
+                            {{/if}}
+                        </td>
+                        <td class="col-name">{{role.name}}</td>
+                        {{each role.subWeightList prop}}
+                        <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                        {{/each}}
+                        <td class="col-divider"></td>
+                        {{each role.mainWeightList.C4 prop}}
+                        <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                        {{/each}}
+                        <td class="col-divider"></td>
+                        {{each role.mainWeightList.C3 prop}}
+                        <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                        {{/each}}
+                        <td class="col-divider"></td>
+                        {{each role.mainWeightList.C1 prop}}
+                        <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                        {{/each}}
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        {{else}}
+        <div class="header single-header">
+            <div class="title-row">
+                {{if data.role.image}}
+                <img class="role-avatar" src="{{data.role.image}}" />
+                {{/if}}
+                <div class="title-text">
+                    <div class="title">{{data.role.name}} 声骸权重</div>
+                    <div class="subtitle">权重 v{{data.baseWeight.version}}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="single-content">
+            <div class="section">
+                <div class="section-title">副词条权重</div>
+                <div class="table-wrapper">
+                    <table class="weight-table single-table">
+                        <thead>
+                            <tr>
+                                <th class="col-prop-name">属性</th>
+                                {{each data.role.subWeightList prop}}
+                                <th class="col-weight">{{prop.name}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-prop-name">权重</td>
+                                {{each data.role.subWeightList prop}}
+                                <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                                {{/each}}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">4C 主词条权重</div>
+                <div class="table-wrapper">
+                    <table class="weight-table single-table">
+                        <thead>
+                            <tr>
+                                <th class="col-prop-name">属性</th>
+                                {{each data.role.mainWeightList.C4 prop}}
+                                <th class="col-weight">{{prop.name}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-prop-name">权重</td>
+                                {{each data.role.mainWeightList.C4 prop}}
+                                <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                                {{/each}}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">3C 主词条权重</div>
+                <div class="table-wrapper">
+                    <table class="weight-table single-table">
+                        <thead>
+                            <tr>
+                                <th class="col-prop-name">属性</th>
+                                {{each data.role.mainWeightList.C3 prop}}
+                                <th class="col-weight">{{prop.name}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-prop-name">权重</td>
+                                {{each data.role.mainWeightList.C3 prop}}
+                                <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                                {{/each}}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">1C 主词条权重</div>
+                <div class="table-wrapper">
+                    <table class="weight-table single-table">
+                        <thead>
+                            <tr>
+                                <th class="col-prop-name">属性</th>
+                                {{each data.role.mainWeightList.C1 prop}}
+                                <th class="col-weight">{{prop.name}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-prop-name">权重</td>
+                                {{each data.role.mainWeightList.C1 prop}}
+                                <td class="col-weight {{prop.cls}}">{{prop.value}}</td>
+                                {{/each}}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="copyright">{{@copyright || sys?.copyright}}</div>
+    </div>
+</body>
+</html>

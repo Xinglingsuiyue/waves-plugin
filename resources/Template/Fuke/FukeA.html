@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/Fuke/FukeA.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div>
+        <!-- 头部 -->
+        <div class="header">
+            <div class="title-icon-wrap">
+                <div class="avatar">
+                    <img src="{{pluginResources}}/Template/calendar/imgs/logo-rolepool.png" alt="icon">
+                </div>
+                <div class="title-wrap">
+                    <div class="title">共鸣者记录</div>
+                    <div class="subtitle">角色5星</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色列表 -->
+        <div class="character-list">
+            {{each data.currentUp char idx}}
+            <div class="character-item current-up">
+                <div class="char-avatar-wrap">
+                    {{if char.url}}
+                    <img src="{{char.url}}" alt="{{char.name}}" class="char-img">
+                    {{else}}
+                    <div class="avatar-placeholder">{{char.name[0]}}</div>
+                    {{/if}}
+                    <div class="char-avatar"></div>
+                </div>
+                <div class="char-name">{{char.name}}</div>
+                <div class="char-up-count">共鸣次数: {{char.rerunCount}}</div>
+                <div class="char-days current">
+                    当期共鸣者
+                    {{if data.currentPool && data.currentPool.daysLeft > 0}}
+                    ({{data.currentPool.daysLeft}}天后关闭)
+                    {{/if}}
+                </div>
+            </div>
+            {{/each}}
+
+            {{each data.ranking char idx}}
+            <div class="character-item">
+                <div class="char-avatar-wrap">
+                    {{if char.url}}
+                    <img src="{{char.url}}" alt="{{char.name}}" class="char-img">
+                    {{else}}
+                    <div class="avatar-placeholder">{{char.name[0]}}</div>
+                    {{/if}}
+                    <div class="char-avatar"></div>
+                </div>
+                <div class="char-name">{{char.name}}</div>
+                <div class="char-up-count">共鸣次数: {{char.rerunCount}}</div>
+                <div class="char-days">已有 {{char.daysSinceLastRerun}} 天未共鸣</div>
+            </div>
+            {{/each}}
+        </div>
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+
+</html>

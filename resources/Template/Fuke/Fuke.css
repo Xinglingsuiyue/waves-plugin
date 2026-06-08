@@ -1,0 +1,159 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+#body {
+    transform-origin: top left;
+    display: inline-block;
+    font-family: "Guruwords";
+}
+
+#body>div {
+    display: inline-block;
+}
+
+#main-box {
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 40px 0 40px;
+    font-family: "Guruwords";
+}
+
+.user {
+    position: relative;
+    margin: 40px 20px;
+    height: 160px;
+    border-radius: 0px 0px 0px 0px;
+    overflow: hidden;
+}
+
+.user-bg {
+    position: absolute;
+    z-index: -1;
+    height: 160px;
+    width: 100%;
+}
+
+.user-avatar {
+    position: absolute;
+    left: 600px;
+    top: -15px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #8f6340, #d0894b);
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.user-name {
+    position: absolute;
+    left: 60px;
+    top: 25px;
+    color: black;
+    font-size: 50px;
+    font-weight: 800;
+}
+
+.user-count {
+    position: absolute;
+    left: 75px;
+    top: 95px;
+    color: black;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.box {
+    position: relative;
+    margin: 40px 20px;
+    border-radius: 20px;
+    box-shadow: 4px 4px 20px rgba(225, 225, 225, 0.8);
+}
+
+.pool-type {
+    position: absolute;
+    margin: -22px 0px 0px -20px;
+    background-color: #d7b784;
+    color: #fef1de;
+    width: 160px;
+    font-size: 24px;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 0px 22px 22px 22px;
+    font-weight: bold;
+}
+
+.box-rolelist {
+    padding: 30px 49.12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    column-gap: 16px;
+    row-gap: 24px;
+}
+
+.role-box {
+    position: relative;
+    background: linear-gradient(#8f6340, #d0894b);
+    background-size: cover;
+    border-radius: 20px;
+    color: #fff;
+    padding: 15px 10px;
+    text-align: center;
+}
+
+.history-version {
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.history-date {
+    font-size: 20px;
+    margin-bottom: 3px;
+}
+
+#copyright {
+    position: relative;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0 auto;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 10px;
+}
+
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}

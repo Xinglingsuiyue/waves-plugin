@@ -1,7 +1,7 @@
 pool_name: 「浮声沉兵」
 five_star:
   up_pool:
-    - name: 價作的矮星
+    - name: 存帧
   other_pool: []
   basic: 0.008
   increase: 0.0902

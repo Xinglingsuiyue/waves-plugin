@@ -1,4 +1,4 @@
-pool_name: 「赛博朋克」
+pool_name: 「怒 烬中重燃」
 five_star:
   up_pool:
     - name: 丽贝卡
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 散华
+    - name: 釉瑚
     - name: 灯灯
-    - name: 渊武
+    - name: 桃祈
   other_pool:
     # 4星角色
     - name: 桃祈

@@ -6,9 +6,18 @@
 
 - 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的鸣潮游戏数据查询插件（原版目前是暂停维护状态）原版请前往https://github.com/erzaozi/waves-plugin.git 查看
 
-先把更新地址替换一下
+- 支持手机验证码登录或 Token 登录，支持查询玩家、日常、数据坞、抽卡等游戏数据
+
+- **使用中遇到问题请加 QQ 群咨询：[707331865](https://qm.qq.com/q/TXTIS9KhO2)**
+
+> [!TIP]
+> 最近看见群友都在玩潮啊，入坑了几天还算有意思（剧情全跳了）。群里有人建议我搓一个，反正闲的无聊，那就动手搓一个罢。哦对了，你怎么知道我是安可和维里奈双萝莉开局？
+
+原版的先把更新地址替换一下
 
 ## 切换步骤
+
+<details><summary>点击展开</summary>
 
 1. **进入插件目录**
    ```bash
@@ -65,12 +74,7 @@
 如果遇到问题，可以尝试：
 ### 摆烂重装
 
-- 支持手机验证码登录或 Token 登录，支持查询玩家、日常、数据坞、抽卡等游戏数据
-
-- **使用中遇到问题请加 QQ 群咨询：[707331865](https://qm.qq.com/q/TXTIS9KhO2)**
-
-> [!TIP]
-> 最近看见群友都在玩潮啊，入坑了几天还算有意思（剧情全跳了）。群里有人建议我搓一个，反正闲的无聊，那就动手搓一个罢。哦对了，你怎么知道我是安可和维里奈双萝莉开局？
+</details>
 
 ## 安装插件
 
@@ -229,8 +233,8 @@ pnpm install --filter=waves-plugin
 - [x] 声骸评分
 - [x] 声骸替换
 - [x] 矩阵数据查询
-- [ ] 伤害计算
-- [ ] 卡池倒计时
+- [x] 伤害计算
+- [x] 共鸣者复刻
 
 ## 功能列表
 
@@ -269,6 +273,7 @@ pnpm install --filter=waves-plugin
 3. 声骸评分：[燊林大火](https://github.com/SLDHshenlindahuo)
 4. 帮助背景图：[loong](https://x.com/loong_blo/status/1848708696521773257)
 5. 角色持有率数据：[WutheringWavesUID](https://github.com/tyql688/WutheringWavesUID) & [XutheringWavesUID](https://github.com/Loping151/XutheringWavesUID)
+6. 伤害计算：[Tangxinyan0904](https://github.com/Tangxinyan0904)
 
 ## 许可证
 

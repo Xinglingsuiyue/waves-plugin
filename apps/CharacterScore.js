@@ -86,14 +86,38 @@ function normalizeNumber(line) {
 
 //提取声骸词条信息
 function extractPhantomDataFromOCR(rawText) {
-    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本长度:', rawText?.length || 0);
-    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本前200字符:', rawText?.substring(0, 200)?.replace(/\n/g, '\\n'));
+    const phantomData = {
+        name: '',
+        level: '',
+        mainStats: [],
+        subStats: []
+    };
+    
+    if (!rawText || typeof rawText !== 'string') {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.red('[OCR调试]'), 'rawText 无效，不是字符串类型');
+        return phantomData;
+    }
+    
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本长度:', rawText.length);
+    logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本前200字符:', rawText.substring(0, 200).replace(/\n/g, '\\n'));
     
     // 常见错别字替换表
     const replacements = [
+        [/COST/gi, 'cost'],
+        [/MAX/gi, 'max'],
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•+×]/g, ' '],
+        [/ooo/g, ''],
+        [/OOO/g, ''],
+        [/000/g, ''],
+        [/总/g, ''],
+        [/衣/g, ''],
+        [/病/g, ''],
+        [/森/g, ''],
+        [/点/g, ''],
+        [/瑕/g, ''],
+        [/农/g, ''],
         [/－/g, ''],
         [/-/g, ''],
         [/16%/g, ''],
@@ -163,38 +187,20 @@ function extractPhantomDataFromOCR(rawText) {
         [/攻击伤害/g, '暴击伤害'],
         [/攻擎/g, '攻击'],
         [/晋攻/g, '普攻'],
-        [/普攻/g, '普攻伤害加成'],
+        [/普攻(?!伤害加成)/g, '普攻伤害加成'],
         [/普攻伤古如成/g, '普攻伤害加成'],
         [/最击伤害/g, '暴击伤害'],
         [/寨击/g, '暴击'],
         [/爆击/g, '暴击'],
         [/潮顾重/g, '潮顾重'],
-        [/热熔/g, '热熔伤害加成'],
-        [/多热熔/g, '热熔伤害加成'],
-        [/湮灭/g, '湮灭伤害加成'],
-        [/衍射/g, '衍射伤害加成'],
-        [/生命百分比/g, '生命百分比'],
-        [/冷凝/g, '冷凝伤害加成'],
-        [/导电/g, '导电伤害加成'],
-        [/妨缷/g, '防御'],
-        [/防御百分比/g, '防御百分比'],
-        [/重击/g, '重击伤害加成'],
-        [/重击伤古如成/g, '重击伤害加成'],
-        [/垂击/g, '重击'],
-        [/双扱/g, '双极'],
-        [/攻击百分比/g, '攻击百分比'],
-        [/气动/g, '气动伤害加成'],
         [/泰击/g, '暴击'],
         [/治疗加成/g, '治疗效果加成'],
         [/能量效率/g, '共鸣效率'],
-        [/共鸣技能/g, '共鸣技能伤害加成'],
         [/共鸣技能伤古如成/g, '共鸣技能伤害加成'],
-        [/共鸣解放/g, '共鸣解放伤害加成'],
         [/共鸣解放伤古如成/g, '共鸣解放伤害加成'],
         [/伤害加成伤害加成/g, '伤害加成'],
         [/暴击伤古/g, '暴击伤害'],
         [/火攻击/g, '攻击'],
-        // 缺字补全
         [/攻击百分(?![比])/g, '攻击百分比'],
         [/生命百分(?![比])/g, '生命百分比'],
         [/防御百分(?![比])/g, '防御百分比'],
@@ -211,11 +217,34 @@ function extractPhantomDataFromOCR(rawText) {
         [/湮灭伤害(?![加成])/g, '湮灭伤害加成'],
         [/衍射伤害(?![加成])/g, '衍射伤害加成'],
         [/共鸣效(?![率])/g, '共鸣效率'],
+        [/热熔(?![\u4e00-\u9fa5])/g, '热熔伤害加成'],
+        [/多热熔/g, '热熔伤害加成'],
+        [/冷凝(?![\u4e00-\u9fa5])/g, '冷凝伤害加成'],
+        [/导电(?![\u4e00-\u9fa5])/g, '导电伤害加成'],
+        [/气动(?![\u4e00-\u9fa5])/g, '气动伤害加成'],
+        [/湮灭(?![\u4e00-\u9fa5])/g, '湮灭伤害加成'],
+        [/衍射(?![\u4e00-\u9fa5])/g, '衍射伤害加成'],
+        [/妨缷/g, '防御'],
+        [/防御百分比/g, '防御百分比'],
+        [/重击(?!伤害加成)/g, '重击伤害加成'],
+        [/重击伤古如成/g, '重击伤害加成'],
+        [/垂击/g, '重击'],
+        [/双扱/g, '双极'],
+        [/攻击百分比/g, '攻击百分比'],
+        [/生命百分比/g, '生命百分比'],
+        [/防御百分比/g, '防御百分比'],
+        [/共鸣技能(?!伤害加成)/g, '共鸣技能伤害加成'],
+        [/共鸣解放(?!伤害加成)/g, '共鸣解放伤害加成'],
     ];
 
     let text = rawText;
-    for (let [pattern, replacement] of replacements) {
-        text = text.replace(pattern, replacement);
+    if (Array.isArray(replacements)) {
+        for (let i = 0; i < replacements.length; i++) {
+            const entry = replacements[i];
+            if (Array.isArray(entry) && entry.length >= 2) {
+                text = text.replace(entry[0], entry[1]);
+            }
+        }
     }
     text = text.trim();
     
@@ -256,13 +285,6 @@ function extractPhantomDataFromOCR(rawText) {
     const levelRegex = /^(?:MAX|max|\+\d{1,2})$/;
 
     const scoreLineRegex = /^\d+\.\d+[-A-Za-z]+$/;
-
-    const phantomData = {
-        name: '',
-        level: '',
-        mainStats: [],
-        subStats: []
-    };
 
     const usedLines = new Set();
 
@@ -314,7 +336,8 @@ function extractPhantomDataFromOCR(rawText) {
     const otherPairs = [];
     let pendingAttrs = [];
 
-    for (let line of remainingLines) {
+    for (let li = 0; li < remainingLines.length; li++) {
+        const line = remainingLines[li];
         if (line.includes('>>')) {
             const parts = line.split('>>');
             const lastPart = parts[parts.length - 1].trim();
@@ -492,7 +515,6 @@ function extractPhantomDataFromOCR(rawText) {
     }
 
     // --- 副词条验证和修正 ---
-    // 基于数值范围验证副词条，修正明显错误的匹配
     const verifiedSubStats = [];
     for (const stat of phantomData.subStats) {
         const val = parseFloat(stat.attributeValue.replace('%', ''));
@@ -622,7 +644,7 @@ export class CharacterScore extends plugin {
         super({
             name: "鸣潮-角色评分",
             event: "message",
-            priority: 1006,
+            priority: 1008,
             rule: [
                 {
                     reg: "^(?:～|\~)(.*)评分",
@@ -639,7 +661,7 @@ export class CharacterScore extends plugin {
         const message = match ? match[1].trim() : '';
 
         if (!message) {
-            return await e.reply('请输入角色名，如：～爱弥斯评分');
+            return await e.reply('请输入角色名，如：～今汐评分');
         }
 
         // ====================== 检查 OCR Key 配置 ======================
@@ -662,7 +684,7 @@ export class CharacterScore extends plugin {
             } catch (error) {
                 console.error('获取历史消息出错:', error);
             }
-            if (source) {
+            if (source && Array.isArray(source.message)) {
                 for (const msg of source.message) {
                     if (msg.type === 'image') images.push(msg.url);
                     else if (msg.type === 'json' && /resid/.test(msg.data)) {
@@ -670,7 +692,7 @@ export class CharacterScore extends plugin {
                         if (resid) {
                             const forwardMessages = await e.bot?.getForwardMsg(resid) || [];
                             forwardMessages.forEach(item => 
-                                images.push(...item.message.filter(itm => itm.type === 'image').map(itm => itm.url))
+                                images.push(...Array.isArray(item.message) ? item.message.filter(itm => itm.type === 'image').map(itm => itm.url) : [])
                             );
                         }
                     }
@@ -679,7 +701,7 @@ export class CharacterScore extends plugin {
         }
 
         if (e.reply_id) {
-            let reply;
+            let reply = [];
             try {
                 const replyMsg = await e.getReply(e.reply_id);
                 reply = replyMsg?.message || [];
@@ -687,8 +709,10 @@ export class CharacterScore extends plugin {
                 console.error('获取回复消息失败:', err);
                 reply = [];
             }
-            for (const val of reply) {
-                if (val.type === "image") images.push(val.url);
+            if (Array.isArray(reply)) {
+                for (const val of reply) {
+                    if (val.type === "image") images.push(val.url);
+                }
             }
         }
 
@@ -784,7 +808,7 @@ export class CharacterScore extends plugin {
         if (ocrResults.length === 0) {
             if (forwardMessages.length > 0) {
                 if (!e.isGroup) {
-                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    const forward = await Bot.makeForwardMsg(forwardMessages);
                     await e.reply(forward);
                 }
             } else {
@@ -808,7 +832,7 @@ export class CharacterScore extends plugin {
             const errMsg = `暂未收录【${name}】的面板数据`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
             return true;
@@ -830,7 +854,7 @@ export class CharacterScore extends plugin {
                 const errMsg = '角色面板数据中没有找到配置';
                 forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
                 if (!e.isGroup) {
-                    const forward = await e.bot.makeForwardMsg(forwardMessages);
+                    const forward = await Bot.makeForwardMsg(forwardMessages);
                     await e.reply(forward);
                 }
                 return true;
@@ -932,7 +956,7 @@ export class CharacterScore extends plugin {
 
             // 发送合并转发消息
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
 
@@ -978,7 +1002,7 @@ export class CharacterScore extends plugin {
             const errMsg = `处理【${name}】评分时发生错误：${error.message}`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
             if (!e.isGroup) {
-                const forward = await e.bot.makeForwardMsg(forwardMessages);
+                const forward = await Bot.makeForwardMsg(forwardMessages);
                 await e.reply(forward);
             }
         }

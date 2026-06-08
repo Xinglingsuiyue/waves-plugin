@@ -1,0 +1,263 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Guruwords', 'Microsoft YaHei', sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    width: fit-content;
+}
+
+.container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 900px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e8e8e8;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #999;
+}
+
+.single-header {
+    text-align: left;
+    border-bottom: none;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e8e8e8;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.role-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e8e8e8;
+}
+
+.title-text .title {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.title-text .subtitle {
+    font-size: 12px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.weight-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed;
+}
+
+.weight-table thead tr {
+    background: #f0f2f5;
+}
+
+.weight-table th {
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid #d0d0d0;
+    white-space: nowrap;
+    font-size: 11px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f0f2f5;
+}
+
+.col-icon {
+    width: 48px;
+    min-width: 48px;
+}
+
+.col-name {
+    width: 70px;
+    min-width: 70px;
+    text-align: left !important;
+    padding-left: 8px !important;
+}
+
+.col-weight {
+    width: 52px;
+    min-width: 52px;
+}
+
+.col-prop-name {
+    width: 60px;
+    min-width: 60px;
+    text-align: left !important;
+    padding-left: 8px !important;
+    font-weight: 600;
+    background: #f8f8f8 !important;
+}
+
+.col-divider {
+    width: 6px;
+    min-width: 6px;
+    padding: 0 !important;
+    background: #d0d0d0 !important;
+    border-left: 2px solid #bbb;
+    border-right: 2px solid #bbb;
+}
+
+.weight-table td {
+    padding: 6px;
+    text-align: center;
+    border-bottom: 1px solid #e8e8e8;
+    border-right: 1px solid #f0f0f0;
+    font-size: 12px;
+    color: #444;
+    transition: background 0.15s;
+}
+
+.weight-table td:last-child {
+    border-right: none;
+}
+
+.row-even {
+    background: #ffffff;
+}
+
+.row-odd {
+    background: #fafbfc;
+}
+
+.role-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+}
+
+.role-icon-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #999;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+}
+
+.weight-1 {
+    background: #ffe0b2 !important;
+    color: #e65100;
+    font-weight: bold;
+}
+
+.weight-075 {
+    background: #fff3e0 !important;
+    color: #ef6c00;
+    font-weight: 600;
+}
+
+.weight-05 {
+    background: #fffde7 !important;
+    color: #f9a825;
+}
+
+.weight-025 {
+    background: #e8f5e9 !important;
+    color: #2e7d32;
+}
+
+.weight-0 {
+    color: #bbb;
+}
+
+.single-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.section {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.section-title {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.single-table {
+    border: none;
+}
+
+.single-table thead tr {
+    background: #f8f9fa;
+}
+
+.single-table th {
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.single-table td {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.copyright {
+    text-align: center;
+    font-size: 20px;
+    color: white;
+    font-weight: bold;
+    transform: translateX(0%);
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    text-shadow: 2px 2px 2px black;
+}
+
+.copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}
