@@ -1,4 +1,4 @@
-pool_name: 「赛博朋克」
+pool_name: 「梦 行与月畔」
 five_star:
   up_pool:
     - name: 露西
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 炽霞
-    - name: 白芷
-    - name: 丹瑾
+    - name: 桃祈
+    - name: 釉瑚
+    - name: 灯灯
   other_pool:
     # 4星角色
     - name: 秧秧
