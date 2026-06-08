@@ -157,11 +157,27 @@ export class Fuke extends plugin {
         return map;
     }
 
-    async getAvatarMap() {
+    async getAvatarMap(checkChars = null) {
         const cache = this.loadAvatarCache();
+
         if (Object.keys(cache).length > 0) {
-            logger.info(`[复刻] 头像缓存命中: ${Object.keys(cache).length}个`);
-            return cache;
+            if (checkChars) {
+                const missing = [];
+                for (const name of checkChars) {
+                    if (name.includes('漂泊者')) continue;
+                    if (!cache[name]) {
+                        missing.push(name);
+                    }
+                }
+                if (missing.length === 0) {
+                    logger.info(`[复刻] 头像缓存命中: ${Object.keys(cache).length}个 (全部覆盖)`);
+                    return cache;
+                }
+                logger.info(`[复刻] 检测到新角色 (${missing.length}个): ${missing.join(', ')}，重新拉取头像...`);
+            } else {
+                logger.info(`[复刻] 头像缓存命中: ${Object.keys(cache).length}个`);
+                return cache;
+            }
         }
 
         const res = await this.fetchWikiPage('1363');
@@ -294,12 +310,19 @@ export class Fuke extends plugin {
 
     async rerunRanking(e) {
         const rerunData = this.loadRerunData();
-        const [charMap, pool, avatarCache, currentVersion] = await Promise.all([
-            this.getCharacterMap(),
+        const charMap = await this.getCharacterMap();
+        const [pool, currentVersion] = await Promise.all([
             this.getCurrentPool(),
-            this.getAvatarMap(),
             this.getCurrentVersion()
         ]);
+
+        const upNames = [];
+        if (pool) {
+            for (const charInfo of pool.upCharacters.values()) {
+                upNames.push(charInfo.name);
+            }
+        }
+        const avatarCache = await this.getAvatarMap(upNames);
 
         const updatedChars = this.syncRerunData(rerunData, charMap, pool, currentVersion);
         if (updatedChars.length > 0) {
