@@ -19,7 +19,7 @@ export class Gacha extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(?:常驻)?(?:角色|武器|武器常驻|自选|新手)?抽卡(?:统计|分析|记录)([\\s\\S]*)$",
+                    reg: "^(?:～|~|鸣潮)(?:常驻)?(?:联动角色|联动武器|角色|武器|武器常驻|自选|新手)?抽卡(?:统计|分析|记录)([\\s\\S]*)$",
                     fnc: "gachaCount"
                 },
                 {
@@ -191,7 +191,9 @@ export class Gacha extends plugin {
                     "武器调谐（常驻池）": "0004",
                     "新手调谐": "0005",
                     "6": "0006",
-                    "7": "0007"
+                    "7": "0007",
+                    "10": "0010",
+                    "11": "0011"
                 },
                 type: {
                     "0001": "角色活动唤取",
@@ -200,7 +202,9 @@ export class Gacha extends plugin {
                     "0004": "武器常驻唤取",
                     "0005": "新手唤取",
                     "0006": "新手自选唤取",
-                    "0007": "新手自选唤取（感恩定向唤取）"
+                    "0007": "新手自选唤取（感恩定向唤取）",
+                    "0010": "角色联动唤取",
+                    "0011": "武器联动唤取"
                 }
             },
             reverse: {
@@ -210,7 +214,9 @@ export class Gacha extends plugin {
                 "0004": "武器调谐（常驻池）",
                 "0005": "新手调谐",
                 "0006": "新手自选唤取",
-                "0007": "新手自选唤取（感恩定向唤取）"
+                "0007": "新手自选唤取（感恩定向唤取）",
+                "0010": "角色联动调谐",
+                "0011": "武器联动调谐"
             }
         };
 
@@ -268,7 +274,9 @@ export class Gacha extends plugin {
             "常驻角色": 3,
             "常驻武器": 4,
             "新手": 5,
-            "自选": 6
+            "自选": 6,
+            "联动角色": 10,
+            "联动武器": 11
         };
 
         const poolType = Object.entries(poolMapping).reduce((type, [key, value]) => e.msg.includes(key) ? value : type, 0);
@@ -292,10 +300,12 @@ export class Gacha extends plugin {
                     upCharPool: await getPoolData(1),
                     upWpnPool: await getPoolData(2),
                     stdCharPool: await getPoolData(3),
-                    stdWpnPool: await getPoolData(4)
+                    stdWpnPool: await getPoolData(4),
+                    collabCharPool: await getPoolData(10),
+                    collabWpnPool: await getPoolData(11)
                 };
             } else if (poolType > 0) {
-                const key = poolType === 5 ? 'otherPool' : poolType === 6 ? 'upCharPool' : poolType === 1 ? 'upCharPool' : poolType === 2 ? 'upWpnPool' : poolType === 3 ? 'stdCharPool' : 'stdWpnPool';
+                const key = poolType === 5 ? 'otherPool' : poolType === 6 ? 'upCharPool' : poolType === 10 ? 'collabCharPool' : poolType === 11 ? 'collabWpnPool' : poolType === 1 ? 'upCharPool' : poolType === 2 ? 'upWpnPool' : poolType === 3 ? 'stdCharPool' : 'stdWpnPool';
                 renderData = { ...renderData, [key]: await getPoolData(poolType) };
             }
 
@@ -366,6 +376,8 @@ export class Gacha extends plugin {
             getCardPool("5", "5"),
             getCardPool("6", "6"),
             getCardPool("7", "7"),
+            getCardPool("10", "10"),
+            getCardPool("11", "11"),
         ]);
 
         const failedPool = pools.find(pool => !pool.status);
@@ -379,7 +391,9 @@ export class Gacha extends plugin {
                 upCharPool: await this.dataFormat(pools[0].data),
                 upWpnPool: await this.dataFormat(pools[1].data),
                 stdCharPool: await this.dataFormat(pools[2].data),
-                stdWpnPool: await this.dataFormat(pools[3].data)
+                stdWpnPool: await this.dataFormat(pools[3].data),
+                collabCharPool: await this.dataFormat(pools[7].data),
+                collabWpnPool: await this.dataFormat(pools[8].data)
             },
             1: { upCharPool: await this.dataFormat(pools[0].data) },
             2: { upWpnPool: await this.dataFormat(pools[1].data) },
@@ -387,6 +401,8 @@ export class Gacha extends plugin {
             4: { stdWpnPool: await this.dataFormat(pools[3].data) },
             5: { otherPool: await this.dataFormat(pools[4].data) },
             6: { upCharPool: await this.dataFormat(pools[5].data) },
+            10: { collabCharPool: await this.dataFormat(pools[7].data) },
+            11: { collabWpnPool: await this.dataFormat(pools[8].data) },
         };
 
         const selectedPools = poolDataMapping[poolType] || {};
@@ -420,7 +436,9 @@ export class Gacha extends plugin {
                 ...pools[3].data,
                 ...pools[4].data,
                 ...pools[5].data,
-                ...pools[6].data
+                ...pools[6].data,
+                ...pools[7].data,
+                ...pools[8].data
             ], true)
         }
 
