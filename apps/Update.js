@@ -155,13 +155,28 @@ export class Update extends plugin {
    * @returns
    */
   async makeForwardMsg(title, msg, end) {
-    let { nickname } = this.e.bot ?? Bot
+    let bot = this.e.bot ?? Bot
+    let nickname = bot?.nickname || '鸣潮插件'
     if (this.e.isGroup) {
-      let info = await (this.e.bot ?? Bot).getGroupMemberInfo(this.e.group_id, (this.e.bot ?? Bot).uin)
-      nickname = info.card || info.nickname
+      try {
+        // TRSS-Yunzai 兼容：getGroupMemberInfo 可能不存在，优先尝试
+        let info = null
+        if (typeof bot?.getGroupMemberInfo === 'function') {
+          info = await bot.getGroupMemberInfo(this.e.group_id, bot.uin)
+        } else if (typeof this.e.group?.pickMember === 'function') {
+          // 备选方案：通过 group 对象获取成员信息（TRSS-Yunzai 通用 API）
+          info = await this.e.group.pickMember(bot.uin)
+        }
+        if (info) {
+          nickname = info.card || info.nickname
+        }
+      } catch (e) {
+        // 所有方式均失败时使用 bot 默认昵称，不影响主流程
+        logger.debug(`[waves-plugin][makeForwardMsg] 获取群名片失败: ${e.message}`)
+      }
     }
     let userInfo = {
-      user_id: (this.e.bot ?? Bot).uin,
+      user_id: bot?.uin || this.e.self_id || 0,
       nickname
     }
     let forwardMsg = [
@@ -186,7 +201,8 @@ export class Update extends plugin {
     } else if (this.e?.friend?.makeForwardMsg) {
       forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
     } else {
-      return msg.join('\n')
+      // 修复：msg 是字符串不是数组，直接返回即可
+      return msg
     }
     let dec = 'waves-plugin 更新日志'
     /** 处理描述 */
