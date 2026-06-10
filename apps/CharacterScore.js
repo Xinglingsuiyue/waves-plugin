@@ -108,6 +108,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：*,•+×]/g, ' '],
+        [/環/g, ''],
         [/ooo/g, ''],
         [/OOO/g, ''],
         [/000/g, ''],
