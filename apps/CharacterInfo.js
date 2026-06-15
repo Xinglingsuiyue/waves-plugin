@@ -591,9 +591,9 @@ export class CharacterInfo extends plugin {
         // 角色身份信息 — favorRole
         const fr = detail.favorRole || {}
         const infoFields = []
-        if (fr.Birthday && fr.Birthday.Content) infoFields.push({ label: '生日', value: fr.Birthday.Content })
-        if (fr.Country && fr.Country.Content) infoFields.push({ label: '出生', value: fr.Country.Content })
-        if (fr.Influence && fr.Influence.Content) infoFields.push({ label: '势力', value: fr.Influence.Content })
+        if (fr.Birthday && fr.Birthday.Content) infoFields.push({ label: '生日', value: fr.Birthday.Content.replace(/<[^>]+>/g, '') })
+        if (fr.Country && fr.Country.Content) infoFields.push({ label: '出生', value: fr.Country.Content.replace(/<[^>]+>/g, '') })
+        if (fr.Influence && fr.Influence.Content) infoFields.push({ label: '势力', value: fr.Influence.Content.replace(/<[^>]+>/g, '') })
         const sex = (fr.Sex && fr.Sex.Content) ? fr.Sex.Content : ''
 
         return {
