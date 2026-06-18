@@ -1,0 +1,36 @@
+@font-face{font-family:"Guruwords";src:url("../../../fonts/Guruwords.ttf");font-weight:normal;font-style:normal}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Guruwords","Microsoft YaHei",sans-serif}
+#body{transform-origin:top left;width:800px;min-height:100px}
+.wrapper{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%);padding:24px;color:#e6e6e6}
+
+.header{display:flex;align-items:center;gap:20px;padding:20px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:20px}
+.mon-icon{width:100px;height:100px;border-radius:12px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#2d2d44;border:3px solid #888;flex-shrink:0}
+.header-info{flex:1}
+.mon-name{margin-bottom:10px}
+.name{font-size:30px;font-weight:bold;text-shadow:0 0 8px rgba(255,255,255,0.1)}
+.mon-meta{display:flex;gap:10px;flex-wrap:wrap}
+.meta-tag{padding:6px 16px;border-radius:20px;font-size:15px;color:#fff}
+.meta-tag.element{background:#2d2d44;color:#d4d4d4}
+.elem-icon{width:18px;height:18px;vertical-align:-3px;margin-right:4px;object-fit:contain}
+
+.section{margin-bottom:16px;background:rgba(255,255,255,0.03);border-radius:10px;padding:16px}
+.section-title{font-size:20px;color:#a3835c;border-bottom:1px solid #3d3d5c;padding-bottom:8px;margin-bottom:12px}
+.section-content{font-size:15px;line-height:1.8;color:#c0c0c0}
+.desc-text{font-size:15px;line-height:1.8;color:#e0e0e0}
+.desc-text span[style]{font-weight:bold}
+.ita{font-style:italic;color:#888}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-item{padding:12px;background:#2d2d44;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+.stat-name{font-size:14px;color:#a0a0a0}
+.stat-value{font-size:18px;font-weight:bold}
+
+.resist-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.resist-item{padding:10px 8px;background:#2d2d44;border-radius:8px;text-align:center}
+.resist-item.high{}
+.resist-name{display:block;font-size:12px;color:#a0a0a0;margin-bottom:4px}
+.resist-value{display:block;font-size:15px;font-weight:bold}
+.resist-hint{font-size:12px;color:#666;margin-top:8px;text-align:right}
+
+#copyright{text-align:center;font-size:20px;font-weight:bold;color:#fff;text-shadow:2px 2px 2px #000;padding-top:20px}
+#copyright .version{color:#d3bc8e}

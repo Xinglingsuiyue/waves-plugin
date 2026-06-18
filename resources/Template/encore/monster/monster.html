@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/monster/monster.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <div class="header">
+            <div class="mon-icon" style="background-image: url('{{monIcon}}'); border-color:{{rarityColor}}"></div>
+            <div class="header-info">
+                <div class="mon-name">
+                    <span class="name" style="color:{{rarityColor}}">{{monName}}</span>
+                </div>
+                <div class="mon-meta">
+                    {{if rarity}}<span class="meta-tag rarity" style="background:{{rarityColor}}; color:#fff">{{rarity}}</span>{{/if}}
+                    {{each elements elem}}
+                    <span class="meta-tag element">
+                        {{if elementIcon}}<img class="elem-icon" src="{{elementIcon}}">{{/if}}
+                        {{elem.name}}
+                    </span>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+
+        <!-- 描述 -->
+        {{if discoveredDes}}
+        <div class="section desc-section">
+            <div class="section-title">图鉴描述</div>
+            <div class="section-content desc-text">{{@discoveredDes}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 基础属性 -->
+        {{if baseStats && baseStats.length > 0}}
+        <div class="section stats-section">
+            <div class="section-title">基础属性（LV.90）</div>
+            <div class="stats-grid">
+                {{each baseStats stat}}
+                <div class="stat-item">
+                    <span class="stat-name">{{stat.name}}</span>
+                    <span class="stat-value" style="color:{{elemColor}}">{{stat.value}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 元素抗性 -->
+        {{if resists && resists.length > 0}}
+        <div class="section resist-section">
+            <div class="section-title">元素抗性</div>
+            <div class="resist-grid">
+                {{each resists r}}
+                {{if r.high}}
+                <div class="resist-item high" style="border-color:{{r.color}}; background:{{r.color}}1a">
+                {{else}}
+                <div class="resist-item">
+                {{/if}}
+                    <span class="resist-name">{{r.name}}</span>
+                    <span class="resist-value" style="color:{{r.color}}">{{r.pct}}% {{r.marker}}</span>
+                </div>
+                {{/each}}
+            </div>
+            <div class="resist-hint">↑↑ 抗性大幅提高 &nbsp; ↑ 抗性提高</div>
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
