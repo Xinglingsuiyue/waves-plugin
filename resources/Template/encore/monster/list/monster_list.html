@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/monster/list/monster_list.css">
+</head>
+<body id="body">
+    <div id="wrapper">
+        {{each groups g}}
+        <div class="rarity-section">
+            <div class="rarity-header" style="border-left-color:{{g.color}}">
+                <span class="rarity-name">{{g.rarity}}</span>
+                <span class="rarity-count">{{g.count}}</span>
+            </div>
+            <div class="card-grid">
+                {{each g.list m}}
+                <div class="mon-card">
+                    <div class="card-portrait">
+                        <img class="card-avatar" src="{{m.avatar}}">
+                        <img class="card-elem" src="{{m.elementIcon}}">
+                        <span class="card-index">{{m.index}}</span>
+                    </div>
+                    <div class="card-name-bar" style="border-bottom-color:{{g.color}}">
+                        <span class="card-name">{{m.name}}</span>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
