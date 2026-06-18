@@ -1,1 +1,154 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/dpmatrix/dpmatrix.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div>
+        <div id="header">
+            <div class="dpmatrix-label">
+            </div>
+            <div class="header-content">
+                <h1 id="dpmatrix-title">终焉矩阵 第{{season}}期</h1>
+                <div class="phase-info">
+                    {{if name}}{{name}}  {{/if}}
+                    {{if seasonName}}赛季: {{seasonName}}  {{/if}}
+                    {{if endVersion}}截止: {{endVersion}}{{/if}}
+                </div>
+            </div>
+        </div>
 
+        <div class="info-bar">
+            <div class="time-label">
+                <span>剩余时间: {{leftTime}}</span>
+            </div>
+            <div class="time-label">
+                <span>{{beginTime}} ~ {{endTime}}</span>
+            </div>
+        </div>
+
+        <!-- 关卡列表 -->
+        {{each levels level}}
+        <div class="level-card">
+            <div class="level-header">
+                <div class="level-header-left">
+                    {{if level.levelIcon}}
+                    <div class="level-icon" style="background-image: url('{{level.levelIcon}}')"></div>
+                    {{/if}}
+                    <span class="level-name" {{if level.levelColor}}style="color: {{level.levelColor}}"{{/if}}>{{level.name}}</span>
+                </div>
+                <span class="level-team">队伍上限: {{level.teamLimit}}</span>
+            </div>
+
+            <!-- Buff -->
+            {{if level.buffs && level.buffs.length > 0}}
+            <div class="buffs-section">
+                <div class="section-title">Buff效果</div>
+                <div class="buff-grid">
+                    {{each level.buffs b}}
+                    <div class="buff-card">
+                        {{if b.icon}}
+                        <div class="buff-icon" style="background-image: url('{{b.icon}}')"></div>
+                        {{/if}}
+                        <div class="buff-info">
+                            <span class="buff-name">{{b.name}}</span>
+                            <span class="buff-desc">{{@b.desc}}</span>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+
+            <!-- 波次 -->
+            {{if level.waves && level.waves.length > 0}}
+            <div class="waves-section">
+                <div class="section-title">挑战对象</div>
+                {{each level.waves w}}
+                <div class="wave-card">
+                    <div class="wave-header">
+                        <span class="wave-label">第{{w.wave}}波</span>
+                        {{if level.scoreLevels && level.scoreLevels.length > 0}}
+                        <div class="score-levels">
+                            {{each level.scoreLevels sl}}
+                            <div class="score-item">
+                                {{if sl.icon}}
+                                <img class="score-icon" src="{{sl.icon}}">
+                                {{/if}}
+                                <span class="score-value">{{sl.value}}</span>
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                    </div>
+                    <div class="wave-content">
+                        <div class="monster-info">
+                            {{if w.icon}}
+                            <div class="monster-icon" style="background-image: url('{{w.icon}}')"></div>
+                            {{/if}}
+                            <div class="monster-detail">
+                                <div class="monster-name-row">
+                                    <span class="monster-name">{{w.name}} (Lv.{{w.monsterLevel}})</span>
+                                    {{if w.elementId > 0}}
+                                    <div class="monster-element" title="{{getElementName(w.elementId)}}">
+                                        <div class="element-icon" style="background-image: url('{{pluginResources}}/Template/towerInfo/imgs/{{w.elementId}}.png')"></div>
+                                    </div>
+                                    {{/if}}
+                                </div>
+                                {{if w.tags && w.tags.length > 0}}
+                                <div class="monster-tags">
+                                    {{each w.tags t}}
+                                    <div class="tag-chip" style="border-color: #{{t.color}}">
+                                        {{if t.path}}
+                                        <div class="tag-icon" style="background-image: url('{{t.path}}')"></div>
+                                        {{/if}}
+                                        <span class="tag-name">{{t.name}}</span>
+                                    </div>
+                                    {{/each}}
+                                </div>
+                                {{/if}}
+                            </div>
+                        </div>
+                        <!-- 技能 Buff（危机应对·乘胜追击 等） -->
+                        {{if w.showBuffs && w.showBuffs.length > 0}}
+                        <div class="showbuff-section">
+                            {{each w.showBuffs sb}}
+                            <div class="showbuff-item">
+                                {{if sb.icon}}
+                                <div class="showbuff-icon" style="background-image: url('{{sb.icon}}')"></div>
+                                {{/if}}
+                                <div class="showbuff-info">
+                                    <span class="showbuff-title">{{sb.title}}</span>
+                                    <span class="showbuff-desc">{{@sb.desc}}</span>
+                                </div>
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        {{if w.recommendFeatures && w.recommendFeatures.length > 0}}
+                        <div class="recommend-section">
+                            {{each w.recommendFeatures f}}
+                            <div class="recommend-item">
+                                {{if f.icon}}
+                                <img class="recommend-icon" src="{{f.icon}}">
+                                {{/if}}
+                                <span class="recommend-text">{{@f.name}}</span>
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+        {{/each}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>

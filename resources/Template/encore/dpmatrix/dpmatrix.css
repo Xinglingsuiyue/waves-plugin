@@ -1,0 +1,394 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../fonts/Guruwords.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    font-family: "Guruwords", "Microsoft YaHei", sans-serif;
+}
+#body {
+    transform-origin: top left;
+    width: 1400px;
+    height: auto;
+    background: #1a1a2e;
+    color: #e6e6e6;
+}
+#body>div {
+    width: 100%;
+    background: url(imgs/background.png) no-repeat;
+    background-size: cover;
+    min-height: 100vh;
+    padding: 20px;
+}
+#header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+.dpmatrix-label {
+    width: 120px;
+    height: 120px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-right: 20px;
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.header-content {
+    flex: 1;
+    text-align: center;
+    padding-left: 50px;
+    padding-right: 20px;
+}
+#dpmatrix-title {
+    font-size: 36px;
+    color: #cdb56b;
+    text-shadow: 0 0 10px rgba(205, 181, 107, 0.5);
+    margin-bottom: 10px;
+}
+.phase-info {
+    font-size: 20px;
+    color: #a3835c;
+}
+.info-bar {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+}
+.time-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ─── 关卡卡片 ─── */
+.level-card {
+    margin-top: 20px;
+    background: #2d2d44;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.level-header {
+    background: #cdb56b;
+    color: #1a1a2e;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.level-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.level-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+}
+.level-name {
+    font-size: 24px;
+    font-weight: bold;
+}
+.level-team {
+    font-size: 16px;
+    color: #3d3d5c;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 4px 14px;
+    border-radius: 15px;
+}
+
+/* ─── Buff 网格 ─── */
+.buffs-section {
+    padding: 15px 20px;
+}
+.section-title {
+    font-size: 18px;
+    color: #a3835c;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #3d3d5c;
+}
+.buff-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.buff-card {
+    background: #3d3d5c;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.buff-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+.buff-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.buff-name {
+    font-size: 15px;
+    font-weight: bold;
+    color: #cdb56b;
+}
+.buff-desc {
+    font-size: 13px;
+    color: #a0a0a0;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* ─── 波次 ─── */
+.waves-section {
+    padding: 0 20px 15px 20px;
+}
+.wave-card {
+    background: #3d3d5c;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.wave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.wave-label {
+    font-size: 18px;
+    font-weight: bold;
+    color: #60a5fa;
+}
+.score-levels {
+    display: flex;
+    gap: 8px;
+}
+.score-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+.score-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+.score-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fbbf24;
+}
+
+/* ─── 怪物 ─── */
+.wave-content {
+}
+.monster-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.monster-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #cdb56b;
+    background-color: #1a1a2e;
+    flex-shrink: 0;
+}
+.monster-detail {
+    flex: 1;
+}
+.monster-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.monster-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #cdb56b;
+}
+.monster-element {
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+}
+.monster-element .element-icon {
+    width: 18px;
+    height: 18px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* ─── 抗性标签 ─── */
+.monster-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.tag-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
+}
+.tag-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.tag-name {
+    font-size: 12px;
+    color: #ccc;
+}
+
+/* ─── 推荐特性 ─── */
+.recommend-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.recommend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(96, 165, 250, 0.08);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+.recommend-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+.recommend-text {
+    font-size: 12px;
+    color: #a0c4e8;
+    line-height: 1.4;
+    max-width: 500px;
+    white-space: pre-line;
+}
+
+/* ─── 技能Buff（危机应对·乘胜追击 等） ─── */
+.showbuff-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.showbuff-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #60a5fa;
+    min-width: 280px;
+    flex: 1 1 auto;
+}
+.showbuff-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+.showbuff-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.showbuff-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #60a5fa;
+}
+.showbuff-desc {
+    font-size: 12px;
+    color: #a0a0a0;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+#copyright {
+    position: relative;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto;
+    color: white;
+    text-shadow: 2px 2px 2px black;
+    text-align: center;
+    padding-top: 40px;
+    padding-bottom: 10px;
+}
+#copyright .version {
+    color: #d3bc8e;
+    display: inline-block;
+    padding: 0 3px;
+}
