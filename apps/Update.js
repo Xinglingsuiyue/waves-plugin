@@ -255,7 +255,7 @@ export class Update extends plugin {
       await this.reply(msg + `\n连接失败：${remote}`)
       return
     }
-    if (errMsg.includes('be overwritten by merge')) {
+    if (errMsg.includes('be overwritten by merge') || errMsg.includes('本地修改将被合并操作覆盖')) {
       await this.reply(
         msg +
         `存在冲突：\n${errMsg}\n` +
@@ -263,7 +263,7 @@ export class Update extends plugin {
       )
       return
     }
-    if (stdout.includes('CONFLICT')) {
+    if (stdout.includes('CONFLICT') || stdout.includes('冲突')) {
       await this.reply([
         msg + '存在冲突\n',
         errMsg,
