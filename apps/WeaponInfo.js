@@ -25,10 +25,6 @@ export class WeaponInfo extends plugin {
                 {
                     reg: '^(?:～|~|鸣潮)?武器列表$',
                     fnc: 'weaponList'
-                },
-                {
-                    reg: '^(?:～|~|鸣潮)?下载武器encore$',
-                    fnc: 'downloadWeaponIcons'
                 }
             ]
         })
@@ -206,65 +202,6 @@ export class WeaponInfo extends plugin {
             }
             return match
         })
-    }
-
-    async downloadWeaponIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getWeaponData()
-        if (!data || !Array.isArray(data)) return e.reply('武器数据未下载，请先使用 ~下载encore资源')
-
-        const est = Math.ceil(data.length * 0.8) // 每个约需0.8秒
-        const estStr = est > 60 ? `预计 ${Math.ceil(est / 60)} 分钟` : `预计 ${est} 秒`
-        await e.reply(`开始下载武器图标（${estStr}），共 ${data.length} 个…`)
-
-        if (!fs.existsSync(ICON_DIR)) fs.mkdirSync(ICON_DIR, { recursive: true })
-
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const w = data[i]
-            const itemId = w.Id
-
-            const detail = await this.fetchWeaponDetail(itemId)
-            if (!detail || !detail.Icon) { fail++; continue }
-
-            const baseFilename = this.iconFilenameFromPath(detail.Icon)
-            if (!baseFilename) { fail++; continue }
-
-            const urls = new Set()
-            const addUrl = (uePath) => {
-                if (!uePath) return
-                const fn = this.iconFilenameFromPath(uePath)
-                if (!fn) return
-                const lp = path.join(ICON_DIR, `${fn}.webp`)
-                if (fs.existsSync(lp)) return
-                const wp = uePath.replace(/\.([^./]+)$/, '.webp')
-                urls.add(`https://api.encore.moe/resource/Data${wp}`)
-            }
-            addUrl(detail.Icon)
-            addUrl(detail.TypeIcon)
-
-            if (urls.size === 0) { skip++; continue }
-
-            let downloaded = 0
-            for (const iconUrl of urls) {
-                try {
-                    const res = await fetch(iconUrl, {
-                        headers: { 'User-Agent': 'Mozilla/5.0', 'Origin': 'https://encore.moe', 'Referer': 'https://encore.moe/' }
-                    })
-                    if (!res.ok) { console.error(`[WeaponIcon] ${itemId} HTTP ${res.status}: ${iconUrl}`); continue }
-                    const buf = Buffer.from(await res.arrayBuffer())
-                    const urlFn = path.basename(new URL(iconUrl).pathname)
-                    fs.writeFileSync(path.join(ICON_DIR, urlFn), buf)
-                    downloaded++
-                } catch (err) { console.error(`[WeaponIcon] ${itemId} download error:`, err.message) }
-            }
-            if (downloaded > 0) ok++
-            else fail++
-        }
-
-        await e.reply(`武器图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
     }
 
     async weaponList(e) {

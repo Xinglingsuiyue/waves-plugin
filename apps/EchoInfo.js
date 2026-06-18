@@ -7,6 +7,22 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 
 const ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'echo', 'icon')
 
+// API垃圾数据黑名单（列表API中部分声骸被错误归属到这些套装）
+const BLACKLIST = {
+    '凝夜白霜': ['呜咔咔'],
+    '彻空冥雷': ['巨布偶'],
+    '熔山裂谷': ['巨布偶'],
+    '浮星祛暗': ['寂寞小姐', '呜咔咔'],
+    '隐世回光': ['异相·飞廉之猩'],
+    '轻云出月': ['寂寞小姐'],
+    '不绝余音': ['寂寞小姐'],
+    '凌冽决断之心': ['布兰特', '椿', '菲比', '今汐', '卡卡罗', '卡提希娅', '坎特蕾拉', '珂莱塔', '洛可可', '守岸人', '异相·磐石守卫', '赞妮', '长离', '阿嗞嗞', '异相·寒霜陆龟'],
+    '高天共奏之曲': ['朔雷之鳞', '异相·寒霜陆龟', '阿嗞嗞', '角'],
+    '无惧浪涛之勇': ['无妄者', '角'],
+    '此间永驻之光': ['奏谕乐师'],
+    '幽夜隐匿之帷': ['咕咕河豚', '阿嗞嗞', '奏谕乐师']
+}
+
 /** 声骸信息查询 — 渲染图片卡片 */
 export class EchoInfo extends plugin {
     constructor() {
@@ -17,8 +33,7 @@ export class EchoInfo extends plugin {
             rule: [
                 { reg: '^(?:～|~|鸣潮)(?:声骸查询|声骸搜索|查声骸)\\s*(.+)?$', fnc: 'echoQuery' },
                 { reg: '^(?:～|~|鸣潮)声骸列表$', fnc: 'echoList' },
-                { reg: '^(?:～|~|鸣潮)(?:合鸣查询|合鸣搜索|查合鸣)\\s*(.+)?$', fnc: 'fetterQuery' },
-                { reg: '^(?:～|~|鸣潮)下载声骸encore$', fnc: 'downloadEchoIcons' }
+                { reg: '^(?:～|~|鸣潮)(?:合鸣查询|合鸣搜索|合鸣套查询|共鸣查询|共鸣套查询|查合鸣)\\s*(.+)?$', fnc: 'fetterQuery' }
             ]
         })
     }
@@ -47,22 +62,34 @@ export class EchoInfo extends plugin {
 
     async echoQuery(e) {
         const keyword = (e.msg.match(this.rule[0].reg)?.[1] || '').trim()
-        if (!keyword) return e.reply('请输入声骸名称查询，如: ~声骸查询 幼猿')
+        if (!keyword) return e.reply('请输入声骸名称或序号查询，如: ~声骸查询 幼猿 或 ~声骸查询 01')
 
         const data = this.getEchoData()
         if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
 
-        const kw = keyword.toLowerCase()
-        const results = data.filter(e => e && ((e.Name || '').toLowerCase().includes(kw)
-            || String(e.Id) === kw || (e.Element?.Name || '').toLowerCase().includes(kw)
-            || (e.FetterGroups || []).some(f => (f.Name || '').toLowerCase().includes(kw))))
+        // 先尝试序号查询（纯数字，如 01、1、02、2）
+        const isNumeric = /^\d{1,3}$/.test(keyword)
+        let results = isNumeric ? this._queryByIndex(data, keyword) : null
 
-        if (!results || results.length === 0) return e.reply(`未找到与 "${keyword}" 相关的声骸`)
-        const exact = results.find(r => (r.Name || '').toLowerCase() === kw)
-        if (exact) {
-            const detail = await this.fetchEchoDetail(exact.Id)
-            if (!detail) return e.reply(`获取声骸 ${exact.Name} 详情失败`)
-            const renderData = this.buildRenderData(exact, detail)
+        if (!results) {
+            const kw = keyword.toLowerCase()
+            const all = data.filter(e => e && ((e.Name || '').toLowerCase().includes(kw)
+                || String(e.Id) === kw || (e.Element?.Name || '').toLowerCase().includes(kw)
+                || (e.FetterGroups || []).some(f => (f.Name || '').toLowerCase().includes(kw))))
+
+            if (!all || all.length === 0) return e.reply(`未找到与 "${keyword}" 相关的声骸`)
+            const exact = all.find(r => (r.Name || '').toLowerCase() === kw)
+            if (exact) {
+                results = [exact]
+            } else {
+                results = all
+            }
+        }
+
+        if (results.length === 1) {
+            const detail = await this.fetchEchoDetail(results[0].Id)
+            if (!detail) return e.reply(`获取声骸 ${results[0].Name} 详情失败`)
+            const renderData = this.buildRenderData(results[0], detail)
             const img = await Render.render('Template/encore/echo_info/echo_info', renderData, { e, retType: 'base64' })
             return e.reply(img, false)
         }
@@ -219,6 +246,79 @@ export class EchoInfo extends plugin {
         }
     }
 
+    /** 获取排序后的声骸扁平列表 — 与 echoList 排序完全一致 */
+    _getSortedEchoList() {
+        const data = this.getEchoData()
+        if (!data || !Array.isArray(data)) return []
+
+        // 建立 FetterGroup ID → {name} 映射
+        const idToGroup = {}
+        for (const echo of data) {
+            if (!echo) continue
+            for (const g of (echo.FetterGroups || [])) {
+                if (g.Id && g.Name && !idToGroup[g.Id]) {
+                    idToGroup[g.Id] = { name: g.Name }
+                }
+            }
+        }
+
+        // 按合鸣分组
+        const groupMap = {}
+        for (const echo of data) {
+            if (!echo) continue
+            let detail = readLocalDetail('echo', echo.Id)
+            let groupIds = []
+            if (detail && detail.FetterGroup && Array.isArray(detail.FetterGroup)) {
+                groupIds = detail.FetterGroup
+            } else {
+                groupIds = (echo.FetterGroups || []).map(g => g.Id).filter(Boolean)
+            }
+            for (const gid of groupIds) {
+                const grp = idToGroup[gid]
+                if (!grp) continue
+                if (!groupMap[grp.name]) {
+                    groupMap[grp.name] = { name: grp.name, echos: [] }
+                }
+                groupMap[grp.name].echos.push({
+                    Id: echo.Id,
+                    Name: echo.Name || '',
+                    rarity: echo.Rarity || 0
+                })
+            }
+        }
+
+        // 按合鸣ID排序
+        const sortedGroups = Object.values(groupMap).sort((a, b) => {
+            const aId = (data.find(e => e?.FetterGroups?.some(g => g.Name === a.name))?.FetterGroups || [])[0]?.Id || 99
+            const bId = (data.find(e => e?.FetterGroups?.some(g => g.Name === b.name))?.FetterGroups || [])[0]?.Id || 99
+            return aId - bId
+        })
+
+        // 去重 + 黑名单 + 扁平化（每组独立去重，与 echoList 一致）
+        const flat = []
+        for (const group of sortedGroups) {
+            const bl = BLACKLIST[group.name] || []
+            const seen = new Set()
+            group.echos.sort((a, b) => b.rarity - a.rarity || a.Name.localeCompare(b.Name, 'zh'))
+            for (const e of group.echos) {
+                if (bl.includes(e.Name)) continue
+                if (seen.has(e.Name)) continue
+                seen.add(e.Name)
+                flat.push(e)
+            }
+        }
+        return flat
+    }
+
+    /** 按列表序号查询（列表排序后第N个，1-based） */
+    _queryByIndex(data, keyword) {
+        const num = parseInt(keyword, 10)
+        if (isNaN(num) || num < 1) return null
+        const sorted = this._getSortedEchoList()
+        if (num > sorted.length) return null
+        return [sorted[num - 1]]
+    }
+
     async echoList(e) {
         const data = this.getEchoData()
         if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
@@ -284,21 +384,6 @@ export class EchoInfo extends plugin {
         })
 
         for (const group of sortedGroups) {
-            // API垃圾数据黑名单（列表API中部分声骸被错误归属到这些套装）
-            const BLACKLIST = {
-                '凝夜白霜': ['呜咔咔'],
-                '彻空冥雷': ['巨布偶'],
-                '熔山裂谷': ['巨布偶'],
-                '浮星祛暗': ['寂寞小姐', '呜咔咔'],
-                '隐世回光': ['异相·飞廉之猩'],
-                '轻云出月': ['寂寞小姐'],
-                '不绝余音': ['寂寞小姐'],
-                '凌冽决断之心': ['布兰特', '椿', '菲比', '今汐', '卡卡罗', '卡提希娅', '坎特蕾拉', '珂莱塔', '洛可可', '守岸人', '异相·磐石守卫', '赞妮', '长离', '阿嗞嗞', '异相·寒霜陆龟'],
-                '高天共奏之曲': ['朔雷之鳞', '异相·寒霜陆龟', '阿嗞嗞', '角'],
-                '无惧浪涛之勇': ['无妄者', '角'],
-                '此间永驻之光': ['奏谕乐师'],
-                '幽夜隐匿之帷': ['咕咕河豚', '阿嗞嗞', '奏谕乐师']
-            }
             const bl = BLACKLIST[group.name] || []
 
             // 去重 + 黑名单过滤
@@ -314,6 +399,15 @@ export class EchoInfo extends plugin {
             group.count = group.echos.length
             // 合鸣图标URL修正
             group.icon = fixUrl(group.icon)
+        }
+
+        // 全局序号分配（与残像列表一致，跨品质组递增）
+        let globalIdx = 0
+        for (const group of sortedGroups) {
+            for (const ec of group.echos) {
+                globalIdx++
+                ec.index = String(globalIdx).padStart(2, '0')
+            }
         }
 
         const renderData = { groups: sortedGroups }
@@ -388,21 +482,6 @@ export class EchoInfo extends plugin {
             }
         }
 
-        // 所属声骸
-        const BLACKLIST = {
-            '凝夜白霜': ['呜咔咔'],
-            '彻空冥雷': ['巨布偶'],
-            '熔山裂谷': ['巨布偶'],
-            '浮星祛暗': ['寂寞小姐', '呜咔咔'],
-            '隐世回光': ['异相·飞廉之猩'],
-            '轻云出月': ['寂寞小姐'],
-            '不绝余音': ['寂寞小姐'],
-            '凌冽决断之心': ['布兰特', '椿', '菲比', '今汐', '卡卡罗', '卡提希娅', '坎特蕾拉', '珂莱塔', '洛可可', '守岸人', '异相·磐石守卫', '赞妮', '长离', '阿嗞嗞', '异相·寒霜陆龟'],
-            '高天共奏之曲': ['朔雷之鳞', '异相·寒霜陆龟', '阿嗞嗞', '角'],
-            '无惧浪涛之勇': ['无妄者', '角'],
-            '此间永驻之光': ['奏谕乐师'],
-            '幽夜隐匿之帷': ['咕咕河豚', '阿嗞嗞', '奏谕乐师']
-        }
         // 找到匹配的合鸣名来查黑名单
         const bl = BLACKLIST[renderData.name] || []
 
@@ -425,62 +504,4 @@ export class EchoInfo extends plugin {
         return e.reply(img, false)
     }
 
-    /** 下载单个图标文件 */
-    async downloadIcon(url, saveDir) {
-        if (!url) return false
-        try {
-            const filename = path.basename(new URL(url).pathname)
-            const localPath = path.join(saveDir, filename)
-            if (fs.existsSync(localPath)) return true
-            const res = await fetch(url)
-            if (!res.ok) return false
-            const buf = Buffer.from(await res.arrayBuffer())
-            fs.writeFileSync(localPath, buf)
-            return true
-        } catch (e) { return false }
-    }
-
-    async downloadEchoIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getEchoData()
-        if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
-
-        if (!fs.existsSync(ICON_DIR)) fs.mkdirSync(ICON_DIR, { recursive: true })
-
-        await e.reply(`开始下载声骸图标，共 ${data.length} 个…`)
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const echo = data[i]
-            if (!echo) continue
-
-            const detail = await this.fetchEchoDetail(echo.Id)
-            if (!detail) { fail++; continue }
-
-            const urls = new Set()
-            const addUrl = (url) => {
-                if (url && typeof url === 'string' && url.startsWith('http')) {
-                    urls.add(url.replace(/\.png$/i, '.webp').replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/'))
-                }
-            }
-            addUrl(detail.Icon)
-            addUrl(detail.IconMiddle)
-            addUrl(detail.IconSmall)
-            addUrl(detail.ElementIcon)
-            addUrl(detail.Element?.Icon)
-            addUrl(detail.Skill?.BattleViewIcon)
-
-            if (urls.size === 0) { skip++; continue }
-
-            let downloaded = 0
-            for (const iconUrl of urls) {
-                if (await this.downloadIcon(iconUrl, ICON_DIR)) downloaded++
-            }
-            if (downloaded > 0) ok++
-            else fail++
-        }
-
-        await e.reply(`声骸图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
-    }
 }

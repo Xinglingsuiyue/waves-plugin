@@ -25,10 +25,6 @@ export class CharacterInfo extends plugin {
                     fnc: 'characterList'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)下载角色encore$',
-                    fnc: 'downloadCharIcons'
-                },
-                {
                     reg: '^(?:～|~|鸣潮)?(.+)en查询$',
                     fnc: 'encoreQuery'
                 }
@@ -104,7 +100,7 @@ export class CharacterInfo extends plugin {
 
     /** 统一encore查询 — ~xxxen查询，先查角色再查武器 */
     async encoreQuery(e) {
-        const keyword = (e.msg.match(this.rule[3].reg)?.[1] || '').trim()
+        const keyword = (e.msg.match(this.rule[2].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入名称查询，如: ~今汐en查询 或 ~存帧en查询')
 
         const wiki = new Wiki()
@@ -511,11 +507,6 @@ export class CharacterInfo extends plugin {
         }
     }
 
-    /** 辅助方法 — 添加URL到集合 */
-    _addUrl(urls, url) {
-        if (url && typeof url === 'string' && url.startsWith('http')) urls.add(url)
-    }
-
     /** 图标URL — 本地文件优先，否则用原始URL */
     getLocalCharIcon(url) {
         if (!url) return ''
@@ -526,21 +517,6 @@ export class CharacterInfo extends plugin {
             if (fs.existsSync(localPath)) return `file://${localPath}`
         } catch (e) {}
         return url
-    }
-
-    /** 下载单个图标文件 */
-    async downloadIcon(url, saveDir) {
-        if (!url) return false
-        try {
-            const filename = path.basename(new URL(url).pathname)
-            const localPath = path.join(saveDir, filename)
-            if (fs.existsSync(localPath)) return true
-            const res = await fetch(url)
-            if (!res.ok) return false
-            const buf = Buffer.from(await res.arrayBuffer())
-            fs.writeFileSync(localPath, buf)
-            return true
-        } catch (e) { return false }
     }
 
     _qualityColor(qualityId) {
@@ -619,99 +595,6 @@ export class CharacterInfo extends plugin {
             coreMechanics: coreMechanics,
             saveId: `char_${detail.Id}`
         }
-    }
-
-    async downloadCharIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getCharacterData()
-        if (!data || !Array.isArray(data)) return e.reply('角色数据未下载，请先使用 ~下载encore资源')
-
-        if (!fs.existsSync(CHAR_ICON_DIR)) fs.mkdirSync(CHAR_ICON_DIR, { recursive: true })
-
-        const est = Math.ceil(data.length * 2.5) // 每个约需2.5秒
-        const estStr = est > 60 ? `预计 ${Math.ceil(est / 60)} 分钟` : `预计 ${est} 秒`
-        await e.reply(`开始下载角色图标（${estStr}），共 ${data.length} 个…`)
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const c = data[i]
-            if (!c) continue
-
-            const detail = await this.fetchCharacterDetail(c.Id)
-            if (!detail) { fail++; continue }
-
-            const urls = new Set()
-            // 详情API图标
-            this._addUrl(urls, detail.RoleHeadIconLarge || detail.RoleHeadIcon)
-            this._addUrl(urls, detail.ElementIcon)
-            this._addUrl(urls, detail.WeaponTypeIcon)
-
-            // 列表API图标（~角色列表使用）
-            this._addUrl(urls, c.RoleHeadIcon)  // 列表头像
-            this._addUrl(urls, c.RoleHeadIconLarge) // 列表大头像
-            // 列表元素图标 — UE路径转HTTP
-            if (c.Element && c.Element.Icon) {
-                const elemHttp = `https://api-v2.encore.moe/resource/Data/Game/Aki/${c.Element.Icon.replace(/^\/Game\/Aki\//, '')}.webp`
-                this._addUrl(urls, elemHttp)
-            }
-
-            const props = detail.Properties
-            if (Array.isArray(props)) props.forEach(p => this._addUrl(urls, p.Icon))
-
-            const skills = detail.Skills
-            if (Array.isArray(skills)) skills.forEach(s => this._addUrl(urls, s.Icon))
-
-            const rc = detail.ResonantChain
-            if (Array.isArray(rc)) rc.forEach(r => {
-                if (r.NodeIcon) this._addUrl(urls, r.NodeIcon.replace(/^\/Game\/Aki\//, 'https://api.encore.moe/resource/Data/Game/Aki/'))
-            })
-
-            const skins = detail.Skins
-            if (Array.isArray(skins)) skins.forEach(s => {
-                this._addUrl(urls, s.FormationRoleCard || s.RoleHeadIconLarge)
-            })
-
-            const siList = detail.SkillInputs
-            if (Array.isArray(siList) && siList.length > 0) {
-                const si = siList[0]
-                this._addUrl(urls, si.Icon)
-                const iconList = si.IconList
-                if (Array.isArray(iconList)) iconList.forEach(icon => this._addUrl(urls, icon))
-                const inputDetails = si.InputDetails
-                if (Array.isArray(inputDetails)) {
-                    for (const inp of inputDetails) {
-                        const desc = inp.description || ''
-                        const imgRe = /<img\s[^>]*?src="([^"]+)"[^>]*?>/gi
-                        let m
-                        while ((m = imgRe.exec(desc)) !== null) {
-                            const src = m[1].replace(/https:\/\/api\.encore\.moe\/resource\//, 'https://api-v2.encore.moe/resource/')
-                            this._addUrl(urls, src)
-                        }
-                        const mappings = inp.mappings
-                        if (Array.isArray(mappings)) {
-                            for (const map of mappings) {
-                                const kds = map.keyDetails
-                                if (Array.isArray(kds)) kds.forEach(kd => {
-                                    const rawUrl = kd.keyIconPath || ''
-                                    const fixedUrl = rawUrl.replace(/^https:\/\/api\.encore\.moe\/resource\//, 'https://api-v2.encore.moe/resource/')
-                                    this._addUrl(urls, fixedUrl)
-                                })
-                            }
-                        }
-                    }
-                }
-            }
-
-            let downloaded = 0
-            for (const url of urls) {
-                if (await this.downloadIcon(url, CHAR_ICON_DIR)) downloaded++
-            }
-            if (downloaded > 0) ok++
-            else skip++
-        }
-
-        await e.reply(`角色图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
     }
 
     async characterList(e) {

@@ -8,6 +8,7 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 const MONSTER_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'monster', 'icon')
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
 
+/** 残像信息查询 — 渲染图片卡片 */
 export class MonsterInfo extends plugin {
     constructor() {
         super({
@@ -16,17 +17,17 @@ export class MonsterInfo extends plugin {
             priority: 1007,
             rule: [
                 { reg: '^(?:～|~|鸣潮)?(?:残像查询|残像搜索|查残像)\\s*(.+)?$', fnc: 'monsterQuery' },
-                { reg: '^(?:～|~|鸣潮)?残像列表$', fnc: 'monsterList' },
-                { reg: '^(?:～|~|鸣潮)?(?:下载残像|下载怪物)encore$', fnc: 'downloadMonsterIcons' }
+                { reg: '^(?:～|~|鸣潮)?残像列表$', fnc: 'monsterList' }
             ]
         })
     }
 
     getMonsterData() { return readLocalData('monster') }
 
+    /** 域名修正 — api.encore.moe → api-v2 */
     _fixUrl(url) {
         if (!url) return ''
-        return url.replace(/^https:\/\/api\.encore\.moe\
+        return url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
     }
 
     async fetchMonsterDetail(id) {
@@ -46,11 +47,11 @@ export class MonsterInfo extends plugin {
         } catch (e) { console.error(`[MonsterInfo] 获取 ${id} 详情失败:`, e); return null }
     }
 
-
+    /** 按列表序号查询（列表排序后第N个，1-based） */
     _queryByIndex(data, keyword) {
         const num = parseInt(keyword, 10)
         if (isNaN(num) || num < 1) return null
-
+        // 排序规则与 monsterList 一致：按品质降序，同品质按名称排序
         const rarityRank = { '海啸级': 4, '怒涛级': 3, '巨浪级': 2, '轻波级': 1 }
         const sorted = [...data].filter(Boolean).sort((a, b) => {
             const ra = rarityRank[a.Rarity] || 0
@@ -69,7 +70,7 @@ export class MonsterInfo extends plugin {
         const data = this.getMonsterData()
         if (!data || !Array.isArray(data)) return e.reply('残像数据未下载，请先使用 ~下载encore资源')
 
-
+        // 先尝试序号查询（纯数字，如 01、1、02、2）
         const isNumeric = /^\d{1,3}$/.test(keyword)
         let results = isNumeric ? this._queryByIndex(data, keyword) : null
 
@@ -262,7 +263,9 @@ export class MonsterInfo extends plugin {
         return e.reply(img, false)
     }
 
+    // ─── 图标工具 ───
 
+    /** 图标URL — 本地优先（残像目录 → 角色目录），.png 转 .webp */
     _getLocalUrl(httpUrl) {
         if (!httpUrl) return ''
         try {
@@ -274,77 +277,10 @@ export class MonsterInfo extends plugin {
             const charPath = path.join(CHAR_ICON_DIR, webpName)
             if (fs.existsSync(charPath)) return `file://${charPath}`
             let url = httpUrl.replace(/\.png$/i, '.webp')
-            url = url.replace(/^https:\/\/api\.encore\.moe\
+            url = url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
             return url
         } catch (e) {}
         return httpUrl
     }
 
-
-    _addUrl(urls, url) {
-        if (url && typeof url === 'string' && url.startsWith('http')) {
-            const fixed = url.replace(/\.png$/i, '.webp').replace(/^https:\/\/api\.encore\.moe\
-            urls.add(fixed)
-        }
     }
-
-
-    async _downloadIcon(url, saveDir) {
-        if (!url) return false
-        try {
-            const filename = path.basename(new URL(url).pathname)
-            const localPath = path.join(saveDir, filename)
-            if (fs.existsSync(localPath)) return true
-            const res = await fetch(url)
-            if (!res.ok) return false
-            const buf = Buffer.from(await res.arrayBuffer())
-            fs.writeFileSync(localPath, buf)
-            return true
-        } catch (e) { return false }
-    }
-
-
-
-    async downloadMonsterIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getMonsterData()
-        if (!data || !Array.isArray(data)) return e.reply('残像数据未下载，请先使用 ~下载encore资源')
-
-        if (!fs.existsSync(MONSTER_ICON_DIR)) fs.mkdirSync(MONSTER_ICON_DIR, { recursive: true })
-
-        const est = Math.ceil(data.length * 0.6)
-        const estStr = est > 60 ? `预计 ${Math.ceil(est / 60)} 分钟` : `预计 ${est} 秒`
-        await e.reply(`开始下载残像图标（${estStr}），共 ${data.length} 个…`)
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const m = data[i]
-            if (!m) continue
-
-            const urls = new Set()
-
-            this._addUrl(urls, m.Icon)
-            this._addUrl(urls, m.Element?.Icon)
-
-
-            const detail = await this.fetchMonsterDetail(m.Id)
-            if (detail) {
-                this._addUrl(urls, detail.Icon)
-                this._addUrl(urls, detail.Element?.Icon)
-                this._addUrl(urls, detail.ElementIcon)
-            }
-
-            if (urls.size === 0) { skip++; continue }
-
-            let downloaded = 0
-            for (const iconUrl of urls) {
-                if (await this._downloadIcon(iconUrl, MONSTER_ICON_DIR)) downloaded++
-            }
-            if (downloaded > 0) ok++
-            else skip++
-        }
-
-        await e.reply(`残像图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
-    }
-}

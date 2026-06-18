@@ -23,10 +23,6 @@ export class NamecardInfo extends plugin {
                 {
                     reg: '^(?:～|~|鸣潮)(?:名片|羁旅印章)列表$',
                     fnc: 'namecardList'
-                },
-                {
-                    reg: '^(?:～|~|鸣潮)下载名片encore$',
-                    fnc: 'downloadNamecardIcons'
                 }
             ]
         })
@@ -232,66 +228,4 @@ export class NamecardInfo extends plugin {
         return e.reply(img, false)
     }
 
-    /** 下载单个图标文件 */
-    async downloadIcon(url, saveDir) {
-        if (!url) return false
-        try {
-            const filename = path.basename(new URL(url).pathname)
-            const localPath = path.join(saveDir, filename)
-            if (fs.existsSync(localPath)) return true
-            const res = await fetch(url)
-            if (!res.ok) return false
-            const buf = Buffer.from(await res.arrayBuffer())
-            fs.writeFileSync(localPath, buf)
-            return true
-        } catch (e) { return false }
-    }
-
-    async downloadNamecardIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getNamecardData()
-        if (!data || !Array.isArray(data)) return e.reply('名片数据未下载，请先使用 ~下载encore资源')
-
-        if (!fs.existsSync(ICON_DIR)) fs.mkdirSync(ICON_DIR, { recursive: true })
-
-        await e.reply(`开始下载名片图标，共 ${data.length} 个…`)
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const n = data[i]
-            if (!n) continue
-
-            const detail = await this.fetchNamecardDetail(n.Id)
-            if (!detail) { fail++; continue }
-
-            const urls = new Set()
-            const addUrl = (url) => {
-                if (url && typeof url === 'string' && url.startsWith('http')) urls.add(url)
-            }
-            addUrl(detail.CardPath)
-            addUrl(detail.Icon)
-            addUrl(detail.IconMiddle)
-            addUrl(detail.IconSmall)
-
-            // LongCardPath — UE 路径转 URL
-            if (detail.LongCardPath) {
-                const filename = this.iconFilenameFromPath(detail.LongCardPath)
-                if (filename) {
-                    urls.add(`https://api.encore.moe/resource/Data${detail.LongCardPath.replace(/\.([^./]+)$/, '.webp')}`)
-                }
-            }
-
-            if (urls.size === 0) { skip++; continue }
-
-            let downloaded = 0
-            for (const iconUrl of urls) {
-                if (await this.downloadIcon(iconUrl, ICON_DIR)) downloaded++
-            }
-            if (downloaded > 0) ok++
-            else fail++
-        }
-
-        await e.reply(`名片图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
-    }
 }

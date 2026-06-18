@@ -23,10 +23,6 @@ export class TitleInfo extends plugin {
                 {
                     reg: '^(?:～|~|鸣潮)称号列表$',
                     fnc: 'titleList'
-                },
-                {
-                    reg: '^(?:～|~|鸣潮)下载称号encore$',
-                    fnc: 'downloadTitleIcons'
                 }
             ]
         })
@@ -60,9 +56,7 @@ export class TitleInfo extends plugin {
     /** 修复图片URL：api.encore.moe → api-v2.encore.moe，.png → .webp */
     fixImageUrl(url) {
         if (!url) return ''
-        // 替换域名
         let fixed = url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
-        // 替换扩展名
         fixed = fixed.replace(/\.png(\?.*)?$/, '.webp$1')
         return fixed
     }
@@ -85,30 +79,19 @@ export class TitleInfo extends plugin {
         return {
             id: detail.Id,
             name: detail.TitleName || '',
-            // 称号类型
             titleType: detail.TitleType || 0,
             titleTypeName: titleTypeMap[detail.TitleType] || '',
-            // 称号品质
             titleQuality: detail.TitleQuality || 0,
-            // 称号图片
             image: this.getLocalIconUrl(detail.Image || ''),
-            // 角色头像
             roleHeadIcon: this.getLocalIconUrl(detail.RoleHeadIcon || ''),
             femaleRoleHeadIcon: this.getLocalIconUrl(detail.FemaleRoleHeadIcon || ''),
-            // 装饰图标
             decorateLeftIcon: this.getLocalIconUrl(detail.DecorateLeftIcon || ''),
             decorateRightIcon: this.getLocalIconUrl(detail.DecorateRightIcon || ''),
-            // 称号背景
             titleBgIcon: this.getLocalIconUrl(detail.TitleBgIcon || ''),
-            // 称号选中图标
             selectedIcon: this.getLocalIconUrl(detail.SelectedIcon || ''),
-            // 信息图标
             iconInTitleInfo: this.getLocalIconUrl(detail.IconInTitleInfo || ''),
-            // 描述
             description: detail.Description || '',
-            // 荣誉描述
             honorDescription: detail.HonorDescription || '',
-            // 获取方式 — 去掉进度格式（当前已激活（{0}/{1}）链）
             itemAccess: (detail.ItemAccess || '').replace(/\s*（当前已激活.+链）/, '').trim(),
             saveId: `title_${detail.Id}`
         }
@@ -130,17 +113,14 @@ export class TitleInfo extends plugin {
         const data = this.getTitleData()
         if (!data || !Array.isArray(data)) return e.reply('称号数据未下载，请先使用 ~下载encore资源')
 
-        // 先尝试序号查询（纯数字，如 01、1、02、2）
         const isNumeric = /^\d{1,3}$/.test(keyword)
         let results = isNumeric ? this._queryByIndex(data, keyword) : null
 
-        // 非数字或序号超出范围 → 正常名称查询
         if (!results) {
             const wiki = new Wiki()
             const resolved = (await wiki.getAlias(keyword)) || keyword
             const kw = keyword.toLowerCase()
             const resolvedKw = resolved.toLowerCase()
-
             if (resolved !== keyword) {
                 results = data.filter(t => t && ((t.TitleName || '').toLowerCase().includes(resolvedKw)))
                 if (results.length === 0) {
@@ -161,7 +141,6 @@ export class TitleInfo extends plugin {
 
         const detail = await this.fetchTitleDetail(results[0].Id)
         if (!detail) {
-            // 降级：使用列表数据渲染
             const item = results[0]
             const fallback = {
                 id: item.Id,
@@ -204,11 +183,7 @@ export class TitleInfo extends plugin {
                 avatar: this.getLocalIconUrl(t.Image || '')
             })
         }
-
-        // 按 ID 排序
         list.sort((a, b) => a.id - b.id)
-
-        // 分配序号（01, 02, 03...）
         for (let i = 0; i < list.length; i++) {
             list[i].index = String(i + 1).padStart(2, '0')
         }
@@ -216,60 +191,5 @@ export class TitleInfo extends plugin {
         const renderData = { list }
         const img = await Render.render('Template/encore/title/list/title_list', renderData, { e, retType: 'base64' })
         return e.reply(img, false)
-    }
-
-    /** 下载单个图标文件 */
-    async downloadIcon(url, saveDir) {
-        if (!url) return false
-        try {
-            const filename = path.basename(new URL(url).pathname)
-            const localPath = path.join(saveDir, filename)
-            if (fs.existsSync(localPath)) return true
-            const res = await fetch(url)
-            if (!res.ok) return false
-            const buf = Buffer.from(await res.arrayBuffer())
-            fs.writeFileSync(localPath, buf)
-            return true
-        } catch (e) { return false }
-    }
-
-    async downloadTitleIcons(e) {
-        if (!e.isMaster) return e.reply('仅主人可使用此命令')
-        const data = this.getTitleData()
-        if (!data || !Array.isArray(data)) return e.reply('称号数据未下载，请先使用 ~下载encore资源')
-
-        if (!fs.existsSync(ICON_DIR)) fs.mkdirSync(ICON_DIR, { recursive: true })
-
-        await e.reply(`开始下载称号图标，共 ${data.length} 个…`)
-        let ok = 0, skip = 0, fail = 0
-        const total = data.length
-
-        for (let i = 0; i < total; i++) {
-            const t = data[i]
-            if (!t) continue
-
-            const detail = await this.fetchTitleDetail(t.Id)
-            if (!detail) { fail++; continue }
-
-            const urls = new Set()
-            const addUrl = (url) => {
-                if (url && typeof url === 'string' && url.startsWith('http')) urls.add(this.fixImageUrl(url))
-            }
-            addUrl(detail.Image)
-            addUrl(detail.TitleBgIcon)
-            addUrl(detail.DecorateLeftIcon)
-            addUrl(detail.DecorateRightIcon)
-
-            if (urls.size === 0) { skip++; continue }
-
-            let downloaded = 0
-            for (const iconUrl of urls) {
-                if (await this.downloadIcon(iconUrl, ICON_DIR)) downloaded++
-            }
-            if (downloaded > 0) ok++
-            else fail++
-        }
-
-        await e.reply(`称号图标下载完成!\n成功: ${ok}, 跳过(已存在): ${skip}, 失败: ${fail}`)
     }
 }
