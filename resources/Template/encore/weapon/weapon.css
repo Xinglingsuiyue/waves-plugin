@@ -1,0 +1,33 @@
+@font-face{font-family:"Guruwords";src:url("../../../fonts/Guruwords.ttf");font-weight:normal;font-style:normal}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Guruwords","Microsoft YaHei",sans-serif}
+#body{transform-origin:top left;width:800px;min-height:100px}
+.wrapper{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%);padding:24px;color:#e6e6e6}
+
+.header{display:flex;align-items:center;gap:20px;padding:20px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:20px}
+.wp-icon{width:100px;height:100px;border-radius:12px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#2d2d44;border:3px solid #888;flex-shrink:0}
+.wp-q5{border-color:#ffd700!important}
+.wp-q4{border-color:#a080c0!important}
+.wp-q3{border-color:#5898b8!important}
+.wp-q2{border-color:#6b8e6b!important}
+.wp-q1{border-color:#888!important}
+.header-info{flex:1}
+.star-row{font-size:18px;color:#ffd700;margin-bottom:4px}
+.wp-name{font-size:30px;font-weight:bold;color:#ffffff;text-shadow:0 0 8px rgba(255,255,255,0.15);margin-bottom:10px}
+.wp-meta{display:flex;gap:10px}
+.meta-tag{padding:5px 14px 5px 30px;border-radius:20px;font-size:15px;background-color:#2d2d44;background-size:20px 20px;background-repeat:no-repeat;background-position:6px center;color:#d4d4d4}
+
+.section{margin-bottom:16px;background:rgba(255,255,255,0.03);border-radius:10px;padding:16px}
+.section-title{font-size:20px;color:#a3835c;border-bottom:1px solid #3d3d5c;padding-bottom:8px;margin-bottom:12px}
+.section-content{font-size:15px;line-height:1.8;color:#c0c0c0}
+
+.stat-row{display:flex;gap:16px}
+.stat-item{flex:1;padding:14px;border-radius:10px;text-align:center}
+.stat-item.main{background:linear-gradient(135deg,#3d3d5c,#4a4a6a)}
+.stat-item.sub{background:linear-gradient(135deg,#2d2d44,#3d3d5c)}
+.stat-label{display:block;font-size:13px;color:#ffffff;margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:bold;color:#ffffff}
+
+.skill-desc{font-size:15px;line-height:1.8;color:#e0e0e0}
+
+#copyright{text-align:center;font-size:20px;font-weight:bold;color:#fff;text-shadow:2px 2px 2px #000;padding-top:20px}
+#copyright .version{color:#d3bc8e}

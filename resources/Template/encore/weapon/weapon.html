@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/weapon/weapon.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <div class="header">
+            <div class="wp-icon wp-q{{qualityId}}" style="background-image: url('{{wpIcon}}')"></div>
+            <div class="header-info">
+                <div class="star-row">{{star}}</div>
+                <div class="wp-name">{{wpName}}</div>
+                <div class="wp-meta">
+                    <span class="meta-tag" style="background-image: url('{{wpTypeIcon}}')">{{wpTypeName}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 属性面板 -->
+        <div class="section props-section">
+            <div class="section-title">属性面板</div>
+            <div class="stat-row">
+                <div class="stat-item main">
+                    <span class="stat-label">{{firstProp.name}}</span>
+                    <span class="stat-value">{{firstProp.display}}</span>
+                </div>
+                {{if secondProp}}
+                <div class="stat-item sub">
+                    <span class="stat-label">{{secondProp.name}}</span>
+                    <span class="stat-value">{{secondProp.display}}</span>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- 谐振技能 -->
+        {{if resonName}}
+        <div class="section skill-section">
+            <div class="section-title">{{resonName}}</div>
+            <div class="section-content skill-desc">{{@resonDesc}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 背景故事 -->
+        {{if bgDesc}}
+        <div class="section bg-section">
+            <div class="section-title">背景故事</div>
+            <div class="section-content">{{bgDesc}}</div>
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
