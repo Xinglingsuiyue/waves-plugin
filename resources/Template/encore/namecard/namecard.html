@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/namecard/namecard.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 头部信息 -->
+        <div class="header">
+            <div class="card-preview" style="background-image: url('{{namecard.cardImg}}')"></div>
+            <div class="header-info">
+                <div class="card-name">{{namecard.name}}</div>
+                <div class="card-meta">
+                    {{if namecard.typeName}}
+                    <span class="card-type">{{namecard.typeName}}</span>
+                    {{/if}}
+                    <span class="card-id">ID: {{namecard.id}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 名片预览大图 -->
+        {{if namecard.longCardImg || namecard.cardImg}}
+        <div class="section">
+            <div class="section-title">名片预览</div>
+            <div class="full-img" style="background-image: url('{{namecard.longCardImg || namecard.cardImg}}')"></div>
+        </div>
+        {{/if}}
+
+        <!-- 名片描述 -->
+        {{if namecard.desc}}
+        <div class="section">
+            <div class="section-title">名片描述</div>
+            <div class="section-content">{{namecard.desc}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 背景故事 -->
+        {{if namecard.bgDesc}}
+        <div class="section">
+            <div class="section-title">背景故事</div>
+            <div class="section-content">{{namecard.bgDesc}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 获取方式 -->
+        {{if namecard.tips || namecard.accessDescriptions.length > 0}}
+        <div class="section">
+            <div class="section-title">获取方式</div>
+            {{if namecard.tips}}
+            <div class="section-content">{{namecard.tips}}</div>
+            {{/if}}
+            {{if namecard.accessDescriptions.length > 0}}
+            <div class="tips-list">
+                {{each namecard.accessDescriptions d}}
+                <div class="tips-item">{{d}}</div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
