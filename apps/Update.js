@@ -38,10 +38,21 @@ export class Update extends plugin {
     if (!(await this.checkGit())) return
     const isForce = this.e.msg.includes('强制')
     /** 执行更新 */
-    await this.runUpdate(isForce)
+    try {
+      await this.runUpdate(isForce)
+    } catch (err) {
+      logger.error(`[waves-plugin] 更新过程出错: ${err.message}`)
+      // 如果是强制更新且已经拉取了代码，仍然尝试重启
+      if (isForce && this.isUp) {
+        await this.reply('更新过程出现异常，但代码已更新，即将重启')
+      } else {
+        await this.reply(`更新失败: ${err.message}`)
+        return
+      }
+    }
     /** 是否需要重启 */
     if (this.isUp) {
-      await this.reply('更新完毕，正在重启云崽以应用更新')
+      await this.reply('更新完成，正在重启')
       setTimeout(() => this.restart(), 2000)
     }
   }
@@ -81,8 +92,13 @@ export class Update extends plugin {
       await this.reply(`waves-plugin\n最后更新时间：${time}`)
       this.isUp = true
       /** 获取waves-plugin的更新日志 */
-      const log = await this.getLog('waves-plugin')
-      await this.reply(log)
+      try {
+        const log = await this.getLog('waves-plugin')
+        await this.reply(log)
+      } catch (err) {
+        logger.error(`[waves-plugin] 获取更新日志失败: ${err.message}`)
+        await this.reply('更新日志获取失败，但更新已完成，即将重启')
+      }
     }
     logger.mark(`${this.e.logFnc} 最后更新时间：${time}`)
     return true

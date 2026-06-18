@@ -15,6 +15,7 @@ import { CharacterRanking } from './Paiming.js';
 const WAVERIDER_ATTRIBUTES = {
     '1604': '湮灭', '1605': '湮灭',
     '1501': '衍射', '1502': '衍射',
+    '1309': '导电', '1310': '导电',
     '1406': '气动', '1408': '气动'
 };
 
