@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/echo_info/echo_info.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="echo-icon" style="background-image: url('{{iconUrl}}')"></div>
+            <div class="header-info">
+                <div class="echo-name">
+                    <span class="name">{{name}}</span>
+                </div>
+                <div class="echo-meta">
+                    {{if elementIcon}}
+                    <span class="meta-tag element"><img class="meta-tag-icon" src="{{elementIcon}}">{{elementName}}</span>
+                    {{/if}}
+                    {{each meta tags}}
+                    <span class="meta-tag {{tags.cls}}">{{tags.txt}}</span>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+
+        <!-- 图鉴信息 -->
+        {{if handbook && handbook.length > 0}}
+        <div class="section">
+            <div class="section-title">图鉴信息</div>
+            {{each handbook rows}}
+            <div class="hb-row">
+                <span class="hb-label">{{rows.label}}</span>
+                <span class="hb-value">{{rows.value}}</span>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <!-- 声骸技能 -->
+        {{if skill}}
+        <div class="section">
+            <div class="section-title">声骸技能{{if skill.cd}} (CD: {{skill.cd}}秒){{/if}}</div>
+            {{if skill.icon}}
+            <div class="skill-icon-row">
+                <img class="skill-icon-img" src="{{skill.icon}}">
+            </div>
+            {{/if}}
+            <div class="section-content skill-desc">{{skill.descFull || skill.desc}}</div>
+            {{if skill.params && skill.params.length > 0}}
+            <div class="skill-params">
+                <div class="param-title">满级参数 (Lv.MAX):</div>
+                <div class="param-values">{{skill.params.join(' / ')}}</div>
+            </div>
+            {{/if}}
+            {{if skill.hasDamageList}}
+            <div class="damage-section">
+                <div class="damage-title">伤害明细</div>
+                <div class="damage-table">
+                    <div class="damage-header">
+                        <span class="d-col-num">#</span>
+                        <span class="d-col-type">类型</span>
+                        <span class="d-col-prop">属性</span>
+                        <span class="d-col-rate">倍率</span>
+                        <span class="d-col-energy">协奏能量</span>
+                        <span class="d-col-tough">削韧</span>
+                    </div>
+                    {{each skill.damageList d}}
+                    <div class="damage-row">
+                        <span class="d-col-num">{{d.entryNumber}}</span>
+                        <span class="d-col-type">{{d.type}}</span>
+                        <span class="d-col-prop">{{d.propertyName}}</span>
+                        <span class="d-col-rate">{{d.rateLv}}</span>
+                        <span class="d-col-energy">{{d.energy}}</span>
+                        <span class="d-col-tough">{{d.toughness}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+        {{/if}}
+
+        <!-- 合鸣效果 -->
+        {{if fetterGroups && fetterGroups.length > 0}}
+        <div class="section">
+            <div class="section-title">合鸣效果</div>
+            {{each fetterGroups group}}
+            <div class="fetter-group">
+                <div class="fetter-name">
+                    {{if group.icon}}<img class="fetter-icon" src="{{group.icon}}">{{/if}}
+                    {{group.name}}
+                </div>
+                {{each group.descriptions d}}
+                <div class="fetter-desc">
+                    {{if d.key > 0}}<span class="fetter-key">{{d.key}}件套:</span>{{/if}}
+                    {{d.desc}}
+                </div>
+                {{/each}}
+                {{if group.hasDefine}}
+                <div class="fetter-define">
+                    {{each group.defineDescriptions dd}}
+                    <div class="define-line">📖 {{dd}}</div>
+                    {{/each}}
+                </div>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
