@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/echo_info/fetter/echo_fetter.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 合鸣头部 -->
+        <div class="fetter-header">
+            {{if icon}}<img class="fetter-big-icon" src="{{icon}}">{{/if}}
+            <span class="fetter-title">{{name}}</span>
+        </div>
+
+        <!-- 合鸣效果 -->
+        <div class="section">
+            <div class="section-title">合鸣效果</div>
+            {{each descriptions d}}
+            <div class="effect-row">
+                <span class="effect-key">{{d.key}}件套</span>
+                <span class="effect-desc">{{d.desc}}</span>
+            </div>
+            {{/each}}
+        </div>
+
+        <!-- 背景故事 -->
+        {{if hasDefine}}
+        <div class="section">
+            <div class="section-title">背景故事</div>
+            {{each defineDescriptions dd}}
+            <div class="define-line">{{dd}}</div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <!-- 所属声骸 -->
+        {{if echoes && echoes.length > 0}}
+        <div class="section">
+            <div class="section-title">所属声骸 ({{echoes.length}})</div>
+            <div class="echo-grid">
+                {{each echoes ec}}
+                <div class="echo-card">
+                    <div class="echo-portrait" style="background-image: url('{{ec.icon}}')">
+                        {{if ec.elementIcon}}
+                        <img class="echo-elem" src="{{ec.elementIcon}}">
+                        {{/if}}
+                    </div>
+                    <div class="echo-name-bar"><span class="echo-name">{{ec.name}}</span></div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
