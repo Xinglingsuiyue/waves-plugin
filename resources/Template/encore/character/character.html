@@ -1,0 +1,216 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/character/character.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 头部 — 头像 + 信息 + 信息栏 + 属性面板 -->
+        <div class="header">
+            <div class="char-avatar" style="background-image: url('{{charAvatar}}'); border: 3px solid {{charBorderColor}}"></div>
+            <div class="header-center">
+                <div class="star-row">{{star}}</div>
+                <div class="char-name-row">
+                    <span class="name">{{charName}}</span>
+                    {{if charId}}<span class="char-id">#{{charId}}</span>{{/if}}
+                    {{if sex}}
+                    <span class="sex-tag">{{sex}}</span>
+                    {{/if}}
+                </div>
+                <div class="char-meta">
+                    <span class="meta-tag element" style="background-image: url('{{charElementIcon}}')">{{charElementName}}</span>
+                    <span class="meta-tag weapon" style="background-image: url('{{charWeaponTypeIcon}}')">{{charWeaponTypeName}}</span>
+                </div>
+            </div>
+            <!-- 身份信息栏 — 属性左侧 -->
+            {{if infoFields && infoFields.length > 0}}
+            <div class="header-info">
+                {{each infoFields f}}
+                <div class="info-row">
+                    <span class="info-label">{{f.label}}</span>
+                    <span class="info-value">{{f.value}}</span>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+            <!-- 属性面板 -->
+            {{if properties && properties.length > 0}}
+            <div class="header-props">
+                {{each properties prop}}
+                <div class="hprop-item">
+                    <div class="hprop-icon" style="background-image: url('{{prop.Icon}}')"></div>
+                    <span class="hprop-name">{{prop.Name}}</span>
+                    <span class="hprop-value">{{prop.display}}</span>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+
+        <!-- 简介 -->
+        {{if introduction}}
+        <div class="section introduction">
+            <div class="section-title">角色简介</div>
+            <div class="section-content">{{introduction}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 标签 -->
+        {{if tags && tags.length > 0}}
+        <div class="section tags-section">
+            <div class="section-title">角色标签</div>
+            <div class="tags">
+                {{each tags tag}}
+                <div class="tag" style="color: {{tag.TagNameColor}}; border-color: {{tag.TagNameColor}};">
+                    <span class="tag-name">{{tag.TagName}}</span>
+                    <span class="tag-desc">{{tag.TagDesc}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 技能详情 -->
+        {{if skills && skills.length > 0}}
+        <div class="section skills-section">
+            <div class="section-title">技能详情</div>
+            {{each skills skill}}
+            <div class="skill-item">
+                <div class="skill-header">
+                    <div class="skill-icon" style="background-image: url('{{skill.icon}}')"></div>
+                    <span class="skill-name">{{skill.name}}</span>
+                    <span class="skill-type-tag">{{skill.type}}</span>
+                </div>
+                {{if skill.desc}}
+                <div class="skill-desc">{{@skill.desc}}</div>
+                {{/if}}
+                {{if skill.hasTable}}
+                <table class="skill-table">
+                    <colgroup>
+                        <col class="col-attr">
+                        {{each skill.levels lv}}
+                        <col class="col-lv">
+                        {{/each}}
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="col-attr">技能属性</th>
+                            {{each skill.levels lv}}
+                            <th class="col-lv">{{lv}}</th>
+                            {{/each}}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{each skill.attributes attr}}
+                        <tr>
+                            <td class="col-attr">{{attr.name}}</td>
+                            {{each attr.values val}}
+                            <td class="col-lv">{{val}}</td>
+                            {{/each}}
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        <!-- 共鸣链 -->
+        {{if resonantChain && resonantChain.length > 0}}
+        <div class="section chain-section">
+            <div class="section-title">共鸣链</div>
+            <div class="chain-grid">
+                {{each resonantChain chain}}
+                <div class="chain-item">
+                    <div class="chain-item-header">
+                        {{if chain.icon}}
+                        <div class="chain-icon" style="background-image: url('{{chain.icon}}')"></div>
+                        {{/if}}
+                        <div class="chain-index">共鸣链-{{chain.index}}</div>
+                    </div>
+                    <div class="chain-name">{{chain.name}}</div>
+                    {{if chain.desc}}
+                    <div class="chain-desc">{{@chain.desc}}</div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 皮肤 -->
+        {{if skins && skins.length > 0}}
+        <div class="section skins-section">
+            <div class="section-title">皮肤 ({{skins.length}})</div>
+            <div class="skins-grid">
+                {{each skins skin}}
+                <div class="skin-item">
+                    <div class="skin-img" style="background-image: url('{{skin.avatar}}')"></div>
+                    <div class="skin-name">{{skin.Name}}</div>
+                    <div class="skin-sub">{{skin.SubDecName}}</div>
+                    {{if skin.bgDesc}}
+                    <div class="skin-bgdesc">{{skin.bgDesc}}</div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 核心机制 -->
+        {{if coreMechanics && coreMechanics.hasData}}
+        <div class="section core-section">
+            <div class="section-title">核心机制</div>
+
+            <!-- 角色特点 -->
+            {{if coreMechanics.features && coreMechanics.features.length > 0}}
+            <div class="core-subsection">
+                <div class="core-subtitle">角色特点</div>
+                <div class="features-list">
+                    {{each coreMechanics.features ft}}
+                    <div class="feature-item">{{@ft}}</div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+
+            <!-- 特殊能量 -->
+            {{if coreMechanics.energyItems && coreMechanics.energyItems.length > 0}}
+            <div class="core-subsection">
+                <div class="core-subtitle">特殊能量</div>
+                {{each coreMechanics.energyItems item}}
+                <div class="energy-item">
+                    {{if item.icon}}
+                    <img class="energy-item-icon" src="{{item.icon}}">
+                    {{/if}}
+                    {{if item.desc}}
+                    <div class="energy-item-desc">{{@item.desc}}</div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            <!-- 招式说明 -->
+            {{if coreMechanics.inputDetails && coreMechanics.inputDetails.length > 0}}
+            <div class="core-subsection">
+                <div class="core-subtitle">招式说明</div>
+                {{each coreMechanics.inputDetails detail}}
+                <div class="input-detail-item">
+                    <div class="input-detail-desc">{{@detail.desc}}</div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>

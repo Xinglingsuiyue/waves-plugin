@@ -1,0 +1,109 @@
+@font-face {
+    font-family: "Guruwords";
+    src: url("../../../fonts/Guruwords.ttf");
+    font-weight: normal; font-style: normal;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Guruwords","Microsoft YaHei",sans-serif;}
+#body{transform-origin:top left;width:1080px;min-height:100px;}
+.wrapper{background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%);border-radius:12px;padding:24px;color:#e6e6e6;}
+
+/* 头部 — 四栏: 头像 | 名称+标签 | 身份信息 | 属性面板 */
+.header{display:flex;align-items:center;gap:16px;padding:20px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:20px;}
+/* 头像 */
+.char-avatar{width:120px;height:120px;border-radius:16px;background-size:cover;background-position:center;background-color:#2d2d44;flex-shrink:0;}
+.header-center{flex-shrink:0;display:flex;flex-direction:column;gap:4px;}
+.star-row{font-size:18px;color:#ffd700;}
+.char-name-row{display:flex;align-items:center;gap:8px;}
+.name{font-size:28px;font-weight:bold;color:#cdb56b;text-shadow:0 0 8px rgba(205,181,107,0.3);}
+.sex-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;color:#a0d0ff;background:rgba(160,208,255,0.12);border:1px solid rgba(160,208,255,0.25);}
+.char-id{font-size:16px;color:#666;font-weight:normal;}
+.char-meta{display:flex;gap:8px;flex-wrap:wrap;}
+.meta-tag{padding:5px 12px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:4px;background-size:20px;background-repeat:no-repeat;background-position:6px center;padding-left:32px;background-color:#2d2d44;color:#d4d4d4;}
+
+/* 身份信息栏 */
+.header-info{flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:0 16px;border-left:1px solid rgba(255,255,255,0.08);}
+.info-row{display:flex;align-items:center;gap:8px;}
+.info-label{font-size:12px;color:#888;white-space:nowrap;}
+.info-value{font-size:13px;color:#e0e0e0;white-space:nowrap;}
+
+/* 属性面板 — 两列排列 */
+.header-props{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;flex-shrink:0;min-width:280px;}
+.hprop-item{display:flex;align-items:center;gap:6px;}
+.hprop-icon{width:24px;height:24px;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0;}
+.hprop-name{font-size:13px;color:#a0a0a0;white-space:nowrap;}
+.hprop-value{font-size:15px;font-weight:bold;color:#ffffff;white-space:nowrap;}
+
+/* section */
+.section{margin-bottom:16px;background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;}
+.section-title{font-size:20px;color:#a3835c;border-bottom:1px solid #3d3d5c;padding-bottom:8px;margin-bottom:12px;}
+.section-content{font-size:15px;line-height:1.8;color:#c0c0c0;}
+
+/* 标签 */
+.tags{display:flex;flex-wrap:wrap;gap:10px;}
+.tag{padding:8px 14px;border:1px solid;border-radius:20px;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.tag-name{font-weight:bold;font-size:14px;}
+.tag-desc{font-size:11px;opacity:0.7;}
+
+/* 共鸣链 */
+.chain-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.chain-item{padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);}
+.chain-item-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.chain-icon{width:32px;height:32px;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0;border-radius:4px;}
+.chain-index{font-size:11px;color:#888;}
+.chain-name{font-size:15px;font-weight:bold;color:#cdb56b;margin-bottom:6px;}
+.chain-desc{font-size:11px;color:#a0a0a0;line-height:1.5;}
+.chain-desc span{font-weight:bold;color:#ffd700;}
+
+/* 核心机制 */
+.core-subsection{margin-bottom:14px;}
+.core-subsection:last-child{margin-bottom:0;}
+.core-subtitle{font-size:15px;font-weight:bold;color:#cdb56b;margin-bottom:10px;}
+
+/* 角色特点 */
+.features-list{display:flex;flex-direction:column;gap:8px;}
+.feature-item{padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.05);font-size:13px;color:#c0c0c0;line-height:1.7;}
+.feature-item span{font-weight:bold;color:#ffd700;}
+
+/* 特殊能量 */
+.energy-item{margin-bottom:12px;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);}
+.energy-item:last-child{margin-bottom:0;}
+.energy-item-icon{display:block;width:100%;max-height:120px;object-fit:contain;margin-bottom:8px;border-radius:4px;background:rgba(0,0,0,0.3);}
+.energy-item-desc{font-size:13px;color:#a0a0a0;line-height:1.6;}
+.energy-item-desc span{font-weight:bold;color:#ffd700;}
+.input-detail-item{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.03);margin-bottom:8px;}
+.input-detail-item:last-child{margin-bottom:0;}
+.input-detail-desc{font-size:12px;color:#c0c0c0;line-height:1.6;}
+.input-detail-desc img{display:inline-block;vertical-align:middle;width:24px;height:24px;margin:0 2px;}
+.input-detail-desc .key-icon{display:inline-block;vertical-align:middle;width:24px;height:24px;margin:0 2px;object-fit:contain;}
+
+/* 皮肤 */
+.skins-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.skin-item{text-align:center;padding:12px;border-radius:10px;flex-shrink:0;min-width:160px;}
+.skin-img{width:100%;height:200px;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:8px;margin-bottom:8px;}
+.skin-name{font-size:16px;font-weight:bold;color:#cdb56b;}
+.skin-sub{font-size:12px;color:#888;margin-top:4px;}
+.skin-bgdesc{font-size:11px;color:#a0a0a0;line-height:1.5;margin-top:8px;padding:0 4px;text-align:left;white-space:pre-line;}
+
+/* 技能详情 */
+.skills-section .skill-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.skills-section .skill-item:last-child{border-bottom:none;padding-bottom:0;}
+.skill-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.skill-icon{width:36px;height:36px;border-radius:8px;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0;}
+.skill-name{font-size:18px;font-weight:bold;color:#cdb56b;}
+.skill-type-tag{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;color:#ffd700;background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.25);flex-shrink:0;}
+.skill-desc{font-size:12px;color:#a0a0a0;line-height:1.7;margin-bottom:8px;}
+.skill-desc span{font-weight:bold;color:#ffd700;}
+
+/* 技能倍率表格 */
+.skill-table{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:6px;font-size:10px;}
+.skill-table col.col-attr{width:14%;}
+.skill-table col.col-lv{width:17.2%;}
+.skill-table thead th{color:#cdb56b;font-weight:bold;padding:5px 3px;text-align:center;border-bottom:1px solid rgba(205,181,107,0.3);white-space:nowrap;font-size:10px;}
+.skill-table thead th.col-attr{text-align:left;padding-left:8px;}
+.skill-table tbody td{padding:5px 3px;text-align:center;color:#d0d0d0;border-bottom:1px solid rgba(255,255,255,0.04);font-variant-numeric:tabular-nums;font-size:10px;overflow-wrap:break-word;word-break:break-all;line-height:1.2;}
+.skill-table tbody td.col-attr{text-align:left;padding-left:8px;color:#a0a0a0;word-break:keep-all;overflow-wrap:normal;}
+.skill-table tbody tr:nth-child(even){background:rgba(255,255,255,0.02);}
+.skill-table tbody tr:hover{background:rgba(255,255,255,0.04);}
+
+#copyright{text-align:center;font-size:20px;font-weight:bold;color:#fff;text-shadow:2px 2px 2px #000;padding-top:20px;}
+#copyright .version{color:#d3bc8e;}
