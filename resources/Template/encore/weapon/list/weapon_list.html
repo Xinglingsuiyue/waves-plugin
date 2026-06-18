@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/weapon/list/weapon_list.css">
+</head>
+<body id="body">
+    <div id="wrapper">
+        <div class="card-grid">
+            {{each list w}}
+            <div class="char-card">
+                <div class="card-portrait">
+                    <img class="card-avatar" src="{{w.avatar}}">
+                    <img class="card-elem" src="{{w.typeIcon}}">
+                </div>
+                <div class="card-name-bar" style="border-bottom-color:{{w.qualityColor}}">
+                    <span class="card-name">{{w.name}}</span>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
