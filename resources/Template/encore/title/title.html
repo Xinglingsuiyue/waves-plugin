@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/title/title.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 头部信息 -->
+        <div class="header">
+            <div class="header-info">
+                <div class="title-name">{{title.name}}</div>
+                <div class="title-meta">
+                    {{if title.titleTypeName}}
+                    <span class="title-type">{{title.titleTypeName}}</span>
+                    {{/if}}
+                    <span class="title-id">ID: {{title.id}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 称号预览大图 -->
+        {{if title.image}}
+        <div class="section">
+            <div class="section-title">称号预览</div>
+            <div class="full-img" style="background-image: url('{{title.image}}')"></div>
+        </div>
+        {{/if}}
+
+        <!-- 称号背景 -->
+        {{if title.titleBgIcon}}
+        <div class="section">
+            <div class="section-title">称号背景</div>
+            <div class="full-img" style="background-image: url('{{title.titleBgIcon}}')"></div>
+        </div>
+        {{/if}}
+
+        <!-- 装饰元素 -->
+        {{if title.decorateLeftIcon || title.decorateRightIcon}}
+        <div class="section">
+            <div class="section-title">装饰元素</div>
+            <div class="decorate-row">
+                {{if title.decorateLeftIcon}}
+                <div class="decorate-icon" style="background-image: url('{{title.decorateLeftIcon}}')"></div>
+                {{/if}}
+                {{if title.decorateRightIcon}}
+                <div class="decorate-icon" style="background-image: url('{{title.decorateRightIcon}}')"></div>
+                {{/if}}
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 称号描述 -->
+        {{if title.description}}
+        <div class="section">
+            <div class="section-title">称号描述</div>
+            <div class="section-content">{{title.description}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 获取方式 -->
+        {{if title.itemAccess}}
+        <div class="section">
+            <div class="section-title">获取方式</div>
+            <div class="section-content">{{title.itemAccess}}</div>
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
