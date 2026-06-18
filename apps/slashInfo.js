@@ -12,26 +12,26 @@ export class WhiWaInfo extends plugin {
         super({
             name: '鸣潮-冥歌海墟查询',
             event: 'message',
-            priority: 1008,
+            priority: 1009,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)?(?:冥歌)?海墟(?:\\s*$|查询$)',
+                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)海墟(?:\\s*$|查询$)',
                     fnc: 'whiwaCurrent'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?上期(?:冥歌)?海墟$',
+                    reg: '^(?:～|~|鸣潮)?上期海墟$',
                     fnc: 'whiwaPrev'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?下期(?:冥歌)?海墟$',
+                    reg: '^(?:～|~|鸣潮)?下期海墟$',
                     fnc: 'whiwaNext'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?(?:冥歌)?海墟$',
+                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?海墟$',
                     fnc: 'whiwaByPeriod'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:冥歌)?海墟列表$',
+                    reg: '^(?:～|~|鸣潮)?海墟列表$',
                     fnc: 'whiwaList'
                 },
                 {

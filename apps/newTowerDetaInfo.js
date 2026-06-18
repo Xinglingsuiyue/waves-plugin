@@ -22,30 +22,30 @@ export class DpMatrixInfo extends plugin {
         super({
             name: '鸣潮-终焉矩阵查询',
             event: 'message',
-            priority: 1008,
+            priority: 1009,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)?(?:终焉)?矩阵$',
+                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)矩阵$',
                     fnc: 'dpmatrixCurrent'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?上期(?:终焉)?矩阵$',
+                    reg: '^(?:～|~|鸣潮)?上期矩阵$',
                     fnc: 'dpmatrixPrev'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?下期(?:终焉)?矩阵$',
+                    reg: '^(?:～|~|鸣潮)?下期矩阵$',
                     fnc: 'dpmatrixNext'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?(?:终焉)?矩阵$',
+                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?矩阵$',
                     fnc: 'dpmatrixByPeriod'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:终焉)?矩阵列表$',
+                    reg: '^(?:～|~|鸣潮)?矩阵列表$',
                     fnc: 'dpmatrixList'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?终焉矩阵清除缓存$',
+                    reg: '^(?:～|~|鸣潮)?(?:终焉)?矩阵清除缓存$',
                     fnc: 'clearDpMatrixCache'
                 }
             ]
