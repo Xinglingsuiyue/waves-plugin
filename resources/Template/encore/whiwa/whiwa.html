@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/whiwa/whiwa.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div>
+        <div id="header">
+            <div class="whiwa-label">
+            </div>
+            <div class="header-content">
+                <h1 id="whiwa-title">冥歌海墟 第{{season}}赛季</h1>
+                <div class="phase-info">
+                    {{if beginTime && endTime}}
+                    时间: {{beginTime}} 至 {{endTime}}
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <div class="info-bar">
+            <div class="time-label">
+                <span>剩余时间: {{leftTime}}</span>
+            </div>
+        </div>
+
+        <!-- 解锁信物 -->
+        {{if buffItems && buffItems.length > 0}}
+        <div class="token-section">
+            <div class="section-title">解锁信物</div>
+            <div class="token-grid">
+                {{each buffItems bi}}
+                <div class="token-card">
+                    <div class="token-icon" style="background-image: url('{{bi.icon}}')"></div>
+                    <span class="token-name">{{bi.name}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="tower-container">
+            {{each Area areaData areaId}}
+            <div class="tower-column {{areaData.layoutClass}}">
+                <div class="tower-header">{{areaData.Name}}</div>
+                <div class="floor-container">
+                    <div class="floor-wrap {{if areaData.floorLayout === 'row'}}floor-row{{else}}floor-col{{/if}}">
+                    {{each areaData.Floor floorData floorKey}}
+                    <div class="floor">
+                        <div class="floor-header">
+                            <span class="floor-name">{{floorData.Name}}</span>
+                            {{if floorData.scoreStages && floorData.scoreStages.length > 0}}
+                            <div class="score-stages">
+                                {{each floorData.scoreStages ss}}
+                                <div class="score-stage-item">
+                                    <img class="score-stage-icon" src="{{ss.icon}}" />
+                                    <span class="score-stage-val">{{ss.score}}</span>
+                                </div>
+                                {{/each}}
+                            </div>
+                            {{/if}}
+                        </div>
+
+                        <!-- 关卡整体 buff 描述 -->
+                        {{if floorData.desc}}
+                        <div class="level-desc">{{@floorData.desc}}</div>
+                        {{/if}}
+
+                        <!-- 上下半场 -->
+                        <div class="stage-wrap {{if floorData.stageLayout === 'row'}}stage-row{{else}}stage-col{{/if}}">
+                            {{each floorData.Stages stage}}
+                            <div class="stage-section">
+                                <div class="stage-label">{{stage.label}}</div>
+
+                                {{if stage.dungeonDesc || stage.hasBuffs}}
+                                <div class="stage-desc">
+                                    {{if stage.dungeonDesc}}{{@stage.dungeonDesc}}{{/if}}
+                                    {{each stage.Buffs buffData buffId}}
+                                    <div class="stage-buff" style="border-color:#{{buffData.Color}}">
+                                        {{if buffData.Icon}}
+                                        <div class="stage-buff-icon" style="background-image: url('{{buffData.Icon}}')"></div>
+                                        {{/if}}
+                                        {{if buffData && buffData.Desc}}
+                                        <span class="stage-buff-text">{{buffData.Desc.replace(/<[^>]*>/g, '')}}</span>
+                                        {{/if}}
+                                    </div>
+                                    {{/each}}
+                                </div>
+                                {{/if}}
+
+                                <!-- 怪物 -->
+                                {{if stage.hasMonsters}}
+                                <div class="monsters-section">
+                                    <div class="section-title">挑战对象</div>
+                                    <ul class="monster-list">
+                                        {{each stage.Monsters monsterData monsterId}}
+                                        <li class="monster-item">
+                                            <div class="monster-icon" style="background-image: url('{{monsterData.Icon}}')"></div>
+                                            <div class="monster-info">
+                                                <div class="monster-name-container">
+                                                    <span class="monster-name">{{monsterData.Name}} (Lv.{{monsterData.Level}})</span>
+                                                    <div class="monster-elements">
+                                                        {{each monsterData.ElementIds elementId}}
+                                                        <div class="monster-element" title="{{getElementName(elementId)}}">
+                                                            <div class="element-icon" style="background-image: url('{{pluginResources}}/Template/towerInfo/imgs/{{elementId}}.png')"></div>
+                                                        </div>
+                                                        {{/each}}
+                                                    </div>
+                                                </div>
+                                                <div class="monster-stats">
+                                                    <span>生命: {{Math.round(monsterData.Life)}}</span>
+                                                    <span>攻击: {{Math.round(monsterData.Atk)}}</span>
+                                                    <span>防御: {{Math.round(monsterData.Def)}}</span>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                                {{/if}}
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                    {{/each}}
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
