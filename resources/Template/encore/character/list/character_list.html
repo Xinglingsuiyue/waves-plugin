@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/character/list/character_list.css">
+</head>
+<body id="body">
+    <div id="wrapper">
+        <div class="card-grid">
+            {{each list c}}
+            <div class="char-card">
+                <div class="card-portrait">
+                    <img class="card-avatar" src="{{c.avatar}}">
+                    <img class="card-elem" src="{{c.elementIcon}}">
+                </div>
+                <div class="card-name-bar" style="border-bottom-color:{{c.qualityColor}}">
+                    <span class="card-name">{{c.name}}</span>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
