@@ -1,1 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/fotg/fotg.css">
+</head>
+<body id="body" {{sys.scale}}>
+    <div class="wrapper">
+        <!-- 顶部 Banner -->
+        <div class="banner" {{if viewBg}}style="background-image:url('{{viewBg}}')"{{/if}}>
+            <div class="banner-overlay">
+                <div class="banner-title">千道门扉的异想</div>
+                <div class="banner-subtitle">Cycle {{periodId}}{{if cycleName}} - {{cycleName}}{{/if}}</div>
+            </div>
+        </div>
 
+        <!-- 信息栏 -->
+        <div class="top-bar">
+            <div class="top-item">
+                <span class="top-label">Scores</span>
+                <span class="top-value">{{baseScore}} / {{maxScore}}</span>
+            </div>
+            <div class="top-item">
+                <span class="top-label">周期</span>
+                <span class="top-value">{{startDate}} ~ {{finishDate}}</span>
+            </div>
+            <div class="top-item">
+                <span class="top-label">状态</span>
+                <span class="top-value status {{statusClass}}">{{statusText}}</span>
+                {{if timeHint}}
+                <span class="top-hint">({{timeHint}})</span>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- BuffDesc 说明 -->
+        {{if buffDesc}}
+        <div class="buff-desc-section">
+            <div class="buff-desc-text">{{@buffDesc}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 推荐角色 -->
+        {{if recommendedRoles && recommendedRoles.length > 0}}
+        <div class="section">
+            <div class="section-header">Recommended</div>
+            <div class="roles-grid">
+                {{each recommendedRoles r}}
+                <div class="role-card">
+                    <div class="role-avatar" style="background-image:url('{{r.avatar}}')">
+                        {{if r.elementIcon}}
+                        <img class="role-elem" src="{{r.elementIcon}}">
+                        {{/if}}
+                    </div>
+                    <span class="role-name">{{r.name}}</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
