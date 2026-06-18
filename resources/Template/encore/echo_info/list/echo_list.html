@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/encore/echo_info/list/echo_list.css">
+</head>
+<body id="body" {{sys.scale}}>
+    <div id="wrapper">
+        {{each groups group}}
+        <div class="group-section">
+            <!-- 合鸣头部 -->
+            <div class="group-header">
+                {{if group.icon}}
+                <div class="group-icon" style="background-image: url('{{group.icon}}')"></div>
+                {{/if}}
+                <span class="group-name">{{group.name}}</span>
+                <span class="group-count">({{group.count}})</span>
+            </div>
+
+            <!-- 声骸网格 -->
+            <div class="echo-grid">
+                {{each group.echos ec}}
+                <div class="echo-card">
+                    <div class="echo-portrait" style="background-image: url('{{ec.icon}}')">
+                        {{if ec.elementIcon}}
+                        <img class="echo-elem" src="{{ec.elementIcon}}">
+                        {{/if}}
+                        <span class="echo-index">{{ec.index}}</span>
+                    </div>
+                    <div class="echo-name-bar">
+                        <span class="echo-name">{{ec.name}}</span>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+</html>
