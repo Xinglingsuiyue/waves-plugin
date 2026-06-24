@@ -6,6 +6,7 @@ import Waves from "../components/Code.js";
 import axios from 'axios';
 import fs from 'fs';
 
+// 卡池类型映射
 const poolTypeMapping = {
     "0001": "角色活动唤取",
     "0002": "武器活动唤取",
@@ -66,8 +67,16 @@ export class CloudGacha extends plugin {
                     fnc: "cloudLogin"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)更新抽卡记录$",
+                    reg: "^(?:～|~|鸣潮)更新抽卡记录(.*)$",
                     fnc: "updateGacha"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)解除云登录(.*)$",
+                    fnc: "unbindCloud"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)我的抽卡链接$",
+                    fnc: "myGachaUrl"
                 }
             ]
         });
@@ -273,7 +282,6 @@ export class CloudGacha extends plugin {
         }
     }
 
-
     async doCloudLogin(phone, code) {
 
         const deviceNum = generateDeviceNum();
@@ -338,11 +346,6 @@ export class CloudGacha extends plugin {
         };
     }
 
-    /**
-     * ~云登录 — 支持两种方式：
-     *   1. ~云登录 → 网页登录
-     *   2. ~云登录 手机号:验证码 → 直接登录
-     */
     async cloudLogin(e) {
         const [, message] = e.msg.match(this.rule[0].reg);
         const cleanMsg = message ? message.trim() : '';
@@ -413,9 +416,6 @@ export class CloudGacha extends plugin {
         return await this.saveCloudLoginResult(e, cloudData.data);
     }
 
-    /**
-     * 保存云登录结果到用户数据文件
-     */
     async saveCloudLoginResult(e, data) {
         const userConfig = Config.getUserData(e.user_id);
         let account = userConfig.find(item =>
@@ -449,27 +449,51 @@ export class CloudGacha extends plugin {
         return true;
     }
 
-    /**
-     * ~更新抽卡记录 — 使用已存储的云抽卡参数自动获取最新抽卡记录
-     */
     async updateGacha(e) {
+        const [, message] = e.msg.match(this.rule[1].reg);
+        const targetUid = message ? message.trim() : '';
+
         const userConfig = Config.getUserData(e.user_id);
         if (!userConfig || !userConfig.length) {
             return await e.reply('未找到登录信息，请先使用 ~云登录 命令登录', true);
         }
 
-        const account = userConfig.find(item => item.cloudGacha);
-        if (!account) {
+        const cloudAccounts = userConfig.filter(item => item.cloudGacha);
+        if (!cloudAccounts.length) {
             return await e.reply('未找到云抽卡记录信息，请先使用 ~云登录 命令登录', true);
+        }
+
+        let account;
+        if (targetUid) {
+            // 指定了 UID，查找匹配的账号
+            account = cloudAccounts.find(item => String(item.cloudGacha.playerId) === String(targetUid));
+            if (!account) {
+                const uidList = cloudAccounts.map(a => a.cloudGacha.playerId).join('、');
+                return await e.reply(
+                    `未找到UID为 ${targetUid} 的云登录账号\n` +
+                    `当前已登录的UID: ${uidList}`,
+                    true
+                );
+            }
+        } else if (cloudAccounts.length > 1) {
+            // 多账号但未指定 UID，提示选择
+            const uidList = cloudAccounts.map(a => a.cloudGacha.playerId).join('、');
+            return await e.reply(
+                `检测到多个云鸣潮账号，请指定UID：\n` +
+                `~更新抽卡记录 ${cloudAccounts[0].cloudGacha.playerId}\n` +
+                `已登录UID: ${uidList}`,
+                true
+            );
+        } else {
+            account = cloudAccounts[0];
         }
 
         const { playerId, cloudToken } = account.cloudGacha;
         await e.reply(`正在更新UID为 ${playerId} 的抽卡记录，请稍候...`);
 
-        // recordId 每半小时刷新，每次更新都通过 cloudToken 获取最新 recordId
         const recordResult = await this.cloudGameRecordInfo(cloudToken);
         if (!recordResult.status) {
-            return await e.reply('获取抽卡记录失败：' + (recordResult.msg || '登录可能已过期，请重新 ~云登录'));
+            return await e.reply('获取抽卡记录失败：' + (recordResult.msg || '云登录可能已过期，请重新 ~云登录'));
         }
         const finalRecordId = recordResult.data.recordId;
 
@@ -532,7 +556,7 @@ export class CloudGacha extends plugin {
                     r => Math.floor(new Date(r.time).getTime() / 1000) === ts
                 ).length;
             }
-            const drawNum = timestampCount[ts]--;
+            const drawNum = timestampCount[ts]--; 
             item.id = this.generateId(ts, item.gacha_id, Math.min(drawNum, 99));
         });
 
@@ -581,7 +605,6 @@ export class CloudGacha extends plugin {
                     );
                 }).flat();
 
-                // 合并
                 exportData.list = [...exportData.list, ...filteredOld].filter(
                     (item, index, self) => index === self.findIndex(t => t.id === item.id)
                 );
@@ -590,7 +613,6 @@ export class CloudGacha extends plugin {
             }
         }
 
-        // 排序
         exportData.list.sort((a, b) => a.gacha_id - b.gacha_id || b.id - a.id);
 
         fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2));
@@ -603,6 +625,99 @@ export class CloudGacha extends plugin {
             `可使用 ~抽卡统计 查看`,
             true
         );
+        return true;
+    }
+
+    async unbindCloud(e) {
+        const [, message] = e.msg.match(this.rule[2].reg);
+        const targetUid = message ? message.trim() : '';
+
+        const userConfig = Config.getUserData(e.user_id);
+        if (!userConfig || !userConfig.length) {
+            return await e.reply('没有绑定的云登录账号', true);
+        }
+
+        const cloudAccounts = userConfig.filter(item => item.cloudGacha);
+        if (!cloudAccounts.length) {
+            return await e.reply('没有绑定的云登录账号', true);
+        }
+
+        if (targetUid) {
+            const account = cloudAccounts.find(item => String(item.cloudGacha.playerId) === String(targetUid));
+            if (!account) {
+                const uidList = cloudAccounts.map(a => a.cloudGacha.playerId).join('、');
+                return await e.reply(
+                    `未找到UID为 ${targetUid} 的云登录账号\n` +
+                    `当前已登录的UID: ${uidList}`,
+                    true
+                );
+            }
+            delete account.cloudGacha;
+            if (!account.token && !account.did) {
+                const idx = userConfig.indexOf(account);
+                userConfig.splice(idx, 1);
+            }
+            Config.setUserData(e.user_id, userConfig);
+            return await e.reply(`已解除UID为 ${targetUid} 的云登录绑定`, true);
+        }
+
+        if (cloudAccounts.length === 1) {
+            const account = cloudAccounts[0];
+            const uid = account.cloudGacha.playerId;
+            delete account.cloudGacha;
+            if (!account.token && !account.did) {
+                const idx = userConfig.indexOf(account);
+                userConfig.splice(idx, 1);
+            }
+            Config.setUserData(e.user_id, userConfig);
+            return await e.reply(`已解除UID为 ${uid} 的云登录绑定`, true);
+        }
+
+        // 多个账号，列出让用户选择
+        const uidList = cloudAccounts.map((a, i) => `${i + 1}. ${a.cloudGacha.playerId}`).join('\n');
+        await e.reply(
+            `检测到多个云鸣潮账号，请使用 ~解除云登录 [UID] 指定：\n${uidList}`,
+            true
+        );
+        return true;
+    }
+
+    async myGachaUrl(e) {
+        const userConfig = Config.getUserData(e.user_id);
+        if (!userConfig || !userConfig.length) {
+            return await e.reply('未找到登录信息，请先使用 ~云登录 命令登录', true);
+        }
+
+        const cloudAccounts = userConfig.filter(item => item.cloudGacha);
+        if (!cloudAccounts.length) {
+            return await e.reply('未找到云抽卡记录信息，请先使用 ~云登录 命令登录', true);
+        }
+
+        const results = [];
+        for (const account of cloudAccounts) {
+            const { playerId, cloudToken } = account.cloudGacha;
+            try {
+                const recordResult = await this.cloudGameRecordInfo(cloudToken);
+                if (recordResult.status) {
+                    const recordId = recordResult.data.recordId;
+                    const url = `https://aki-gm-resources.aki-game.com/aki/gacha/index.html#/record?` +
+                        `svr_id=${CLOUD_CONSTANTS.DEFAULT_SERVER_ID}` +
+                        `&player_id=${playerId}` +
+                        `&record_id=${recordId}` +
+                        `&lang=zh-Hans` +
+                        `&svr_area=cn` +
+                        `&resources_id=${CLOUD_CONSTANTS.DEFAULT_RESOURCES_ID}` +
+                        `&platform=web`;
+                    results.push(`UID ${playerId}:\n${url}`);
+                } else {
+                    results.push(`UID ${playerId}: cloudToken 已过期，请重新 ~云登录`);
+                }
+            } catch (_) {
+                results.push(`UID ${playerId}: 获取失败，请重新 ~云登录`);
+            }
+        }
+
+        await e.reply(results.join('\n\n'), true);
         return true;
     }
 }
