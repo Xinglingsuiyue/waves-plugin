@@ -450,7 +450,7 @@ export class Help extends plugin {
         const helpStep = [
             { message: '一、Android 手机方法\n\n1.进入游戏，打开唤取界面\n\n2.关闭网络\n\n3.点击唤取记录\n\n4.长按左上角空白处，全选，复制\n\n5.向机器人发送[~抽卡统计 + 你复制的内容]，即可开始分析' },
             { message: '二、IOS 手机方法\n\n1.在 AppStore 搜索 Stream 并下载安装\n\n2.打开 Stream，按照提示配置好权限并开启 HTTPS 抓包。在 Stream 中点击 开始抓包 > 安装证书 > 在弹出的窗口中选择允许 > 证书已经下载到了你的设备中，然后打开系统设置 > 通用 > VPN与设备管理 > 选择 Stream Generated CA 并安装。打开系统设置 > 通用 > 关于本机 > (最下方)证书信任设置 > 打开 Stream Generated CA 开关即可\n\n3.在 Stream 中点击开始抓包，回到游戏中点击唤取记录\n\n4.回到 Stream 并点击停止抓包，点击抓包历史 > 选择最新的记录 > 找到链接为 https://gmserver-api.aki-game2.com/gacha/record/query 的POST请求点进去 > 点击位于总览右侧的请求标签页 > 点击最下方查看JSON > 全选复制\n\n5.向机器人发送[~抽卡统计 + 你复制的内容]，即可开始分析' },
-            { message: '三、PC端方法\n\n1.进入游戏，打开唤取界面，点击唤取记录\n\n2.同时按下 Win + X 键，再按 A 键打开 PowerShell 窗口\n\n3.粘贴以下命令：irm waves.cikeyqi.com | iex，回车即可自动获取 \n\n5.向机器人发送[~抽卡统计 + 你复制的内容]，即可开始分析' },
+            { message: '三、PC方法 (推荐)\n\n1.向机器人发送 ~云登录 命令\n\n2.复制链接到浏览器打开，输入手机号和验证码登录\n\n3.登录成功后发送 ~更新抽卡记录 获取最新数据\n\n4.发送 ~抽卡统计 即可查看分析结果（特别注意不能跟云鸣潮同时在线）' },
         ]
         await e.reply(await Bot.makeForwardMsg(helpStep))
         return true

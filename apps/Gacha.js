@@ -30,11 +30,7 @@ export class Gacha extends plugin {
                     reg: "^(～|~|鸣潮)导出抽卡记录$",
                     fnc: "exportGacha"
                 },
-                {
-                    reg: "^(～|~|鸣潮)抽卡帮助$",
-                    fnc: "gachaHelp"
-                }
-            ]
+                ]
         });
 
         this.simulatorData = this.loadSimulatorData();
@@ -595,30 +591,6 @@ export class Gacha extends plugin {
             name: `${boundId}_抽卡记录_${new Date().toISOString().split('T')[0]}.json`
         });
 
-        return true;
-    }
-
-    async gachaHelp(e) {
-        const helpMessage = [
-            "【鸣潮抽卡记录获取帮助】",
-            "1. 官方PC端/安卓端:",
-            "   - 登录游戏后，在抽卡记录页面复制URL",
-            "   - 格式: https://...?player_id=123&record_id=456",
-            "   - 使用命令: ~抽卡统计[URL]",
-            "",
-            "2. 官方iOS端:",
-            "   - 需要抓包获取请求体",
-            "   - 格式: {\"playerId\":\"123\",\"recordId\":\"456\"}",
-            "   - 使用命令: ~抽卡统计[请求体]",
-            "",
-            "3. 导入/导出功能:",
-            "   - 导入: ~导入抽卡记录 (发送JSON文件)",
-            "   - 导出: ~导出抽卡记录",
-            "",
-            "注意: 部分功能可能需要管理员权限"
-        ].join("\n");
-
-        await e.reply(helpMessage);
         return true;
     }
 }
