@@ -2,6 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js';
 import { pluginResources } from '../model/path.js';
 import Config from "../components/Config.js";
 import Wiki from '../components/Wiki.js';
+import CommunityGuide from '../components/CommunityGuide.js';
 import fs from 'fs';
 
 const AUTHORS = [
@@ -29,13 +30,10 @@ export class Strategy extends plugin {
 
     async strategy(e) {
         const [, message] = e.msg.match(this.rule[0].reg);
-
         if (!message) return e.reply("请输入正确的命令格式，如：[～今汐攻略]")
-
         const wiki = new Wiki();
         const name = await wiki.getAlias(message);
         const provide = await Config.getConfig().strategy_provide;
-
         let messages = [];
 
         if (provide === "all") {
@@ -53,6 +51,32 @@ export class Strategy extends plugin {
             if (fs.existsSync(imagePath)) {
                 messages.push({ message: segment.image(imagePath) });
             }
+        }
+
+        try {
+            const { guides } = await CommunityGuide.getCommunityGuides(name);
+            if (guides.length > 0) {
+                const roleInfo = await CommunityGuide.getRoleGbId(name);
+                if (roleInfo) {
+                    const screenshotMap = await CommunityGuide.captureGuideScreenshots(roleInfo.roleGbId, guides);
+                    for (const guide of guides) {
+                        const screenshotPath = screenshotMap.get(guide.guideId);
+                        if (screenshotPath) {
+                            const sourceName = guide.source || guide.title || '社区玩家';
+                            const roleName = guide.roleName || name;
+                            const label = guide.source
+                                ? `来自《鸣潮》|攻略站 ${sourceName} 的${roleName}攻略：`
+                                : `来自社区攻略的${roleName}攻略：${guide.title}`;
+                            messages.push(
+                                { message: label },
+                                { message: segment.image(screenshotPath) }
+                            );
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan('获取《鸣潮》|攻略站 攻略失败'), logger.red(err));
         }
 
         if (messages.length === 0) {
