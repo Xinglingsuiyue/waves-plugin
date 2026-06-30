@@ -8,7 +8,6 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 const MONSTER_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'monster', 'icon')
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
 
-/** 残像信息查询 — 渲染图片卡片 */
 export class MonsterInfo extends plugin {
     constructor() {
         super({
@@ -16,15 +15,14 @@ export class MonsterInfo extends plugin {
             event: 'message',
             priority: 1007,
             rule: [
-                { reg: '^(?:～|~|鸣潮)?(?:残像查询|残像搜索|查残像)\\s*(.+)?$', fnc: 'monsterQuery' },
-                { reg: '^(?:～|~|鸣潮)?残像列表$', fnc: 'monsterList' }
+                { reg: '^(?:～|~|鸣潮)(?:残像查询|残像搜索|查残像)\\s*(.+)?$', fnc: 'monsterQuery' },
+                { reg: '^(?:～|~|鸣潮)残像列表$', fnc: 'monsterList' }
             ]
         })
     }
 
     getMonsterData() { return readLocalData('monster') }
 
-    /** 域名修正 — api.encore.moe → api-v2 */
     _fixUrl(url) {
         if (!url) return ''
         return url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')

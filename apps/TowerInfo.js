@@ -14,11 +14,11 @@ export class TowerInfo extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)?(当期|上期|下期|\\d{1,3}期)深塔$",
+                    reg: "^(?:～|~|鸣潮)(当期|上期|下期|\\d{1,3}期)深塔$",
                     fnc: "towerInfo"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)?清除深塔缓存$",
+                    reg: "^(?:～|~|鸣潮)清除深塔缓存$",
                     fnc: "clearCache"
                 }
             ]

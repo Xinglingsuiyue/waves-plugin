@@ -21,7 +21,7 @@ export class Strategy extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)?(.*)攻略$",
+                    reg: "^(?:～|~|鸣潮)(.*)攻略$",
                     fnc: "strategy"
                 }
             ]

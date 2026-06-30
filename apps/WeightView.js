@@ -28,11 +28,6 @@ function getMainWeight(role, cost, propName) {
     return { value: w, cls: getWeightClass(w) }
 }
 
-/**
- * 计算固定值副属性（攻击/生命/防御）的权重
- * 公式与 Calculate.js 的 calValWeight 保持一致：
- *   固定值weight = 基础最大值 / 角色基础属性 / (百分比最大值 / 100) × 百分比权重
- */
 function calcFixedSubWeight(roleWeight, baseWeight, propName) {
     const getSubMax = (name) => {
         const p = baseWeight.subProps.find(item => item.name === name)

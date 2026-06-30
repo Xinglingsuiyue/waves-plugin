@@ -7,7 +7,6 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 
 const FOTG_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'fotg', 'icon')
 
-/** 千道门扉的异想 (Fantasies of the Thousand Gateways) 查询 */
 export class FotgInfo extends plugin {
     constructor() {
         super({
@@ -16,34 +15,33 @@ export class FotgInfo extends plugin {
             priority: 1008,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)?(?:千道(?:门扉)?(?:的)?异想|千道门扉)(?:\\s*$|查询$)',
+                    reg: '^(?:～|~|鸣潮)(?:当期|当前|本期)?(?:千道(?:门扉)?(?:的)?异想|千道门扉)(?:\\s*$|查询$)',
                     fnc: 'fotgCurrent'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?上期(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
+                    reg: '^(?:～|~|鸣潮)上期(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
                     fnc: 'fotgPrev'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?下期(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
+                    reg: '^(?:～|~|鸣潮)下期(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
                     fnc: 'fotgNext'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
+                    reg: '^(?:～|~|鸣潮)(\\d+)(?:期)?(?:千道(?:门扉)?(?:的)?异想|千道门扉)$',
                     fnc: 'fotgByPeriod'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:千道(?:门扉)?(?:的)?异想|千道门扉)列表$',
+                    reg: '^(?:～|~|鸣潮)(?:千道(?:门扉)?(?:的)?异想|千道门扉)列表$',
                     fnc: 'fotgList'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?千道(?:门扉)?异想清除缓存$',
+                    reg: '^(?:～|~|鸣潮)千道(?:门扉)?异想清除缓存$',
                     fnc: 'clearFotgCache'
                 }
             ]
         })
     }
 
-    /** 获取千道异想列表（本地优先 → Redis → API 兜底） */
     async getFotgList() {
         let data = readLocalData('fotg')
         if (data && Array.isArray(data) && data.length > 0) {
@@ -64,7 +62,6 @@ export class FotgInfo extends plugin {
         } catch (e) { console.error('[FotgInfo] API 请求失败:', e); return null }
     }
 
-    /** 获取 buff pool 数据 — 本地优先 → Redis → API */
     async getBuffPool() {
         let buffs = readLocalData('fotg_buffpool')
         if (buffs && Array.isArray(buffs) && buffs.length > 0) return buffs

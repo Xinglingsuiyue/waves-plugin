@@ -7,10 +7,8 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 import Wiki from '../components/Wiki.js'
 
 const ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'weapon', 'icon')
-// 武器类型图标和角色武器类型图标是同一套，也查角色图标目录
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
 
-/** 武器信息查询 — 渲染图片卡片 */
 export class WeaponInfo extends plugin {
     constructor() {
         super({
@@ -19,7 +17,7 @@ export class WeaponInfo extends plugin {
             priority: 1007,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:武器查询|武器搜索|查武器)\\s*(.+)?$',
+                    reg: '^(?:～|~|鸣潮)(?:武器查询|武器搜索|查武器)\\s*(.+)?$',
                     fnc: 'weaponQuery'
                 },
                 {

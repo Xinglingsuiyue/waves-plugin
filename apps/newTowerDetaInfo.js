@@ -6,7 +6,6 @@ import { pluginResources } from '../model/path.js'
 
 const DPMATRIX_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'dpmatrix', 'icon')
 
-/** 关卡名称颜色 — 与 newTowerDeta 模板保持一致 */
 const LEVEL_NAME_COLOR = {
     '稳态协议': '#5fd9e8',
     '奇点扩张': '#ff5a73'
@@ -16,7 +15,6 @@ const LEVEL_ICON_OVERRIDE = {
     '稳态协议': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAABHNCSVQICAgIfAhkiAAAARtJREFUaIHtmksOwjAMBW3UA5TTcmokOIHZdIGgbV6oreYZzwYJ9eNpEtvQ6O1pkplp+UQsNTKQH4BivoSHcTIlyE4JspNecGof0qRVPk4ttH8zgoeKuJndV76eRURU9ci1986FrusxRUUWmRHxELSDoxRK+jVYguwga/BzfVH9gISTzFIK5o2EEpVk9h4mdM/0U7QE2SlBdrx60S3QkhLW6iGCJiKiqteoICJJP0VLkJ0SZKcE2aEVNDMxa/cR0Z1MVIfyQA+kHUGUEmSnBNnpyaJ7GTHqr8SveyKl4Z3oMuFO72uQ9FO0BNkZWrA3oawxYpKB+0wEr814bk11x6jVZjyRAaeo9+v+9CNYguyUIDvpBV02450EFPMLK30m+QCdSXMAAAAASUVORK5CYII='
 }
 
-/** 终焉矩阵 (Doubled Pawns Matrix) 查询 */
 export class DpMatrixInfo extends plugin {
     constructor() {
         super({
@@ -25,27 +23,27 @@ export class DpMatrixInfo extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:当期|当前|本期)矩阵$',
+                    reg: '^(?:～|~|鸣潮)(?:当期|当前|本期)矩阵$',
                     fnc: 'dpmatrixCurrent'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?上期矩阵$',
+                    reg: '^(?:～|~|鸣潮)上期矩阵$',
                     fnc: 'dpmatrixPrev'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?下期矩阵$',
+                    reg: '^(?:～|~|鸣潮)下期矩阵$',
                     fnc: 'dpmatrixNext'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(\\d+)(?:期)?矩阵$',
+                    reg: '^(?:～|~|鸣潮)(\\d+)(?:期)?矩阵$',
                     fnc: 'dpmatrixByPeriod'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?矩阵列表$',
+                    reg: '^(?:～|~|鸣潮)矩阵列表$',
                     fnc: 'dpmatrixList'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:终焉)?矩阵清除缓存$',
+                    reg: '^(?:～|~|鸣潮)(?:终焉)?矩阵清除缓存$',
                     fnc: 'clearDpMatrixCache'
                 }
             ]
