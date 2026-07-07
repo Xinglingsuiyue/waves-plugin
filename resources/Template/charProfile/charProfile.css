@@ -26,9 +26,14 @@
 
 #container {
   position: relative;
-  width: 970px;
-  height: 1584px;
+  width: 760px;
   background-image: url(./imgs/rolecard.png);
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 760px auto;
+  background-color: #f1eff1;
+  overflow: hidden;
+  padding-bottom: 24px;
 }
 
 #header {
@@ -120,7 +125,7 @@
 
 #right-attributes-container {
   position: absolute;
-  top: 68px;
+  top: 662px;
   right: -10px;
   z-index: 10;
   display: flex;
@@ -307,8 +312,8 @@
   display: flex;
   flex-direction: row;
   bottom: 5px;
-  left: 39%;
-  transform: translateX(-50.5%);
+  left: 50%;
+  transform: translateX(-50%);
   justify-content: center;
   align-items: flex-start;
   width: 680px;
@@ -339,7 +344,7 @@
   grid-template-columns: 68px 68px 68px 68px 68px 68px;
   column-gap: 40px;
   top: 245px;
-  left: 90px;
+  left: 72px;
   height: 70px;
   width: 608px;
   z-index: 2;
@@ -400,13 +405,14 @@
 }
 
 #table {
-  margin: 0px 0px 0px 36px;
+  position: relative;
+  margin: 12px 0px 0px 36px;
   display: grid;
   grid-template-columns: 214px 214px 214px;
   column-gap: 20.3px;
   row-gap: 12px;
-  height: 652x;
-  width: 668px;
+  width: 683px;
+  min-height: 652px;
 }
 
 #table > * {
@@ -585,12 +591,70 @@
   padding: 6px 8px 0px 0px;
 }
 
+
+.role-attr-table {
+  position: relative;
+  width: 688px;
+  margin: 12px auto 0;
+}
+
+.role-attr-header {
+  font-size: 20px;
+  font-weight: bold;
+  color: #4e4e4e;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.role-attr-body {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.attr-row {
+  display: flex;
+  height: 38px;
+}
+
+.attr-cell {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+
+.attr-row:nth-child(odd) > .attr-cell:nth-child(odd),
+.attr-row:nth-child(even) > .attr-cell:nth-child(even) {
+  background-color: #e1e1e1;
+}
+
+.attr-row:nth-child(odd) > .attr-cell:nth-child(even),
+.attr-row:nth-child(even) > .attr-cell:nth-child(odd) {
+  background-color: #f0ecf0;
+}
+
+.attr-key {
+  font-size: 15px;
+  font-weight: bold;
+  color: #4e4e4e;
+}
+
+.attr-val {
+  font-family: "framdit";
+  font-size: 15px;
+  font-weight: bold;
+  color: #9d2933;
+}
+
 .total-score-table {
   position: relative;
-  margin-bottom: 21px;
   display: flex;
-  left: 36px;
-  width: 680px;
+  margin: 14px auto 0;
+  width: 688px;
   height: 180px;
   background-color: #f0ecf0;
   border-radius: 15px;
@@ -609,19 +673,55 @@
   border-right: none;
 }
 
+.total-score-table-right {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.score-row {
+  display: flex;
+  height: 45px;
+}
+
+.score-cell {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.score-row:nth-child(odd) > .score-cell:nth-child(odd),
+.score-row:nth-child(even) > .score-cell:nth-child(even) {
+  background-color: #e1e1e1;
+}
+
+.score-row:nth-child(odd) > .score-cell:nth-child(even),
+.score-row:nth-child(even) > .score-cell:nth-child(odd) {
+  background-color: #f0ecf0;
+}
+
+.score-row:last-child > .score-cell {
+  flex: 2;
+}
+
+.score-row:last-child > .score-cell:first-child {
+  flex: 3;
+}
+
 .score-key {
   font-size: 14px;
   float: left;
-  padding-top: 11px;
-  padding-left: 5px;
+  padding-top: 14px;
+  padding-left: 8px;
 }
 
 .score-value {
   font-family: "framdit";
   font-size: 14px;
   float: right;
-  padding-top: 11px;
-  padding-right: 5px;
+  padding-top: 14px;
+  padding-right: 8px;
 }
 
 .total-score-key {
@@ -640,21 +740,113 @@
   font-size: 46px;
 }
 
-#copyright {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  width: 100%;
-  transform: translateX(-50%);
+.damage-table {
+  position: relative;
+  margin: 18px auto 0;
+  width: 688px;
+}
+
+.damage-target {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  background-color: #e1e1e1;
+  border-radius: 10px;
   font-size: 18px;
   font-weight: bold;
-  color: white;
-  text-shadow: 2px 2px 2px black;
+  color: #4e4e4e;
+}
+
+.damage-target span:last-child {
+  font-family: "framdit";
+  color: #9d2933;
+}
+
+.damage-grid {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.damage-grid-row {
+  display: grid;
+  grid-template-columns: 268px 140px 140px 140px;
+  align-items: center;
+  height: 44px;
+}
+
+.damage-grid-row > div {
+  text-align: center;
+  font-size: 17px;
+  color: #5a5a5a;
+}
+
+.damage-grid-row .dmg-name {
+  text-align: center;
+  font-weight: bold;
+  color: #4e4e4e;
+  padding: 0 10px;
+}
+
+.damage-grid-row > .dmg-expected {
+  font-family: "framdit";
+  color: #9d2933;
+  font-weight: bold;
+}
+
+.damage-grid-row:not(.damage-grid-head) > div:not(.dmg-name) {
+  font-family: "framdit";
+}
+
+.damage-grid-head {
+  height: 48px;
+  background-color: #d8d8d8;
+}
+
+.damage-grid-head > div,
+.damage-grid-head .dmg-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4e4e4e;
+}
+
+.damage-grid-row:nth-child(odd):not(.damage-grid-head) {
+  background-color: #f0ecf0;
+}
+
+.damage-grid-row:nth-child(even):not(.damage-grid-head) {
+  background-color: #e6e2e6;
+}
+
+.damage-grid-row.heal-row .dmg-expected {
+  color: #2f8a43;
+}
+
+.damage-grid-row.shield-row .dmg-expected {
+  color: #245d9a;
+}
+
+.damage-empty {
+  text-align: center;
+  color: #888;
+  font-size: 16px;
+  padding: 16px 0;
+}
+
+#copyright {
+  position: relative;
+  margin: 22px auto 4px;
+  width: 100%;
+  font-size: 18px;
+  font-weight: bold;
+  color: #6a6a6a;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
   text-align: center;
 }
 
 #copyright .version {
-  color: #d3bc8e;
+  color: #b09a5e;
   display: inline-block;
   padding: 0 3px;
 }
