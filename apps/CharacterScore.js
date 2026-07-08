@@ -7,6 +7,36 @@ import Config from '../components/Config.js';
 import path from 'path';
 import fs from 'fs';
 
+let sharp = null;
+try {
+    const sharpModule = await import('sharp');
+    sharp = sharpModule.default || sharpModule;
+} catch (err) {
+    logger.mark(logger.blue('[WAVES 评分]'), logger.red('未检测到 sharp 依赖，图片过大时将无法自动压缩:'), logger.red(err.message));
+}
+
+const MAX_OCR_BYTES = 1024 * 1024;
+async function compressImageUnderLimit(buffer, maxBytes) {
+    if (!sharp) return null;
+    try {
+        for (let quality = 85; quality >= 30; quality -= 15) {
+            const output = await sharp(buffer).jpeg({ quality }).toBuffer();
+            if (output.length <= maxBytes) return output;
+        }
+        for (const width of [1600, 1200, 900]) {
+            const output = await sharp(buffer)
+                .resize({ width, withoutEnlargement: true })
+                .jpeg({ quality: 50 })
+                .toBuffer();
+            if (output.length <= maxBytes) return output;
+        }
+        return null;
+    } catch (err) {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.red('图片压缩失败:'), logger.red(err));
+        return null;
+    }
+}
+
 
 function getOcrKeys() {
     try {
@@ -25,7 +55,6 @@ function getOcrKeys() {
     return [];
 }
 
-// 全局轮询索引
 let _ocrKeyIndex = 0;
 
 
@@ -108,7 +137,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/MAX/gi, 'max'],
         [/＆/g, ''],
         [/&/g, ''],
-        [/[，:：、*,•+×]/g, ' '],
+        [/[，:：。、*,•+×]/g, ' '],
         [/素/g, ''],
         [/表/g, ''],
         [/教/g, ''],
@@ -133,6 +162,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/(?<![\d+])25(?!\d)/g, ''],
         [/生前/g, '生命'],
         [/焱/g, ''],
+        [/士/g, ''],
         [/土/g, ''],
         [/誕/g, ''],
         [/只/g, ''],
@@ -213,6 +243,41 @@ function extractPhantomDataFromOCR(rawText) {
         [/⑧/g, ''],
         [/⑨/g, ''],
         [/⑩/g, ''],
+        [/63/g, '6.3'],
+        [/69/g, '6.9'],
+        [/75/g, '7.5'],
+        [/81/g, '8.1'],
+        [/87/g, '8.7'],
+        [/93/g, '9.3'],
+        [/99/g, '9.9'],
+        [/105/g, '10.5'],
+        [/126/g, '12.6'],
+        [/138/g, '13.8'],
+        [/162/g, '16.2'],
+        [/174/g, '17.4'],
+        [/186/g, '18.6'],
+        [/198/g, '19.8'],
+        [/68/g, '6.8'],
+        [/76/g, '7.6'],
+        [/84/g, '8.4'],
+        [/92/g, '9.2'],
+        [/108/g, '10.8'],
+        [/116/g, '11.6'],
+        [/81/g, '8.1'],
+        [/109/g, '10.9'],
+        [/118/g, '11.8'],
+        [/128/g, '12.8'],
+        [/138/g, '13.8'],
+        [/147/g, '14.7'],
+        [/3.1/g, '8.1'],
+        [/124/g, '12.4'],
+        [/64/g, '6.4'],
+        [/71/g, '7.1'],
+        [/79/g, '7.9'],
+        [/86/g, '8.6'],
+        [/94/g, '9.4'],
+        [/101/g, '10.1'],
+        [/109/g, '10.9'],
         [/多/g, ''],
         [/暴擊/g, '暴击'],
         [/暴擊傷害/g, '暴击伤害'],
@@ -240,6 +305,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/普攻(?!伤害加成)/g, '普攻伤害加成'],
         [/普攻伤古如成/g, '普攻伤害加成'],
         [/最击伤害/g, '暴击伤害'],
+        [/桑击/g, '暴击'],
         [/寨击/g, '暴击'],
         [/爆击/g, '暴击'],
         [/潮顾重/g, '潮顾重'],
@@ -636,6 +702,109 @@ function extractPhantomDataFromOCR(rawText) {
     return phantomData;
 }
 
+// 从单个消息段中提取图片直链。
+// 兼容两种格式：OneBot 11 嵌套格式 { type:'image', data:{ url } }
+// 以及 icqq/Yunzai 内部的平铺格式 { type:'image', url }
+function getImageUrlFromSegment(seg) {
+    if (!seg || seg.type !== 'image') return null;
+    const data = seg.data || seg;
+    return data.url || seg.url || null;
+}
+
+// 拉取合并转发消息里的各个节点，兼容不同协议实现：
+//   1) icqq 协议 (QQ NT 等): bot.getForwardMsg(id) 直接返回节点数组，每项 { message: [...] }
+//   2) OneBot 11 标准 (LLBot 等): 没有 getForwardMsg 方法，需要用 sendApi('get_forward_msg', {id})
+//      调用底层协议 API；不同实现返回字段名不完全一致，这里做了多种兼容：
+//      messages/message 数组，节点里 content/message/data.content 都当作消息段数组处理。
+async function fetchForwardNodes(e, id) {
+    const bot = e?.bot;
+    if (!bot) return [];
+
+    if (typeof bot.getForwardMsg === 'function') {
+        try {
+            const nodes = await bot.getForwardMsg(id);
+            if (Array.isArray(nodes) && nodes.length > 0) {
+                return nodes.map(n => (Array.isArray(n?.message) ? n.message : []));
+            }
+        } catch (err) {
+            console.error('bot.getForwardMsg 调用失败，尝试走 OneBot get_forward_msg API:', err);
+        }
+    }
+
+    let res = null;
+    try {
+        if (typeof bot.sendApi === 'function') {
+            res = await bot.sendApi('get_forward_msg', { id, message_id: id });
+        } else if (typeof bot.api === 'function') {
+            res = await bot.api('get_forward_msg', { id, message_id: id });
+        } else {
+            console.error('当前协议端不支持 getForwardMsg / sendApi，无法解析转发消息');
+            return [];
+        }
+    } catch (err) {
+        console.error('获取转发消息失败 (get_forward_msg):', err);
+        return [];
+    }
+
+    if (res && typeof res === 'object' && 'retcode' in res) {
+        if (res.retcode !== 0) {
+            console.error('get_forward_msg 返回错误:', res.message || res.msg || `retcode=${res.retcode}`);
+            return [];
+        }
+        res = res.data;
+    }
+
+    const rawNodes = res?.messages || res?.message || [];
+    if (!Array.isArray(rawNodes)) return [];
+    return rawNodes.map(node =>
+        Array.isArray(node?.content) ? node.content
+            : Array.isArray(node?.message) ? node.message
+            : Array.isArray(node?.data?.content) ? node.data.content
+            : []
+    );
+}
+
+// 递归解析合并转发消息 (resid/forward id)，把里面所有图片直链取出来。
+// depth 防止转发套娃导致死循环。
+async function collectImageUrlsFromForwardId(e, id, depth = 0) {
+    if (!id || depth > 3) return [];
+    const nodeSegmentsList = await fetchForwardNodes(e, id);
+    const urls = [];
+    for (const segs of nodeSegmentsList) {
+        urls.push(...(await collectImageUrlsFromSegments(e, segs, depth + 1)));
+    }
+    return urls;
+}
+
+// 遍历一组消息段，提取其中的图片；遇到嵌套的转发/合并转发卡片会自动展开。
+// 兼容两种转发表示方式：
+//   1) LLBot/OneBot 11 标准格式: { type:'forward', data:{ id } }（字段可能平铺在 seg 上）
+//   2) 官方 QQ 的旧式转发卡片: { type:'json', data:'...."resid":"xxx"....' }
+async function collectImageUrlsFromSegments(e, segments, depth = 0) {
+    const urls = [];
+    if (!Array.isArray(segments)) return urls;
+
+    for (const seg of segments) {
+        if (!seg || !seg.type) continue;
+        const data = seg.data || seg;
+
+        if (seg.type === 'image') {
+            const url = getImageUrlFromSegment(seg);
+            if (url) urls.push(url);
+        } else if (seg.type === 'forward') {
+            const id = data.id || data.resId || data.res_id || seg.id || seg.resId || seg.res_id;
+            if (id) urls.push(...(await collectImageUrlsFromForwardId(e, id, depth)));
+        } else if (seg.type === 'json') {
+            const jsonStr = typeof seg.data === 'string' ? seg.data : (typeof data.data === 'string' ? data.data : '');
+            if (jsonStr && /resid/i.test(jsonStr)) {
+                const resid = jsonStr.match(/"resid":"(.*?)"/i)?.[1];
+                if (resid) urls.push(...(await collectImageUrlsFromForwardId(e, resid, depth)));
+            }
+        }
+    }
+    return urls;
+}
+
 function replacePhantomStats(targetPhantom, ocrData) {
     if (!targetPhantom || !ocrData) return false;
 
@@ -735,18 +904,7 @@ export class CharacterScore extends plugin {
                 console.error('获取历史消息出错:', error);
             }
             if (source && Array.isArray(source.message)) {
-                for (const msg of source.message) {
-                    if (msg.type === 'image') images.push(msg.url);
-                    else if (msg.type === 'json' && /resid/.test(msg.data)) {
-                        const resid = msg.data.match(/"resid":"(.*?)"/)?.[1];
-                        if (resid) {
-                            const forwardMessages = await e.bot?.getForwardMsg(resid) || [];
-                            forwardMessages.forEach(item => 
-                                images.push(...Array.isArray(item.message) ? item.message.filter(itm => itm.type === 'image').map(itm => itm.url) : [])
-                            );
-                        }
-                    }
-                }
+                images.push(...(await collectImageUrlsFromSegments(e, source.message)));
             }
         }
 
@@ -759,11 +917,7 @@ export class CharacterScore extends plugin {
                 console.error('获取回复消息失败:', err);
                 reply = [];
             }
-            if (Array.isArray(reply)) {
-                for (const val of reply) {
-                    if (val.type === "image") images.push(val.url);
-                }
-            }
+            images.push(...(await collectImageUrlsFromSegments(e, reply)));
         }
 
         if (!images.length) {
@@ -788,8 +942,24 @@ export class CharacterScore extends plugin {
             try {
                 const imgResponse = await fetch(rolePicUrl);
                 const arrayBuffer = await imgResponse.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const base64Image = `data:image/png;base64,${buffer.toString('base64')}`;
+                let buffer = Buffer.from(arrayBuffer);
+                let mimeType = 'image/png';
+
+                if (buffer.length > MAX_OCR_BYTES) {
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow(`第${idx + 1}张图片大小 ${(buffer.length / 1024).toFixed(0)}KB 超过1MB限制，尝试压缩...`));
+                    const compressed = await compressImageUnderLimit(buffer, MAX_OCR_BYTES);
+                    if (compressed) {
+                        buffer = compressed;
+                        mimeType = 'image/jpeg';
+                        logger.mark(logger.blue('[WAVES 评分]'), logger.green(`第${idx + 1}张图片压缩后大小 ${(buffer.length / 1024).toFixed(0)}KB`));
+                    } else {
+                        const warnMsg = `⚠️ 第 ${idx + 1} 张图片过大，请重新上传`;
+                        forwardMessages.push({ message: warnMsg, nickname: e.bot?.nickname || 'Bot' });
+                        continue;
+                    }
+                }
+
+                const base64Image = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
                 const res = await fetch('https://api.ocr.space/parse/image', {
                     method: 'POST',
