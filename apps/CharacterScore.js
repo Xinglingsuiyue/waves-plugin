@@ -243,41 +243,38 @@ function extractPhantomDataFromOCR(rawText) {
         [/⑧/g, ''],
         [/⑨/g, ''],
         [/⑩/g, ''],
-        [/63/g, '6.3'],
-        [/69/g, '6.9'],
-        [/75/g, '7.5'],
-        [/81/g, '8.1'],
-        [/87/g, '8.7'],
-        [/93/g, '9.3'],
-        [/99/g, '9.9'],
-        [/105/g, '10.5'],
-        [/126/g, '12.6'],
-        [/138/g, '13.8'],
-        [/162/g, '16.2'],
-        [/174/g, '17.4'],
-        [/186/g, '18.6'],
-        [/198/g, '19.8'],
-        [/68/g, '6.8'],
-        [/76/g, '7.6'],
-        [/84/g, '8.4'],
-        [/92/g, '9.2'],
-        [/108/g, '10.8'],
-        [/116/g, '11.6'],
-        [/81/g, '8.1'],
-        [/109/g, '10.9'],
-        [/118/g, '11.8'],
-        [/128/g, '12.8'],
-        [/138/g, '13.8'],
-        [/147/g, '14.7'],
-        [/3.1/g, '8.1'],
-        [/124/g, '12.4'],
-        [/64/g, '6.4'],
-        [/71/g, '7.1'],
-        [/79/g, '7.9'],
-        [/86/g, '8.6'],
-        [/94/g, '9.4'],
-        [/101/g, '10.1'],
-        [/109/g, '10.9'],
+        [/(?<!\d)63(?!\d)/g, '6.3'],
+        [/(?<!\d)69(?!\d)/g, '6.9'],
+        [/(?<!\d)75(?!\d)/g, '7.5'],
+        [/(?<!\d)81(?!\d)/g, '8.1'],
+        [/(?<!\d)87(?!\d)/g, '8.7'],
+        [/(?<!\d)93(?!\d)/g, '9.3'],
+        [/(?<!\d)99(?!\d)/g, '9.9'],
+        [/(?<!\d)105(?!\d)/g, '10.5'],
+        [/(?<!\d)126(?!\d)/g, '12.6'],
+        [/(?<!\d)138(?!\d)/g, '13.8'],
+        [/(?<!\d)162(?!\d)/g, '16.2'],
+        [/(?<!\d)174(?!\d)/g, '17.4'],
+        [/(?<!\d)186(?!\d)/g, '18.6'],
+        [/(?<!\d)198(?!\d)/g, '19.8'],
+        [/(?<!\d)68(?!\d)/g, '6.8'],
+        [/(?<!\d)76(?!\d)/g, '7.6'],
+        [/(?<!\d)84(?!\d)/g, '8.4'],
+        [/(?<!\d)92(?!\d)/g, '9.2'],
+        [/(?<!\d)108(?!\d)/g, '10.8'],
+        [/(?<!\d)116(?!\d)/g, '11.6'],
+        [/(?<!\d)109(?!\d)/g, '10.9'],
+        [/(?<!\d)118(?!\d)/g, '11.8'],
+        [/(?<!\d)128(?!\d)/g, '12.8'],
+        [/(?<!\d)147(?!\d)/g, '14.7'],
+        [/(?<!\d)3\.1(?!\d)/g, '8.1'],
+        [/(?<!\d)124(?!\d)/g, '12.4'],
+        [/(?<!\d)64(?!\d)/g, '6.4'],
+        [/(?<!\d)71(?!\d)/g, '7.1'],
+        [/(?<!\d)79(?!\d)/g, '7.9'],
+        [/(?<!\d)86(?!\d)/g, '8.6'],
+        [/(?<!\d)94(?!\d)/g, '9.4'],
+        [/(?<!\d)101(?!\d)/g, '10.1'],
         [/多/g, ''],
         [/暴擊/g, '暴击'],
         [/暴擊傷害/g, '暴击伤害'],
@@ -386,7 +383,7 @@ function extractPhantomDataFromOCR(rawText) {
 
     // 过滤明显无关的关键词行
     const ignoreLineKeywords = [
-        '特征码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功',
+        '特征码', '特花码', '声骸强化', '强化消耗材料', '快捷放入', '已完成全部调谐', '调谐成功',
         '技能使下个变奏技能登场的角', '我銷製讀伤實加', '颤樂战厘率', 'X成通', '不限',
         'GPU', '温度', '功率', '利用率', 'FPS', '简述', '全部', '声骸推荐', '声骸调谐',
         '使用声骸技能', '声骸技能', '对敌人造成', '在此后', '若自', '技能冷却',
@@ -439,10 +436,13 @@ function extractPhantomDataFromOCR(rawText) {
     // 过滤超大纯数字行
     const MAX_VALID_NUMBER = 3000;
     remainingLines = remainingLines.filter(line => {
-        const numMatch = line.match(/^\d+$/);
+        const numMatch = line.match(/^\d+(\.\d+)?$/);
         if (numMatch) {
-            const num = parseInt(numMatch[0]);
-            if (num > MAX_VALID_NUMBER) return false;
+            const num = parseFloat(numMatch[0]);
+            if (num > MAX_VALID_NUMBER) {
+                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '异常超大数值(可能为货币/晶蕊计数):', line);
+                return false;
+            }
         }
         return true;
     });
@@ -703,19 +703,14 @@ function extractPhantomDataFromOCR(rawText) {
 }
 
 // 从单个消息段中提取图片直链。
-// 兼容两种格式：OneBot 11 嵌套格式 { type:'image', data:{ url } }
-// 以及 icqq/Yunzai 内部的平铺格式 { type:'image', url }
+// 兼容两种格式：OneBot 11 icqq
 function getImageUrlFromSegment(seg) {
     if (!seg || seg.type !== 'image') return null;
     const data = seg.data || seg;
     return data.url || seg.url || null;
 }
 
-// 拉取合并转发消息里的各个节点，兼容不同协议实现：
-//   1) icqq 协议 (QQ NT 等): bot.getForwardMsg(id) 直接返回节点数组，每项 { message: [...] }
-//   2) OneBot 11 标准 (LLBot 等): 没有 getForwardMsg 方法，需要用 sendApi('get_forward_msg', {id})
-//      调用底层协议 API；不同实现返回字段名不完全一致，这里做了多种兼容：
-//      messages/message 数组，节点里 content/message/data.content 都当作消息段数组处理。
+// 拉取合并转发消息里的各个节点，兼容不同协议
 async function fetchForwardNodes(e, id) {
     const bot = e?.bot;
     if (!bot) return [];
@@ -764,8 +759,6 @@ async function fetchForwardNodes(e, id) {
     );
 }
 
-// 递归解析合并转发消息 (resid/forward id)，把里面所有图片直链取出来。
-// depth 防止转发套娃导致死循环。
 async function collectImageUrlsFromForwardId(e, id, depth = 0) {
     if (!id || depth > 3) return [];
     const nodeSegmentsList = await fetchForwardNodes(e, id);
@@ -776,10 +769,6 @@ async function collectImageUrlsFromForwardId(e, id, depth = 0) {
     return urls;
 }
 
-// 遍历一组消息段，提取其中的图片；遇到嵌套的转发/合并转发卡片会自动展开。
-// 兼容两种转发表示方式：
-//   1) LLBot/OneBot 11 标准格式: { type:'forward', data:{ id } }（字段可能平铺在 seg 上）
-//   2) 官方 QQ 的旧式转发卡片: { type:'json', data:'...."resid":"xxx"....' }
 async function collectImageUrlsFromSegments(e, segments, depth = 0) {
     const urls = [];
     if (!Array.isArray(segments)) return urls;
