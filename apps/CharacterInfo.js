@@ -8,7 +8,6 @@ import Wiki from '../components/Wiki.js'
 
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
 
-/** 角色信息查询 — 渲染图片卡片 */
 export class CharacterInfo extends plugin {
     constructor() {
         super({
@@ -17,15 +16,15 @@ export class CharacterInfo extends plugin {
             priority: 1007,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:角色查询|角色搜索|查角色)\\s*(.+)?$',
+                    reg: '^(?:～|~|鸣潮)(?:角色查询|角色搜索|查角色)\\s*(.+)?$',
                     fnc: 'characterQuery'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?角色列表$',
+                    reg: '^(?:～|~|鸣潮)角色列表$',
                     fnc: 'characterList'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(.+)en查询$',
+                    reg: '^(?:～|~|鸣潮)(.+)en查询$',
                     fnc: 'encoreQuery'
                 }
             ]

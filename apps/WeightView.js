@@ -28,6 +28,26 @@ function getMainWeight(role, cost, propName) {
     return { value: w, cls: getWeightClass(w) }
 }
 
+function calcFixedSubWeight(roleWeight, baseWeight, propName) {
+    const getSubMax = (name) => {
+        const p = baseWeight.subProps.find(item => item.name === name)
+        return p ? p.max : 0
+    }
+    const getSubW = (name) => {
+        const p = roleWeight.subProps?.find(item => item.name === name)
+        return p ? p.weight : 0
+    }
+
+    if (propName === '攻击') {
+        return getSubMax('攻击') / roleWeight.baseAttack / (getSubMax('攻击百分比') / 100) * getSubW('攻击百分比')
+    } else if (propName === '生命') {
+        return getSubMax('生命') / roleWeight.baseHP / (getSubMax('生命百分比') / 100) * getSubW('生命百分比')
+    } else if (propName === '防御') {
+        return getSubMax('防御') / roleWeight.baseDefense / (getSubMax('防御百分比') / 100) * getSubW('防御百分比')
+    }
+    return 0
+}
+
 export class WeightView extends plugin {
     constructor() {
         super({
@@ -56,8 +76,6 @@ export class WeightView extends plugin {
             .sort()
 
         const simulatorData = YAML.parse(fs.readFileSync(`${pluginResources}/Simulator.yaml`, 'utf-8'))
-
-        // 构建角色映射
         const imageMap = {}
         for (const [key, val] of Object.entries(simulatorData)) {
             if (val.star >= 4) {
@@ -66,14 +84,12 @@ export class WeightView extends plugin {
         }
 
         const charNameMap = {}
-
         const id2NamePath = `${pluginResources}/Chiyoulv/id2Name.json`
         if (fs.existsSync(id2NamePath)) {
             try {
                 const id2Name = JSON.parse(fs.readFileSync(id2NamePath, 'utf-8'))
                 for (const [roleId, info] of Object.entries(id2Name)) {
                     if (info && info.name) {
-                        // 漂泊者统一处理
                         let displayName = info.name
                         if (displayName.startsWith('漂泊者-')) {
                             displayName = displayName.replace(/-(男|女)$/, '')
@@ -85,7 +101,6 @@ export class WeightView extends plugin {
         }
 
         const roleMap = new Map()
-
         for (const file of roleFiles) {
             const roleId = file.replace('.yaml', '')
             const roleWeight = YAML.parse(fs.readFileSync(`${weightDir}/${file}`, 'utf-8'))
@@ -94,25 +109,37 @@ export class WeightView extends plugin {
             const name = charNameMap[roleId] || roleId
             const imageUrl = imageMap[name] || ''
 
-            // 预处理副词条权重
+            // 预处理副词条权重（包含固定值计算）
             const subWeightList = (baseWeight.subProps || []).map(prop => {
                 const w = getSubWeight(roleWeight, prop.name)
-                return { name: prop.name, value: w.value, cls: w.cls }
+                let value = w.value
+                // 攻击/生命/防御 固定值：从百分比权重推导
+                if (['攻击', '生命', '防御'].includes(prop.name) && value === 0) {
+                    value = Math.round(calcFixedSubWeight(roleWeight, baseWeight, prop.name) * 100) / 100
+                }
+                return { name: prop.name, value, cls: getWeightClass(value) }
             })
 
-            // 预处理主词条权重
+            // 预处理主词条权重（过滤掉 C4攻击, C3攻击, C1生命）
             const mainWeightList = {}
             for (const cost of ['C4', 'C3', 'C1']) {
-                mainWeightList[cost] = (baseWeight.mainProps[cost] || []).map(prop => {
-                    const w = getMainWeight(roleWeight, cost, prop.name)
-                    return { name: prop.name, value: w.value, cls: w.cls }
-                })
+                mainWeightList[cost] = (baseWeight.mainProps[cost] || [])
+                    .filter(prop => {
+                        // 删除 C4攻击、C3攻击、C1生命 的显示
+                        if (cost === 'C4' && prop.name === '攻击') return false
+                        if (cost === 'C3' && prop.name === '攻击') return false
+                        if (cost === 'C1' && prop.name === '生命') return false
+                        return true
+                    })
+                    .map(prop => {
+                        const w = getMainWeight(roleWeight, cost, prop.name)
+                        return { name: prop.name, value: w.value, cls: w.cls }
+                    })
             }
 
             if (roleMap.has(name)) {
                 continue
             }
-
             roleMap.set(name, {
                 roleId,
                 name,
@@ -123,7 +150,6 @@ export class WeightView extends plugin {
         }
 
         const roles = Array.from(roleMap.values())
-
         return { baseWeight, roles }
     }
 
@@ -131,11 +157,9 @@ export class WeightView extends plugin {
     async allWeights(e) {
         try {
             const { baseWeight, roles } = this.loadAllWeights()
-
             if (roles.length === 0) {
                 return await e.reply('未找到任何角色权重数据')
             }
-
             const imageCard = await Render.render('Template/weightView/weightView', {
                 data: {
                     mode: 'all',
@@ -143,7 +167,6 @@ export class WeightView extends plugin {
                     baseWeight
                 }
             }, { e, retType: 'base64' })
-
             if (imageCard) {
                 await e.reply(imageCard)
             } else {
@@ -159,22 +182,17 @@ export class WeightView extends plugin {
     async singleWeight(e) {
         const match = e.msg.match(this.rule[1].reg)
         const message = match ? match[1].trim() : ''
-
         if (!message) {
             return await e.reply('请输入角色名，如：～今汐权重')
         }
-
         try {
             const wiki = new Wiki()
             const name = await wiki.getAlias(message)
-
             const { baseWeight, roles } = this.loadAllWeights()
             const role = roles.find(r => r.name === name)
-
             if (!role) {
                 return await e.reply(`未找到【${name}】的权重数据`)
             }
-
             const imageCard = await Render.render('Template/weightView/weightView', {
                 data: {
                     mode: 'single',
@@ -182,7 +200,6 @@ export class WeightView extends plugin {
                     baseWeight
                 }
             }, { e, retType: 'base64' })
-
             if (imageCard) {
                 await e.reply(imageCard)
             } else {

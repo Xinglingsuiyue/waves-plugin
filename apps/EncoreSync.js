@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
 
-/** encore.moe API v2 数据端点映射 */
 const API_BASE = 'https://api-v2.encore.moe/api/zh-Hans'
 const DATA_DIR = path.join(pluginResources, 'data', 'encore')
 const DETAIL_DIR = path.join(DATA_DIR, 'details')
@@ -35,7 +34,6 @@ const ENDPOINTS = {
 
 const ID_FIELDS = { character: 'Id', weapon: 'Id', echo: 'Id', monster: 'Id', namecard: 'Id', title: 'Id', fotg: 'Id', whiwa: 'Season', dpmatrix: 'Season', toa: 'id' }
 
-/* ========== 工具函数 ========== */
 
 function ensureDir(dir) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -82,18 +80,15 @@ function rmdirRecursive(dir) {
     fs.rmdirSync(dir)
 }
 
-/* ========== 对外导出 — 查询模块使用 ========== */
 
 export function readLocalData(name) {
     return readJSON(getDataPath(name))
 }
 
-/** 读取本地详情（不存在返回 null） */
 export function readLocalDetail(type, id) {
     return readJSON(getDetailPath(type, id))
 }
 
-/** 保存单条详情到本地（供查询模块回写 API 结果） */
 export function saveLocalDetail(type, id, data) {
     writeJSON(getDetailPath(type, id), data)
 }
@@ -108,19 +103,19 @@ export class EncoreSync extends plugin {
             priority: 1010,
             rule: [
                 {
-                    reg: '^(?:～|~|鸣潮)?下载encore(?:所有)?资源$',
+                    reg: '^(?:～|~|鸣潮)下载encore(?:所有)?资源$',
                     fnc: 'downloadAll'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?删除encore(?:所有)?资源$',
+                    reg: '^(?:～|~|鸣潮)删除encore(?:所有)?资源$',
                     fnc: 'deleteAll'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?更新encore(?:所有)?资源$',
+                    reg: '^(?:～|~|鸣潮)更新encore(?:所有)?资源$',
                     fnc: 'updateAll'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?encore资源状态$',
+                    reg: '^(?:～|~|鸣潮)encore资源状态$',
                     fnc: 'showStatus'
                 },
                 {
@@ -136,7 +131,7 @@ export class EncoreSync extends plugin {
                     fnc: 'downloadEchoIcons'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?(?:下载残像|下载怪物)encore$',
+                    reg: '^(?:～|~|鸣潮)(?:下载残像|下载怪物)encore$',
                     fnc: 'downloadMonsterIcons'
                 },
                 {
@@ -148,7 +143,7 @@ export class EncoreSync extends plugin {
                     fnc: 'downloadTitleIcons'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?下载武器encore$',
+                    reg: '^(?:～|~|鸣潮)下载武器encore$',
                     fnc: 'downloadWeaponIcons'
                 },
                 {

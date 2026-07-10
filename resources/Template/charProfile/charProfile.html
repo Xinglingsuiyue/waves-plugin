@@ -7,7 +7,6 @@
     <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/charProfile/charProfile.css" />
     <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
     <link rel="preload" href="{{pluginResources}}/fonts/framdit.ttf" as="font" />
-    <script src="{{pluginResources}}/Template/charProfile/echarts.common.min.js"></script>
 </head>
 
 <body id="body" {{sys.scale}} data-content='{{data}}'>
@@ -37,71 +36,6 @@
                     <img src="{{data.rolePicUrl}}">
                 </div>
 
-                <div id="right-attributes-container">
-                    <div class="base-attributes">
-                        <div class="base-attributes-header">角色属性</div>
-                        <div class="base-attributes-container">
-                            {{each data.roleDetail.data.roleAttributeList attr}}
-                            <div class="attribute-item">
-                                <div class="attribute-name">{{attr.attributeName}}</div>
-                                <div class="attribute-value">{{attr.attributeValue}}</div>
-                            </div>
-                            {{/each}}
-                        </div>
-                    </div>
-
-                    <div class="damage-panel">
-                        <div class="damage-panel-header">伤害计算</div>
-
-                        <div class="damage-enemy">
-                            <span>目标</span>
-                            <span>{{data.damageResult?.enemyName || data.damageResult?.target || '无妄者'}}</span>
-                        </div>
-
-                        <div class="damage-tip">
-                            常驻按面板，额外仅补常用触发态
-                        </div>
-
-                        {{if data.damageResult && data.damageResult.items && data.damageResult.items.length}}
-                        <div class="damage-list">
-                            {{each data.damageResult.items item}}
-                            <div class="damage-item {{if item.type === 'heal'}}heal-item{{/if}}{{if item.type === 'shield'}}shield-item{{/if}}">
-                                <div class="damage-skill-name">{{item.name}}</div>
-                                <div class="damage-values">
-                                    {{if item.type === 'heal'}}
-                                    <div class="damage-row heal-row expected">
-                                        <span>治疗量</span>
-                                        <span>{{item.heal || item.expected}}</span>
-                                    </div>
-                                    {{else if item.type === 'shield'}}
-                                    <div class="damage-row shield-row expected">
-                                        <span>护盾量</span>
-                                        <span>{{item.shield || item.expected}}</span>
-                                    </div>
-                                    {{else}}
-                                    <div class="damage-row">
-                                        <span>非暴击</span>
-                                        <span>{{item.nonCrit}}</span>
-                                    </div>
-                                    <div class="damage-row">
-                                        <span>暴击</span>
-                                        <span>{{item.crit}}</span>
-                                    </div>
-                                    <div class="damage-row expected">
-                                        <span>期望</span>
-                                        <span>{{item.expected}}</span>
-                                    </div>
-                                    {{/if}}
-                                </div>
-                            </div>
-                            {{/each}}
-                        </div>
-                        {{else}}
-                        <div class="damage-empty">暂无伤害数据</div>
-                        {{/if}}
-                    </div>
-                </div>
-
                 <div id="chain">
                     <div id="chain-list">
                         {{each data.roleDetail.data.chainList chain}}
@@ -124,6 +58,26 @@
                 </div>
             </div>
 
+            <div class="role-attr-table">
+                <div class="role-attr-body">
+                    {{set attrKeys = ['生命','攻击','防御','暴击','暴击伤害','共鸣效率','共鸣解放伤害加成','共鸣技能伤害加成','偏谐值累积效率','普攻伤害加成','重击伤害加成','谐度破坏增幅','热熔伤害加成','导电伤害加成','湮灭伤害加成','衍射伤害加成','气动伤害加成','冷凝伤害加成']}}
+                    {{set attrData = data.roleDetail.data.roleAttributeList || []}}
+                    {{each attrKeys key idx}}
+                    {{if idx === 0 || idx === 4 || idx === 8 || idx === 12 || idx === 15}}<div class="attr-row">{{/if}}
+                    {{set found = attrData.find(a => a.attributeName === key)}}
+                    {{set isFlat = key === '生命' || key === '攻击' || key === '防御'}}
+                    {{set raw = (found ? found.attributeValue : (isFlat ? '0' : '0%')) + ''}}
+                    {{set num = raw.replace('%', '')}}
+                    {{set shown = num.indexOf('.') > -1 ? num.replace(/0+$/, '').replace(/\.$/, '') : num}}
+                    <div class="attr-cell">
+                        <span class="attr-key">{{key.replace('偏谐值累积效率','偏斜效率').replace('谐度破坏增幅','谐度增幅').replace('伤害加成','')}}</span>
+                        <span class="attr-val">{{shown + (raw.indexOf('%') > -1 ? '%' : '')}}</span>
+                    </div>
+                    {{if idx === 3 || idx === 7 || idx === 11 || idx === 14 || idx === 17}}</div>{{/if}}
+                    {{/each}}
+                </div>
+            </div>
+
             <div class="total-score-table">
                 {{if data.roleDetail.data.phantomData.statistic}}
                 <div class="total-score-table-left">
@@ -136,7 +90,19 @@
                         {{data.roleDetail.data.phantomData.statistic.rank}}
                     </div>
                 </div>
-                <div id="column" style="position: relative;left: -20px;top: -30px;width:100%;height:249px;"></div>
+                <div class="total-score-table-right">
+                    {{set distOrder = ['暴击伤害','暴击','攻击百分比','共鸣效率','普攻伤害加成','生命百分比','共鸣技能伤害加成','重击伤害加成','防御百分比','共鸣解放伤害加成','攻击','生命','防御']}}
+                    {{set flatNames = ['攻击','生命','防御']}}
+                    {{set scoreDist = (data.roleDetail.data.phantomData.statistic.dist || []).slice().sort((a, b) => (distOrder.indexOf(a.name) === -1 ? 999 : distOrder.indexOf(a.name)) - (distOrder.indexOf(b.name) === -1 ? 999 : distOrder.indexOf(b.name)))}}
+                    {{each scoreDist tag idx}}
+                    {{if idx === 0 || idx === 3 || idx === 6 || idx === 9}}<div class="score-row">{{/if}}
+                    <div class="score-cell" style="color: {{tag.color}};">
+                        <span class="score-key">{{tag.name.replace('伤害加成','').replace('百分比','')}}</span>
+                        <span class="score-value">{{(tag.value * 1).toFixed(2) * 1}}{{flatNames.includes(tag.name) ? '' : '%'}}</span>
+                    </div>
+                    {{if idx === 2 || idx === 5 || idx === 8 || idx === scoreDist.length - 1}}</div>{{/if}}
+                    {{/each}}
+                </div>
                 {{else}}
                 <div style="color: #585858;font-style: italic;font-size: 50px;margin: 30px 134px;">
                     当前角色暂无评分
@@ -203,6 +169,39 @@
                 {{/each}}
             </div>
 
+            <div class="damage-table">
+                <div class="damage-target">
+                    <span>目标</span>
+                    <span>{{data.damageResult?.enemyName || data.damageResult?.target || '无妄者'}}</span>
+                </div>
+                {{if data.damageResult && data.damageResult.items && data.damageResult.items.length}}
+                <div class="damage-grid">
+                    <div class="damage-grid-row damage-grid-head">
+                        <div class="dmg-name">伤害类型</div>
+                        <div>非暴击</div>
+                        <div>暴击</div>
+                        <div>期望</div>
+                    </div>
+                    {{each data.damageResult.items item}}
+                    <div class="damage-grid-row {{if item.type === 'heal'}}heal-row{{/if}}{{if item.type === 'shield'}}shield-row{{/if}}">
+                        <div class="dmg-name">{{item.name}}</div>
+                        {{if item.type === 'heal' || item.type === 'shield'}}
+                        <div>—</div>
+                        <div>—</div>
+                        <div class="dmg-expected">{{item.heal || item.shield || item.expected}}</div>
+                        {{else}}
+                        <div>{{item.nonCrit}}</div>
+                        <div>{{item.crit}}</div>
+                        <div class="dmg-expected">{{item.expected}}</div>
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                </div>
+                {{else}}
+                <div class="damage-empty">暂无伤害数据</div>
+                {{/if}}
+            </div>
+
             <div id="copyright">{{@copyright}}</div>
         </div>
     </div>
@@ -260,94 +259,6 @@
             const borderColor = `rgba(${color.slice(4, -1).split(",").map(c => parseInt(c) * factor).join(",")}, 0.6)`;
             img.style.border = `5px solid ${borderColor}`;
         });
-    </script>
-
-    <script>
-        const handler = [
-            (i) => i / 21,
-            (i) => i / 10.5,
-            (i) => i / 11.6,
-            (i) => i / 11.6,
-            (i) => i / 14.7,
-            (i) => i / 12.4,
-            (i) => i / 11.6,
-            (i) => i / 11.6,
-            (i) => i / 11.6,
-            (i) => i / 11.6,
-            (i) => i / 60,
-            (i) => i / 580,
-            (i) => i / 70,
-        ]
-
-        const computedColor = []
-        const computedValue = []
-        const data = dataContent.roleDetail.data.phantomData.statistic?.dist.map((tag, i) => {
-            let name = tag.name
-            if (name.includes("百分比")) name = "大" + name;
-            name = name.replace(/(伤害加成|百分比)/, "");
-            computedColor.push(tag.color.replace("color:", "").replace(";", ""));
-            computedValue.push(handler[i](tag.value))
-            return {
-                name,
-                value: tag.value.toFixed(1),
-            }
-        });
-
-        const columnDom = document.getElementById('column');
-        if (columnDom && data) {
-            const columnChart = echarts.init(columnDom);
-
-            const option = {
-                animation: false,
-                title: {
-                    text: ''
-                },
-                tooltip: {},
-                legend: {
-                    data: ['成长值']
-                },
-                xAxis: {
-                    data: data.map(tag => tag.name),
-                    axisTick: {
-                        length: 6,
-                        lineStyle: {
-                            type: 'dashed',
-                        },
-                        boundaryGap: true
-                    },
-                    axisLabel: {
-                        color: "#000",
-                        fontSize: 8,
-                        rotate: 25,
-                        align: 'center'
-                    },
-                },
-                yAxis: {
-                    max: 5,
-                },
-                series: [
-                    {
-                        type: 'bar',
-                        data: computedValue,
-                        label: {
-                            show: true,
-                            position: 'top',
-                            formatter: (params) => computedValue[params.dataIndex].toFixed(1) + `\n(${data[params.dataIndex].value + (!/^(生命|防御|攻击)$/.test(data[params.dataIndex].name) ? '%' : '')})`
-                        },
-                        itemStyle: {
-                            normal: {
-                                color: (params) => { return computedColor[params.dataIndex] }
-                            }
-                        },
-                    }
-                ]
-            };
-            columnChart.setOption(option);
-            const canvas = columnDom.querySelector('canvas');
-            if (canvas) {
-                canvas.style.width = '110%';
-            }
-        }
     </script>
 </body>
 

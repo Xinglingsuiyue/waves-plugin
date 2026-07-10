@@ -24,7 +24,7 @@ export class Guide extends plugin {
             priority: 1009,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)?(.*)图鉴$",
+                    reg: "^(?:～|~|鸣潮)(.*)图鉴$",
                     fnc: "guide"
                 }
             ]

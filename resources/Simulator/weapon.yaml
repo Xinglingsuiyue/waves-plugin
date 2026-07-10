@@ -1,7 +1,7 @@
 pool_name: 「浮声沉兵」
 five_star:
   up_pool:
-    - name: 存帧
+    - name: 天之苍苍
   other_pool: []
   basic: 0.008
   increase: 0.0902
@@ -9,9 +9,9 @@ five_star:
 four_star:
   up_pool:
     
-    - name: 核熔星盘
-    - name: 凋亡频移
-    - name: 飞逝
+    - name: 不归孤军
+    - name: 骇行
+    - name: 异响空灵
   other_pool:
     # 4星角色
     - name: 秧秧

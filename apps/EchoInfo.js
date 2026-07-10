@@ -7,7 +7,6 @@ import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js
 
 const ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'echo', 'icon')
 
-// API垃圾数据黑名单（列表API中部分声骸被错误归属到这些套装）
 const BLACKLIST = {
     '凝夜白霜': ['呜咔咔'],
     '彻空冥雷': ['巨布偶'],
@@ -23,7 +22,6 @@ const BLACKLIST = {
     '幽夜隐匿之帷': ['咕咕河豚', '阿嗞嗞', '奏谕乐师']
 }
 
-/** 声骸信息查询 — 渲染图片卡片 */
 export class EchoInfo extends plugin {
     constructor() {
         super({

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸣潮云登录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1040 50%, #0d1b3e 100%);
+            background-attachment: fixed;
+            background-image: url(background_image);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.85);
+            z-index: 0;
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 40px 32px;
+        }
+
+        .login-card .logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-card .logo h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #7dd3fc, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .login-card .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #8892b0;
+            margin-bottom: 28px;
+        }
+
+        .user-id-badge {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .user-id-badge span {
+            display: inline-block;
+            background: rgba(125, 211, 252, 0.15);
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 20px;
+            padding: 4px 16px;
+            font-size: 13px;
+            color: #7dd3fc;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            border-color: #7dd3fc;
+        }
+
+        .form-group input::placeholder {
+            color: #64748b;
+        }
+
+        .phone-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .phone-row .phone-input {
+            flex: 1;
+        }
+
+        .sms-btn {
+            padding: 12px 16px;
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 10px;
+            background: rgba(125, 211, 252, 0.1);
+            color: #7dd3fc;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .sms-btn:hover:not(:disabled) {
+            background: rgba(125, 211, 252, 0.2);
+        }
+
+        .sms-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #7dd3fc, #c084fc);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            font-family: inherit;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(125, 211, 252, 0.35);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-msg {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-msg.success {
+            display: block;
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #34d399;
+        }
+
+        .status-msg.error {
+            display: block;
+            background: rgba(248, 113, 113, 0.15);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: #f87171;
+        }
+
+        .status-msg.loading {
+            display: block;
+            background: rgba(125, 211, 252, 0.15);
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            color: #7dd3fc;
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">
+            <h1>鸣潮云登录</h1>
+        </div>
+        <p class="subtitle">使用云鸣潮账号登录以获取抽卡记录</p>
+        <div class="user-id-badge">
+            <span>识别码: undefined</span>
+        </div>
+
+        <form id="loginForm" onsubmit="return false;">
+            <div class="form-group">
+                <label for="phone">手机号</label>
+                <div class="phone-row">
+                    <input type="tel" id="phone" class="phone-input"
+                           placeholder="请输入11位手机号" maxlength="11"
+                           pattern="[0-9]*" inputmode="numeric" autocomplete="tel">
+                    <button type="button" class="sms-btn" id="smsBtn" onclick="sendSms()">
+                        获取验证码
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="code">验证码</label>
+                <input type="text" id="code" placeholder="请输入验证码"
+                       maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn" onclick="doLogin()">
+                登录
+            </button>
+        </form>
+
+        <div class="status-msg" id="status"></div>
+        <p class="hint">登录成功后即可关闭此页面，回到机器人使用 ~更新抽卡记录</p>
+    </div>
+
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const sessionId = pathParts[pathParts.length - 1];
+
+        let smsCountdown = 0;
+        let smsTimer = null;
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status-msg ' + type;
+            el.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        function setLoading(loading) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = loading;
+            submitBtn.textContent = loading ? '登录中...' : '登录';
+        }
+
+        async function sendSms() {
+            const phone = document.getElementById('phone').value.trim();
+            if (!/^\d{11}$/.test(phone)) {
+                showStatus('请输入正确的11位手机号', 'error');
+                return;
+            }
+
+            if (smsCountdown > 0) return;
+
+            const smsBtn = document.getElementById('smsBtn');
+            smsBtn.disabled = true;
+            smsBtn.textContent = '发送中...';
+            hideStatus();
+
+            try {
+                const resp = await fetch(`/cloudlogin/sms/${sessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await resp.json();
+
+                if (data.code === 200) {
+                    showStatus('验证码已发送，请注意查收短信', 'success');
+                    smsCountdown = 60;
+                    smsBtn.textContent = `${smsCountdown}s`;
+                    smsTimer = setInterval(() => {
+                        smsCountdown--;
+                        if (smsCountdown <= 0) {
+                            clearInterval(smsTimer);
+                            smsBtn.disabled = false;
+                            smsBtn.textContent = '获取验证码';
+                        } else {
+                            smsBtn.textContent = `${smsCountdown}s`;
+                        }
+                    }, 1000);
+                } else {
+                    showStatus('发送失败：' + (data.msg || '未知错误'), 'error');
+                    smsBtn.disabled = false;
+                    smsBtn.textContent = '获取验证码';
+                }
+            } catch (error) {
+                console.error('[CloudLogin] SMS fetch error:', error);
+                showStatus('网络错误，请重试', 'error');
+                smsBtn.disabled = false;
+                smsBtn.textContent = '获取验证码';
+            }
+        }
+
+        async function doLogin() {
+            const phone = document.getElementById('phone').value.trim();
+            const code = document.getElementById('code').value.trim();
+
+            if (!/^\d{11}$/.test(phone)) {
+                showStatus('请输入正确的11位手机号', 'error');
+                return;
+            }
+            if (!code || code.length < 4) {
+                showStatus('请输入验证码', 'error');
+                return;
+            }
+
+            hideStatus();
+            setLoading(true);
+            showStatus('正在登录云鸣潮，请稍候...', 'loading');
+
+            try {
+                const resp = await fetch(`/cloudlogin/${sessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, code })
+                });
+                const data = await resp.json();
+
+                if (data.code === 200) {
+                    showStatus('登录成功！您现在可以关闭此页面，回到机器人使用 ~更新抽卡记录', 'success');
+                    setLoading(false);
+                } else {
+                    showStatus('登录失败：' + (data.msg || '未知错误'), 'error');
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error('[CloudLogin] Login fetch error:', error);
+                showStatus('网络错误，请重试', 'error');
+                setLoading(false);
+            }
+        }
+
+        // 回车键提交
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                doLogin();
+            }
+        });
+    </script>
+</body>
+</html>
