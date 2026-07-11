@@ -6,6 +6,7 @@ import {
   loadGroupModule,
   loadEnemyModule
 } from './loader.js'
+import { WAVERIDER_ATTRIBUTES } from './waveriderMap.js'
 
 const log = (...args) => {
   if (typeof logger !== 'undefined' && logger?.info) {
@@ -89,7 +90,16 @@ export async function calcDamage(roleDetailData, options = {}) {
   const panel = parsePanel(roleDetailData)
   const equipment = parseEquipment(roleDetailData)
 
-  const characterModuleRaw = await loadCharacterModule(panel.roleName)
+  // 漂泊者特殊处理
+  const isWaverider = panel.roleName === '漂泊者'
+  const waveriderAttr = isWaverider ? WAVERIDER_ATTRIBUTES[String(panel.roleId)] : null
+  const characterModuleName = isWaverider
+    ? (waveriderAttr ? `漂泊者/${waveriderAttr}` : null)
+    : panel.roleName
+
+  const characterModuleRaw = characterModuleName
+    ? await loadCharacterModule(characterModuleName)
+    : null
   const characterModule = characterModuleRaw?.default || characterModuleRaw
 
   if (!characterModule || typeof characterModule.calc !== 'function') {
@@ -140,7 +150,9 @@ export async function calcDamage(roleDetailData, options = {}) {
     }
   }
 
-  log(`▼▼▼ ${panel.roleName} → ${enemy.name} (等级${panel.level} vs ${enemy.level}) | 武器:${equipment.weaponName || '-'} | 主声骸:${equipment.phantomName || '-'} | 套装:${equipment.groupName || '-'}(${equipment.groupCount || 0}件) ▼▼▼`)
+  const displayRoleName = isWaverider && waveriderAttr ? `漂泊者(${waveriderAttr})` : panel.roleName
+
+  log(`▼▼▼ ${displayRoleName} → ${enemy.name} (等级${panel.level} vs ${enemy.level}) | 武器:${equipment.weaponName || '-'} | 主声骸:${equipment.phantomName || '-'} | 套装:${equipment.groupName || '-'}(${equipment.groupCount || 0}件) ▼▼▼`)
   log(`面板：攻击 ${fmtNumber(panel.attack)} | 暴击 ${fmtPercent(panel.critRate)} | 暴伤 ${fmtPercent(panel.critDamage - 1)}（暴伤乘区 ${panel.critDamage.toFixed(4)}） | 共鸣效率 ${fmtPercent(panel.resonanceEfficiency)}`)
 
   const result = await characterModule.calc(context)
@@ -153,7 +165,7 @@ export async function calcDamage(roleDetailData, options = {}) {
       })
     }
   }
-  log(`▲▲▲ ${panel.roleName} 伤害计算结束 ▲▲▲`)
+  log(`▲▲▲ ${displayRoleName} 伤害计算结束 ▲▲▲`)
 
   return {
     target: enemy.name || enemyName,
