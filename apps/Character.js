@@ -10,14 +10,7 @@ import fs from 'fs';
 import RankUtil from '../utils/RankUtil.js';
 import Zhinengshanghai from '../utils/Zhinengshanghai.js';
 import { CharacterRanking } from './Paiming.js';
-
-// 漂泊者属性ID映射
-const WAVERIDER_ATTRIBUTES = {
-    '1604': '湮灭', '1605': '湮灭',
-    '1501': '衍射', '1502': '衍射',
-    '1309': '导电', '1310': '导电',
-    '1406': '气动', '1408': '气动'
-};
+import { WAVERIDER_ATTRIBUTES } from '../utils/damage/waveriderMap.js';
 
 export class Character extends plugin {
     constructor() {
