@@ -15,16 +15,16 @@ const levelMap = (...values) => values.reduce((map, value, index) => {
 }, {});
 
 // =============================================================
-// 漂泊者-衍射
-// 数据来源：库街区 Wiki entryId=1242294789908504576
+// 漂泊者-湮灭
+// 数据来源：库街区 Wiki entryId=1242103196649603072
 // 自动从「角色养成 / 技能介绍」倍率表生成，展示倍率最高的 3 个代表输出项。
 // =============================================================
 const WIKI_DETAIL = {
-  "id": "1242294789908504576",
-  "name": "漂泊者-衍射",
+  "id": "1242103196649603072",
+  "name": "漂泊者-湮灭",
   "orgFullName": "角色组 > 共鸣者",
   "lastUpdateTime": "2025-12-29",
-  "currentVersion": "36.0"
+  "currentVersion": "37.0"
 };
 
 const SKILLS = {
@@ -32,97 +32,133 @@ const SKILLS = {
     name: "第一段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.2975, 0.3219, 0.3463, 0.3805, 0.4049, 0.4329, 0.472, 0.511, 0.55, 0.5915)
+    levelMap: levelMap(0.285, 0.3084, 0.3318, 0.3645, 0.3879, 0.4148, 0.4521, 0.4895, 0.5269, 0.5667)
   },
   skill2: {
     name: "第二段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.4139, 0.4453, 0.4892, 0.5206, 0.5566, 0.6068, 0.657, 0.7072, 0.7605)
+    levelMap: levelMap(0.57, 0.6168, 0.6636, 0.729, 0.7758, 0.8296, 0.9042, 0.979, 1.0538, 1.1334)
   },
   skill3: {
     name: "第三段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.414, 0.4455, 0.4895, 0.521, 0.557, 0.607, 0.657, 0.7075, 0.7605)
+    levelMap: levelMap(0.4275, 0.4626, 0.4977, 0.5467, 0.5818, 0.6221, 0.6782, 0.7343, 0.7904, 0.85)
   },
   skill4: {
     name: "第四段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.6545, 0.7082, 0.7619, 0.837, 0.8907, 0.9524, 1.0383, 1.1242, 1.21, 1.3013)
+    levelMap: levelMap(0.6081, 0.6579, 0.708, 0.7776, 0.8274, 0.885, 0.9645, 1.0443, 1.1241, 1.209)
   },
   skill5: {
-    name: "极限闪避反击",
+    name: "第五段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.9825, 1.0631, 1.1437, 1.2565, 1.337, 1.4297, 1.5586, 1.6875, 1.8164, 1.9534)
+    levelMap: levelMap(0.95, 1.028, 1.1058, 1.215, 1.2928, 1.3824, 1.507, 1.6318, 1.7564, 1.8888)
   },
   skill6: {
     name: "重击",
     type: "heavy",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.4845, 0.5245, 0.564, 0.62, 0.6595, 0.705, 0.769, 0.8325, 0.896, 0.9635)
+    levelMap: levelMap(0.48, 0.5194, 0.5588, 0.6139, 0.6532, 0.6985, 0.7615, 0.8244, 0.8874, 0.9543)
   },
   skill7: {
-    name: "鸣奏",
-    type: "normal",
-    levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.4139, 0.4453, 0.4892, 0.5206, 0.5566, 0.6068, 0.657, 0.7072, 0.7605)
-  },
-  skill8: {
-    name: "余音",
-    type: "normal",
-    levelFrom: "常态攻击",
-    levelMap: levelMap(0.6375, 0.6898, 0.7421, 0.8153, 0.8676, 0.9277, 1.0113, 1.095, 1.1786, 1.2675)
-  },
-  skill9: {
     name: "空中攻击",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.527, 0.5703, 0.6135, 0.674, 0.7172, 0.7669, 0.836, 0.9052, 0.9743, 1.0478)
+    levelMap: levelMap(0.589, 0.6373, 0.6856, 0.7533, 0.8016, 0.8571, 0.9344, 1.0117, 1.0889, 1.171)
   },
-  skill10: {
-    name: "浮声千斩",
+  skill8: {
+    name: "闪避反击",
+    type: "normal",
+    levelFrom: "常态攻击",
+    levelMap: levelMap(0.9025, 0.9766, 1.0506, 1.1542, 1.2282, 1.3133, 1.4317, 1.5501, 1.6685, 1.7943)
+  },
+  skill9: {
+    name: "行刃",
     type: "skill",
     levelFrom: "共鸣技能",
-    levelMap: levelMap(1.188, 1.2855, 1.3829, 1.5193, 1.6167, 1.7287, 1.8846, 2.0404, 2.1963, 2.3619)
+    levelMap: levelMap(2.88, 3.1162, 3.3524, 3.683, 3.9192, 4.1908, 4.5686, 4.9464, 5.3244, 5.7258)
+  },
+  skill10: {
+    name: "灭音",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(1.1475, 1.2416, 1.3357, 1.4675, 1.5616, 1.6698, 1.8203, 1.9709, 2.1214, 2.2814)
   },
   skill11: {
-    name: "浮声千斩·旋音",
+    name: "暗流·普攻第一段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(1.2986, 1.405, 1.5116, 1.6606, 1.767, 1.8896, 2.06, 2.2302, 2.4006, 2.5816)
+    levelMap: levelMap(0.2835, 0.3068, 0.33, 0.3626, 0.3858, 0.4126, 0.4498, 0.487, 0.5242, 0.5637)
   },
   skill12: {
-    name: "浮声千斩·旋音飞轮",
+    name: "暗流·普攻第二段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.2, 0.2164, 0.2328, 0.2558, 0.2722, 0.2911, 0.3173, 0.3435, 0.3698, 0.3977)
+    levelMap: levelMap(0.4725, 0.5113, 0.55, 0.6043, 0.643, 0.6876, 0.7496, 0.8116, 0.8736, 0.9394)
   },
   skill13: {
-    name: "浮声千斩·回声一段",
+    name: "暗流·普攻第三段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.4, 0.4328, 0.4656, 0.5116, 0.5444, 0.5821, 0.6346, 0.687, 0.7395, 0.7953)
+    levelMap: levelMap(0.783, 0.8473, 0.9115, 1.0014, 1.0656, 1.1394, 1.2421, 1.3449, 1.4476, 1.5567)
   },
   skill14: {
-    name: "浮声千斩·回声二段",
+    name: "暗流·普攻第四段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.8, 0.8656, 0.9312, 1.0231, 1.0887, 1.1641, 1.2691, 1.374, 1.479, 1.5905)
+    levelMap: levelMap(1.1207, 1.2125, 1.3044, 1.4332, 1.525, 1.6307, 1.7777, 1.9247, 2.0717, 2.2278)
   },
   skill15: {
-    name: "回响奏鸣",
-    type: "liberation",
-    levelFrom: "共鸣解放",
-    levelMap: levelMap(4.4, 4.7608, 5.1216, 5.6268, 5.9876, 6.4025, 6.9798, 7.557, 8.1343, 8.7477)
+    name: "暗流·普攻第五段",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(1.1478, 1.2416, 1.3359, 1.4678, 1.5616, 1.6701, 1.8206, 1.9711, 2.1215, 2.2815)
   },
   skill16: {
+    name: "暗流·重击",
+    type: "heavy",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(0.648, 0.7012, 0.7543, 0.8287, 0.8818, 0.943, 1.028, 1.113, 1.198, 1.2883)
+  },
+  skill17: {
+    name: "暗流·鸣刃",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(0.837, 0.9057, 0.9743, 1.0706, 1.1393, 1.2181, 1.3281, 1.4377, 1.5477, 1.6645)
+  },
+  skill18: {
+    name: "暗流·下落攻击",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(0.62, 0.6709, 0.7217, 0.7929, 0.8437, 0.9022, 0.9836, 1.0649, 1.1462, 1.2327)
+  },
+  skill19: {
+    name: "暗流·闪避反击",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(1.593, 1.7237, 1.8543, 2.0372, 2.1678, 2.318, 2.527, 2.736, 2.945, 3.1671)
+  },
+  skill20: {
+    name: "暗流·破命",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(2.98, 3.2244, 3.4688, 3.8112, 4.0556, 4.3364, 4.7276, 5.1184, 5.5094, 5.925)
+  },
+  skill21: {
+    name: "临渊死寂",
+    type: "liberation",
+    levelFrom: "共鸣解放",
+    levelMap: levelMap(7.65, 8.2773, 8.9046, 9.7829, 10.4102, 11.1316, 12.1352, 13.1389, 14.1426, 15.209)
+  },
+  skill22: {
     name: "技能",
     type: "intro",
     levelFrom: "变奏技能",
-    levelMap: levelMap(0.85, 0.9197, 0.9894, 1.087, 1.1567, 1.2369, 1.3484, 1.4599, 1.5714, 1.6899)
+    levelMap: levelMap(1, 1.082, 1.164, 1.2788, 1.3608, 1.4551, 1.5863, 1.7175, 1.8487, 1.9881)
   }
 };
 
@@ -163,18 +199,18 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
 }
 
 export default {
-  name: "漂泊者-女-衍射",
+  name: "漂泊者-女-湮灭",
   wiki: WIKI_DETAIL,
   skills: SKILLS,
 
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
     const displayKeys = [
-      "skill15",
-      "skill10",
-      "skill11"
+      "skill21",
+      "skill9",
+      "skill20"
     ];
     const items = displayKeys.map(skillKey => calcOneSkill({ ...args, skillKey })).filter(Boolean);
-    return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1242294789908504576', items };
+    return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1242103196649603072', items };
   }
 };

@@ -15,16 +15,16 @@ const levelMap = (...values) => values.reduce((map, value, index) => {
 }, {});
 
 // =============================================================
-// 漂泊者-衍射
-// 数据来源：库街区 Wiki entryId=1242294789908504576
+// 漂泊者-气动
+// 数据来源：库街区 Wiki entryId=1353293318050545664
 // 自动从「角色养成 / 技能介绍」倍率表生成，展示倍率最高的 3 个代表输出项。
 // =============================================================
 const WIKI_DETAIL = {
-  "id": "1242294789908504576",
-  "name": "漂泊者-衍射",
+  "id": "1353293318050545664",
+  "name": "漂泊者-气动",
   "orgFullName": "角色组 > 共鸣者",
-  "lastUpdateTime": "2025-12-29",
-  "currentVersion": "36.0"
+  "lastUpdateTime": "2026-02-05",
+  "currentVersion": "21.0"
 };
 
 const SKILLS = {
@@ -32,97 +32,115 @@ const SKILLS = {
     name: "第一段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.2975, 0.3219, 0.3463, 0.3805, 0.4049, 0.4329, 0.472, 0.511, 0.55, 0.5915)
+    levelMap: levelMap(0.1776, 0.1922, 0.2068, 0.2272, 0.2417, 0.2585, 0.2818, 0.3051, 0.3284, 0.3531)
   },
   skill2: {
     name: "第二段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.4139, 0.4453, 0.4892, 0.5206, 0.5566, 0.6068, 0.657, 0.7072, 0.7605)
+    levelMap: levelMap(0.4332, 0.4686, 0.5042, 0.5538, 0.5894, 0.6302, 0.687, 0.7438, 0.8006, 0.861)
   },
   skill3: {
     name: "第三段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.414, 0.4455, 0.4895, 0.521, 0.557, 0.607, 0.657, 0.7075, 0.7605)
+    levelMap: levelMap(0.2769, 0.2996, 0.3223, 0.3541, 0.3768, 0.4029, 0.4392, 0.4756, 0.5119, 0.5505)
   },
   skill4: {
     name: "第四段",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.6545, 0.7082, 0.7619, 0.837, 0.8907, 0.9524, 1.0383, 1.1242, 1.21, 1.3013)
+    levelMap: levelMap(0.3859, 0.4176, 0.4492, 0.4935, 0.5251, 0.5615, 0.6121, 0.6628, 0.7134, 0.7672)
   },
   skill5: {
-    name: "极限闪避反击",
+    name: "飞刃",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.9825, 1.0631, 1.1437, 1.2565, 1.337, 1.4297, 1.5586, 1.6875, 1.8164, 1.9534)
+    levelMap: levelMap(0.25, 0.2725, 0.2925, 0.32, 0.3425, 0.365, 0.3975, 0.43, 0.4625, 0.4975)
   },
   skill6: {
     name: "重击",
     type: "heavy",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.4845, 0.5245, 0.564, 0.62, 0.6595, 0.705, 0.769, 0.8325, 0.896, 0.9635)
+    levelMap: levelMap(0.2703, 0.2925, 0.3147, 0.3456, 0.3678, 0.3933, 0.4287, 0.4644, 0.4998, 0.5373)
   },
   skill7: {
-    name: "鸣奏",
+    name: "绞息",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.3825, 0.4139, 0.4453, 0.4892, 0.5206, 0.5566, 0.6068, 0.657, 0.7072, 0.7605)
+    levelMap: levelMap(0.4066, 0.44, 0.4733, 0.52, 0.5533, 0.5916, 0.6449, 0.6982, 0.7516, 0.8083)
   },
   skill8: {
-    name: "余音",
-    type: "normal",
-    levelFrom: "常态攻击",
-    levelMap: levelMap(0.6375, 0.6898, 0.7421, 0.8153, 0.8676, 0.9277, 1.0113, 1.095, 1.1786, 1.2675)
-  },
-  skill9: {
     name: "空中攻击",
     type: "normal",
     levelFrom: "常态攻击",
-    levelMap: levelMap(0.527, 0.5703, 0.6135, 0.674, 0.7172, 0.7669, 0.836, 0.9052, 0.9743, 1.0478)
+    levelMap: levelMap(0.708, 0.7661, 0.8242, 0.9054, 0.9635, 1.0303, 1.1232, 1.216, 1.3089, 1.4076)
+  },
+  skill9: {
+    name: "闪避反击",
+    type: "normal",
+    levelFrom: "常态攻击",
+    levelMap: levelMap(0.6309, 0.6827, 0.7344, 0.8068, 0.8585, 0.918, 1.0008, 1.0836, 1.1663, 1.2543)
   },
   skill10: {
-    name: "浮声千斩",
+    name: "苍息破象",
     type: "skill",
     levelFrom: "共鸣技能",
-    levelMap: levelMap(1.188, 1.2855, 1.3829, 1.5193, 1.6167, 1.7287, 1.8846, 2.0404, 2.1963, 2.3619)
+    levelMap: levelMap(0.8355, 0.904, 0.9725, 1.0685, 1.137, 1.2157, 1.3254, 1.435, 1.5445, 1.661)
   },
   skill11: {
-    name: "浮声千斩·旋音",
+    name: "碧霄断行",
     type: "skill",
-    levelFrom: "共鸣回路",
-    levelMap: levelMap(1.2986, 1.405, 1.5116, 1.6606, 1.767, 1.8896, 2.06, 2.2302, 2.4006, 2.5816)
+    levelFrom: "共鸣技能",
+    levelMap: levelMap(0.8817, 0.9539, 1.0264, 1.1273, 1.1997, 1.2829, 1.3985, 1.5141, 1.6297, 1.7526)
   },
   skill12: {
-    name: "浮声千斩·旋音飞轮",
+    name: "抃风儛润第一段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.2, 0.2164, 0.2328, 0.2558, 0.2722, 0.2911, 0.3173, 0.3435, 0.3698, 0.3977)
+    levelMap: levelMap(0.6479, 0.701, 0.7541, 0.8285, 0.8816, 0.9427, 1.0277, 1.1127, 1.1977, 1.288)
   },
   skill13: {
-    name: "浮声千斩·回声一段",
+    name: "抃风儛润第二段",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.4, 0.4328, 0.4656, 0.5116, 0.5444, 0.5821, 0.6346, 0.687, 0.7395, 0.7953)
+    levelMap: levelMap(0.7116, 0.7699, 0.8283, 0.91, 0.9683, 1.0354, 1.1288, 1.2221, 1.3155, 1.4147)
   },
   skill14: {
-    name: "浮声千斩·回声二段",
+    name: "抃风儛润治疗量",
     type: "skill",
     levelFrom: "共鸣回路",
-    levelMap: levelMap(0.8, 0.8656, 0.9312, 1.0231, 1.0887, 1.1641, 1.2691, 1.374, 1.479, 1.5905)
+    levelMap: levelMap(0.11, 0.1144, 0.1188, 0.1254, 0.1342, 0.143, 0.1595, 0.1782, 0.198, 0.231)
   },
   skill15: {
-    name: "回响奏鸣",
-    type: "liberation",
-    levelFrom: "共鸣解放",
-    levelMap: levelMap(4.4, 4.7608, 5.1216, 5.6268, 5.9876, 6.4025, 6.9798, 7.557, 8.1343, 8.7477)
+    name: "缥缈无相第一段",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(0.863, 0.9335, 1.0045, 1.1035, 1.174, 1.2555, 1.3685, 1.4815, 1.595, 1.715)
   },
   skill16: {
-    name: "技能",
+    name: "缥缈无相第二段",
+    type: "skill",
+    levelFrom: "共鸣回路",
+    levelMap: levelMap(3.6368, 3.935, 4.2332, 4.6507, 4.949, 5.2919, 5.769, 6.2462, 6.7233, 7.2303)
+  },
+  skill17: {
+    name: "万象归墟",
+    type: "liberation",
+    levelFrom: "共鸣解放",
+    levelMap: levelMap(2.7, 2.9214, 3.1428, 3.4528, 3.6742, 3.9288, 4.2831, 4.6373, 4.9915, 5.3679)
+  },
+  skill18: {
+    name: "治疗量",
+    type: "liberation",
+    levelFrom: "共鸣解放",
+    levelMap: levelMap(0.3667, 0.3813, 0.396, 0.418, 0.4473, 0.4767, 0.5317, 0.594, 0.66, 0.77)
+  },
+  skill19: {
+    name: "狂岚未尽",
     type: "intro",
     levelFrom: "变奏技能",
-    levelMap: levelMap(0.85, 0.9197, 0.9894, 1.087, 1.1567, 1.2369, 1.3484, 1.4599, 1.5714, 1.6899)
+    levelMap: levelMap(1, 1.082, 1.164, 1.2789, 1.3609, 1.4552, 1.5864, 1.7175, 1.8488, 1.9882)
   }
 };
 
@@ -135,6 +153,29 @@ function getPanelDamageBonus(attrMap, skillType) {
   if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
   if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
   return total;
+}
+
+function getPanelHealingBonus(attrMap) {
+  return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
+}
+
+function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
+  const skill = SKILLS[skillKey];
+  const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const result = calcSingleHeal({
+    base: finalAttack,
+    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+    multiplierBonus: mergedBuff.multiplierBonus || 0,
+    healingBonus: getPanelHealingBonus(panel.attrMap || {}) + (mergedBuff.healingBonus || 0),
+    deepen: mergedBuff.deepen || 0,
+    sourceDetail: mergedBuff.sources
+  });
+  return { name: skill.name, ...result };
 }
 
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
@@ -163,18 +204,17 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
 }
 
 export default {
-  name: "漂泊者-女-衍射",
+  name: "漂泊者-女-气动",
   wiki: WIKI_DETAIL,
   skills: SKILLS,
 
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
-    const displayKeys = [
-      "skill15",
-      "skill10",
-      "skill11"
-    ];
-    const items = displayKeys.map(skillKey => calcOneSkill({ ...args, skillKey })).filter(Boolean);
-    return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1242294789908504576', items };
+    const items = [
+      calcOneHeal({ ...args, skillKey: 'skill18' }),
+      calcOneHeal({ ...args, skillKey: 'skill14' }),
+      calcOneSkill({ ...args, skillKey: 'skill16' })
+    ].filter(Boolean);
+    return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1353293318050545664', items };
   }
 };
