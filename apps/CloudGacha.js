@@ -249,6 +249,40 @@ export class CloudGacha extends plugin {
         }
     }
 
+    // 使用登录时保存的长效凭证
+    // 无需用户重新输入验证码。
+    async refreshCloudToken(account) {
+        const cg = account.cloudGacha;
+        if (!cg) return { status: false, msg: '账号未绑定云登录信息' };
+
+        const tokenCandidates = [
+            { name: 'access_token', value: cg.accessToken },
+            { name: 'autoToken', value: cg.autoToken },
+            { name: 'phoneToken', value: cg.phoneToken }
+        ];
+
+        if (!tokenCandidates.some(c => c.value)) {
+            return { status: false, msg: '缺少长效登录凭证，请重新 ~云登录' };
+        }
+
+        for (const candidate of tokenCandidates) {
+            if (!candidate.value) continue;
+            logger.mark(`[CloudGacha] cloudToken已失效，尝试用 ${candidate.name} 自动重新登录`);
+            const result = await this.cloudAppLogin(
+                cg.cuid,
+                cg.username,
+                candidate.value,
+                generateDeviceId()
+            );
+            if (result.status) {
+                cg.cloudToken = result.data.token;
+                logger.mark(`[CloudGacha] 自动刷新cloudToken成功! 使用凭证=${candidate.name}`);
+                return { status: true };
+            }
+        }
+        return { status: false, msg: '长效登录凭证已全部失效，请重新 ~云登录' };
+    }
+
     async cloudGameRecordInfo(token) {
         try {
             const deviceId = generateDeviceId();
@@ -425,7 +459,15 @@ export class CloudGacha extends plugin {
 
         const cloudGachaData = {
             cloudToken: data.cloudToken,
-            playerId: data.playerId
+            playerId: data.playerId,
+            // 以下为长效凭证
+            // cloudToken(x-token) 本身仅约1天有效，过期后用这些凭证自动换取新的 cloudToken，
+            // 避免用户必须重新输入验证码 ~云登录
+            cuid: data.cuid,
+            username: data.username,
+            accessToken: data.accessToken,
+            autoToken: data.autoToken,
+            phoneToken: data.phoneToken
         };
 
         if (account) {
@@ -488,10 +530,18 @@ export class CloudGacha extends plugin {
             account = cloudAccounts[0];
         }
 
-        const { playerId, cloudToken } = account.cloudGacha;
+        const { playerId } = account.cloudGacha;
         await e.reply(`正在更新UID为 ${playerId} 的抽卡记录，请稍候...`);
 
-        const recordResult = await this.cloudGameRecordInfo(cloudToken);
+        let recordResult = await this.cloudGameRecordInfo(account.cloudGacha.cloudToken);
+        if (!recordResult.status) {
+            // cloudToken(x-token) 有效期约1天，过期后先尝试用长效凭证自动重新登录，成功后重试一次
+            const refreshResult = await this.refreshCloudToken(account);
+            if (refreshResult.status) {
+                Config.setUserData(e.user_id, userConfig);
+                recordResult = await this.cloudGameRecordInfo(account.cloudGacha.cloudToken);
+            }
+        }
         if (!recordResult.status) {
             return await e.reply('获取抽卡记录失败：' + (recordResult.msg || '云登录可能已过期，请重新 ~云登录'));
         }
@@ -694,10 +744,19 @@ export class CloudGacha extends plugin {
         }
 
         const results = [];
+        let configChanged = false;
         for (const account of cloudAccounts) {
-            const { playerId, cloudToken } = account.cloudGacha;
+            const { playerId } = account.cloudGacha;
             try {
-                const recordResult = await this.cloudGameRecordInfo(cloudToken);
+                let recordResult = await this.cloudGameRecordInfo(account.cloudGacha.cloudToken);
+                if (!recordResult.status) {
+                    // cloudToken 已过期，先尝试用长效凭证自动重新登录，成功后重试一次
+                    const refreshResult = await this.refreshCloudToken(account);
+                    if (refreshResult.status) {
+                        configChanged = true;
+                        recordResult = await this.cloudGameRecordInfo(account.cloudGacha.cloudToken);
+                    }
+                }
                 if (recordResult.status) {
                     const recordId = recordResult.data.recordId;
                     const url = `https://aki-gm-resources.aki-game.com/aki/gacha/index.html#/record?` +
@@ -715,6 +774,10 @@ export class CloudGacha extends plugin {
             } catch (_) {
                 results.push(`UID ${playerId}: 获取失败，请重新 ~云登录`);
             }
+        }
+
+        if (configChanged) {
+            Config.setUserData(e.user_id, userConfig);
         }
 
         await e.reply(results.join('\n\n'), true);
