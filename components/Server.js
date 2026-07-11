@@ -227,6 +227,7 @@ class Server {
                 }
 
                 logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`云登录 Step2 成功`));
+                const accessToken = tokenResp.data.data.access_token;
 
                 logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`云登录 Step3: Login/Login`));
                 let deviceId = generateDeviceId();
@@ -331,7 +332,12 @@ class Server {
                     data: {
                         cloudToken,
                         playerId,
-                        recordId
+                        recordId,
+                        cuid: String(sdkData.cuid || sdkData.id),
+                        username: sdkData.username,
+                        accessToken,
+                        autoToken: sdkData.autoToken,
+                        phoneToken: sdkData.phoneToken
                     }
                 };
 
