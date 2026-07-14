@@ -60,7 +60,7 @@
 
             <div class="role-attr-table">
                 <div class="role-attr-body">
-                    {{set attrKeys = ['生命','攻击','防御','暴击','暴击伤害','共鸣效率','共鸣解放伤害加成','共鸣技能伤害加成','偏谐值累积效率','普攻伤害加成','重击伤害加成','谐度破坏增幅','热熔伤害加成','导电伤害加成','湮灭伤害加成','衍射伤害加成','气动伤害加成','冷凝伤害加成']}}
+                    {{set attrKeys = ['生命','暴击','暴击伤害','共鸣效率','攻击','重击伤害加成','偏谐值累积效率','共鸣技能伤害加成','防御','普攻伤害加成','谐度破坏增幅','共鸣解放伤害加成','热熔伤害加成','导电伤害加成','湮灭伤害加成','衍射伤害加成','气动伤害加成','冷凝伤害加成']}}
                     {{set attrData = data.roleDetail.data.roleAttributeList || []}}
                     {{each attrKeys key idx}}
                     {{if idx === 0 || idx === 4 || idx === 8 || idx === 12 || idx === 15}}<div class="attr-row">{{/if}}
@@ -69,7 +69,8 @@
                     {{set raw = (found ? found.attributeValue : (isFlat ? '0' : '0%')) + ''}}
                     {{set num = raw.replace('%', '')}}
                     {{set shown = num.indexOf('.') > -1 ? num.replace(/0+$/, '').replace(/\.$/, '') : num}}
-                    <div class="attr-cell">
+                    {{set isZero = (shown * 1) === 0}}
+                    <div class="attr-cell {{isZero ? 'attr-zero' : ''}}">
                         <span class="attr-key">{{key.replace('偏谐值累积效率','偏斜效率').replace('谐度破坏增幅','谐度增幅').replace('伤害加成','')}}</span>
                         <span class="attr-val">{{shown + (raw.indexOf('%') > -1 ? '%' : '')}}</span>
                     </div>

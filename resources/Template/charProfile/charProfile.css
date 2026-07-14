@@ -650,6 +650,11 @@
   color: #9d2933;
 }
 
+.attr-cell.attr-zero .attr-key,
+.attr-cell.attr-zero .attr-val {
+  color: #a0a0a0;
+}
+
 .total-score-table {
   position: relative;
   display: flex;
