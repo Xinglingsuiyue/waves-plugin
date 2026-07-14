@@ -98,7 +98,7 @@ export class CharacterRanking extends plugin {
             let name = await wiki.getAlias(charName);
             
             if (name.includes('漂泊者')) {
-                const attributeMatch = charName.match(/(湮灭|衍射|气动)/);
+                const attributeMatch = charName.match(/(湮灭|衍射|导电|气动|热熔|冷凝)/);
                 name = attributeMatch ? `漂泊者${attributeMatch[0]}` : '漂泊者湮灭';
             }
             
