@@ -134,7 +134,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/MAX/gi, 'max'],
         [/＆/g, ''],
         [/&/g, ''],
-        [/[，:：。、*,•+×]/g, ' '],
+        [/[，:：@。、*,•+×]/g, ' '],
         [/素/g, ''],
         [/表/g, ''],
         [/笑/g, ''],
