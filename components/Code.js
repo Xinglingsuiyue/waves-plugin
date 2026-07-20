@@ -624,7 +624,7 @@ async getTowerData(serverId, roleId, token, did = null) {
         }
     }
 
-    async pubCookie() {
+    async pubCookie(validator = null) {
         try {
             if (!Config.getConfig().use_public_cookie) return false;
             const keys = await redis.keys('Yunzai:waves:users:*');
@@ -643,7 +643,14 @@ async getTowerData(serverId, roleId, token, did = null) {
             for (let user of validUsers) {
                 try {
                     const isAvailable = await this.isAvailable(user.serverId, user.roleId, user.token, user.did || '', false);
-                    if (isAvailable) return user;
+                    if (!isAvailable) continue;
+
+                    if (validator) {
+                        const passed = await validator(user);
+                        if (!passed) continue;
+                    }
+
+                    return user;
                 } catch (error) { continue; }
             }
             return false;
