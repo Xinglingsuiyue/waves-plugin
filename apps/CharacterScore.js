@@ -105,8 +105,19 @@ function normalizeNumber(line) {
     normalized = normalized.replace(/\s+/g, '');
     normalized = normalized.replace(/^([\d.]+%?)[.,，。]+$/, '$1');
     normalized = normalized.replace(/\.{2,}/g, '.');
+
     if (/^[\d.]+%?$/.test(normalized)) {
-        return normalized;
+        const hasPercent = normalized.endsWith('%');
+        let core = hasPercent ? normalized.slice(0, -1) : normalized;
+        core = core.replace(/^\.+/, '').replace(/\.+$/, '');
+        const dotIdx = core.indexOf('.');
+        if (dotIdx !== -1) {
+            core = core.slice(0, dotIdx + 1) + core.slice(dotIdx + 1).replace(/\./g, '');
+        }
+        if (core && /^\d+(\.\d+)?$/.test(core)) {
+            return core + (hasPercent ? '%' : '');
+        }
+        return line;
     }
     return line;
 }
@@ -135,6 +146,8 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/葱/g, ''],
+        [/派/g, ''],
         [/素/g, ''],
         [/表/g, ''],
         [/笑/g, ''],
@@ -701,15 +714,15 @@ function extractPhantomDataFromOCR(rawText) {
 }
 
 // 从单个消息段中提取图片直链。
-// 兼容两种格式：OneBot 11 嵌套格式 { type:'image', data:{ url } }
-// 以及 icqq/Yunzai 内部的平铺格式 { type:'image', url }
 function getImageUrlFromSegment(seg) {
     if (!seg || seg.type !== 'image') return null;
     const data = seg.data || seg;
     return data.url || seg.url || null;
 }
 
-// 拉取合并转发消息里的各个节点，兼容不同协议
+// 拉取合并转发消息里的各个节点，兼容不同协议实现：
+//   1) icqq 协议 
+//   2) OneBot 11 
 async function fetchForwardNodes(e, id) {
     const bot = e?.bot;
     if (!bot) return [];
@@ -758,8 +771,7 @@ async function fetchForwardNodes(e, id) {
     );
 }
 
-// 递归解析合并转发消息。
-// 防止转发套娃导致死循环。
+// 递归解析合并转发消息 
 async function collectImageUrlsFromForwardId(e, id, depth = 0) {
     if (!id || depth > 3) return [];
     const nodeSegmentsList = await fetchForwardNodes(e, id);
