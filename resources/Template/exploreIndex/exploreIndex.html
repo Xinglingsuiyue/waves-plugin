@@ -33,15 +33,14 @@
                 </div>
                 <div class="progress-row">
                     {{each area.itemList row idx}}
-                    <div class="progress-item" style="background-color: {{if idx % 2 == 0}}#fcfafb{{else}}#e9e3dc{{/if}};">
+                    {{if row.progress < 100}}
+                    <div class="progress-item">
+                        <div class="progress-fill color-{{idx % 5}}" data-degree="{{row.progress}}"></div>
+                        {{if row.icon}}<img class="progress-icon" src="{{row.icon}}">{{/if}}
                         <div class="progress-name">{{row.name}}</div>
-                        <div class="progress-bar-frame">
-                            <div class="progress-bar-total">
-                                <div class="progress-bar" data-degree="{{row.progress}}"></div>
-                            </div>
-                        </div>
                         <div class="progress-number">{{row.progress}}%</div>
                     </div>
+                    {{/if}}
                     {{/each}}
                 </div>
             </div>
@@ -53,10 +52,20 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const progressBars = document.querySelectorAll(".progress-bar");
-            progressBars.forEach(bar => {
-                const degree = bar.getAttribute("data-degree");
-                bar.style.width = degree + "%";
+            const progressFills = document.querySelectorAll(".progress-fill");
+            progressFills.forEach(fill => {
+                const degree = fill.getAttribute("data-degree");
+                fill.style.width = degree + "%";
+            });
+
+            document.querySelectorAll(".country").forEach(country => {
+                const areas = Array.from(country.querySelectorAll(".area"));
+                areas.sort((a, b) => {
+                    const aHasItems = a.querySelectorAll(".progress-item").length > 0 ? 1 : 0;
+                    const bHasItems = b.querySelectorAll(".progress-item").length > 0 ? 1 : 0;
+                    return aHasItems - bHasItems;
+                });
+                areas.forEach(area => country.appendChild(area));
             });
         });
     </script>
