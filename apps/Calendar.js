@@ -30,22 +30,32 @@ export class Calendar extends plugin {
         }
 
         let newTowerData = null;
-        const publicCookie = await waves.pubCookie();
-        if (publicCookie) {
+        let cachedMatrixResult = null;
+        const publicCookie = await waves.pubCookie(async (user) => {
             try {
-                const matrixData = await waves.getNewTowerIndex(
-                    publicCookie.serverId,
-                    publicCookie.roleId,
-                    publicCookie.token,
-                    publicCookie.did,
-                    publicCookie.userId
+                const result = await waves.getNewTowerIndex(
+                    user.serverId,
+                    user.roleId,
+                    user.token,
+                    user.did,
+                    user.userId
                 );
-                if (matrixData.status && matrixData.data) {
-                    newTowerData = matrixData.data;
+                if (result.status && result.data) {
+                    cachedMatrixResult = result;
+                    return true;
                 }
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`[日历] 公共账号 ${user.roleId} 终焉矩阵数据不可用: ${result.msg || '未知原因'}，尝试下一个账号`));
+                return false;
             } catch (err) {
-                logger.debug('[日历] 获取终焉矩阵数据失败:', err);
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`[日历] 公共账号 ${user.roleId} 终焉矩阵校验异常:`), logger.red(err));
+                return false;
             }
+        });
+
+        if (publicCookie && cachedMatrixResult) {
+            newTowerData = cachedMatrixResult.data;
+        } else if (publicCookie === false) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow('[日历] 账号池中没有找到终焉矩阵数据可用的公共账号，本次不展示终焉矩阵倒计时卡片'));
         }
 
         const role = {
