@@ -40,7 +40,7 @@ export class Explore extends plugin {
             } else {
 
 const imageCard = await Render.render('Template/exploreIndex/exploreIndex', {
-    isSelf: !!(!uid && await redis.get(`Yunzai:waves:users:${e.user_id}`)),
+    isSelf: true,
     baseData: baseData.data,
     exploreData: [...exploreData.data.exploreList].reverse(),
 }, { e, retType: 'base64' });
