@@ -16,12 +16,21 @@
             <div id="user-uid">{{gameData.roleId}}</div>
         </div>
         <div id="data">
-            <div id="stamina">{{gameData.energyData.cur}}/{{gameData.energyData.total}}</div>
-            <div id="jiejindan">{{gameData.storeEnergyData.cur}}/{{gameData.storeEnergyData.total}}</div>
-            <div id="qiandao">{{gameData.weeklyRougeData.cur}}/{{gameData.weeklyRougeData.total}}</div>
-            <div id="zhange">{{gameData.weeklyData.cur}}/{{gameData.weeklyData.total}}</div>
-            <div id="activity">{{gameData.livenessData.cur}}/{{gameData.livenessData.total}}</div>
+            <div id="stamina"><span class="cur">{{gameData.energyData.cur}}</span>/{{gameData.energyData.total}}</div>
+            <div id="jiejindan"><span class="cur">{{gameData.storeEnergyData.cur}}</span>/{{gameData.storeEnergyData.total}}</div>
+            <div id="qiandao"><span class="cur">{{gameData.weeklyFrameData.cur}}</span>/{{gameData.weeklyFrameData.total}}</div>
+            <div id="zhange"><span class="cur">{{gameData.weeklyData.cur}}</span>/{{gameData.weeklyData.total}}</div>
+            <div id="tower"><span class="cur">{{gameData.towerData.cur}}</span>/{{gameData.towerData.total}}</div>
+            <div id="slash"><span class="cur">{{gameData.slashTowerData.cur}}</span>/{{gameData.slashTowerData.total}}</div>
+            <div id="weekly"><span class="cur">{{gameData.weeklyRougeData.cur}}</span></div>
+            <div id="new"><span class="cur">{{gameData.newTowerData.cur}}</span></div>
+            <div id="activity"><span class="cur">{{gameData.livenessData.cur}}</span>/{{gameData.livenessData.total}}</div>
             <div id="dailytime">{{gameData.energyData.refreshTimeStamp}}</div>
+            <div id="jiejindantime"></div>
+            <div id="towertime"></div>
+            <div id="slashtime"></div>
+            <div id="weeklytime"></div>
+            <div id="newtime"></div>
             <div id="experience">{{gameData.battlePassData[1].cur}}/{{gameData.battlePassData[1].total}}</div>
             <div id="level">LV.{{gameData.battlePassData[0].cur}}</div>
             <div id="progress" style="background: linear-gradient(90deg, #b9a068 0%, #c8c5bc 0%);"></div>
@@ -29,6 +38,12 @@
 
         <div id="curExp" style="display: none;">{{gameData.battlePassData[1].cur}}</div>
         <div id="totalExp" style="display: none;">{{gameData.battlePassData[1].total}}</div>
+        <div id="jiejindanCur" style="display: none;">{{gameData.storeEnergyData.cur}}</div>
+        <div id="jiejindanRefresh" style="display: none;">{{gameData.storeEnergyData.refreshTimeStamp}}</div>
+        <div id="towerRefresh" style="display: none;">{{gameData.towerData.refreshTimeStamp}}</div>
+        <div id="slashRefresh" style="display: none;">{{gameData.slashTowerData.refreshTimeStamp}}</div>
+        <div id="weeklyRefresh" style="display: none;">{{gameData.weeklyRougeData.refreshTimeStamp}}</div>
+        <div id="newRefresh" style="display: none;">{{gameData.newTowerData.refreshTimeStamp}}</div>
         <div id="copyright">{{@copyright}}</div>
     </div>
 
@@ -40,15 +55,59 @@
             const progressEl = document.getElementById('progress');
             progressEl.style.background = `linear-gradient(90deg, #b9a068 ${pct}%, #c8c5bc ${pct}%`;
 
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+
             const timestampMs = parseInt(document.getElementById('dailytime').innerText, 10);
             const date = new Date(timestampMs * 1000);
-            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
 
             if (timestampMs === 0 || date < now) {
                 document.getElementById('dailytime').innerText = '体力已恢满';
             } else {
                 document.getElementById('dailytime').innerText = `${date.getDate() > now.getDate() ? '明天' : ''}${date.getHours()}:${date.getMinutes()}恢满`;
             }
+
+
+            const jiejindanCur = parseInt(document.getElementById('jiejindanCur').innerText, 10);
+            const jiejindanTs = parseInt(document.getElementById('jiejindanRefresh').innerText, 10);
+            const jiejindanEl = document.getElementById('jiejindantime');
+            const jiejindanDate = new Date(jiejindanTs * 1000);
+
+            if (!jiejindanCur || !jiejindanTs || jiejindanDate < now) {
+                jiejindanEl.style.display = 'none';
+            } else {
+                jiejindanEl.innerText = `${jiejindanDate.getDate() > now.getDate() ? '明天' : ''}${jiejindanDate.getHours()}:${jiejindanDate.getMinutes()}恢满`;
+            }
+
+
+            function formatRemain(refreshTs) {
+                const ts = parseInt(refreshTs, 10);
+                if (!ts) return null;
+                const diff = ts * 1000 - now.getTime();
+                if (diff <= 0) return null;
+                const totalMinutes = Math.floor(diff / 60000);
+                const days = Math.floor(totalMinutes / 1440);
+                const hours = Math.floor((totalMinutes % 1440) / 60);
+                const minutes = totalMinutes % 60;
+                if (days > 0) return `剩余${days}天${hours}小时`;
+                if (hours > 0) return `剩余${hours}小时${minutes}分`;
+                return `剩余${minutes}分`;
+            }
+
+            [
+                ['towerRefresh', 'towertime'],
+                ['slashRefresh', 'slashtime'],
+                ['weeklyRefresh', 'weeklytime'],
+                ['newRefresh', 'newtime'],
+            ].forEach(([srcId, targetId]) => {
+                const srcEl = document.getElementById(srcId);
+                const targetEl = document.getElementById(targetId);
+                const remain = formatRemain(srcEl.innerText);
+                if (!remain) {
+                    targetEl.style.display = 'none';
+                } else {
+                    targetEl.innerText = remain;
+                }
+            });
         });
     </script>
 </body>
