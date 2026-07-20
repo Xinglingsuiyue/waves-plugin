@@ -1,6 +1,6 @@
 {
   "name": "waves-plugin",
-  "version": "3.5.22",
+  "version": "3.5.3",
   "description": "基于 Yunzai 的鸣潮游戏数据查询插件",
   "main": "index.js",
   "scripts": {
