@@ -30,7 +30,7 @@ export class EchoInfo extends plugin {
             priority: 1007,
             rule: [
                 { reg: '^(?:～|~|鸣潮)(?:声骸查询|声骸搜索|查声骸)\\s*(.+)?$', fnc: 'echoQuery' },
-                { reg: '^(?:～|~|鸣潮)声骸列表$', fnc: 'echoList' },
+                { reg: '^(?:～|~|鸣潮)合鸣列表$', fnc: 'echoList' },
                 { reg: '^(?:～|~|鸣潮)(?:合鸣查询|合鸣搜索|合鸣套查询|共鸣查询|共鸣套查询|查合鸣)\\s*(.+)?$', fnc: 'fetterQuery' }
             ]
         })
