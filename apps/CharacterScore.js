@@ -70,8 +70,26 @@ function getNextOcrKey() {
 import { WAVERIDER_ATTRIBUTES } from '../utils/damage/waveriderMap.js';
 
 
+// 伤害加成
+const ELEMENT_DMG_ELEMENTS = ['热熔', '导电', '冷凝', '气动', '湮灭', '衍射'];
+
+function extractElementDamageAttr(text) {
+    for (const el of ELEMENT_DMG_ELEMENTS) {
+        if (text.includes(el) && text.includes('伤害加成')) {
+            return el + '伤害加成';
+        }
+    }
+    return null;
+}
+
 function cleanAttributeName(name) {
-    return name.replace(/[。，、.,:：]+$/, '').trim();
+    let n = name.replace(/[。，、.,:：]+$/, '').trim();
+
+    const elementAttr = extractElementDamageAttr(n);
+    if (elementAttr) return elementAttr;
+
+    n = n.replace(/^[^\u4e00-\u9fa5]+/, '');
+    return n;
 }
 
 function getCostByMainStat(mainStatName, mainStatValue) {
