@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/myEchoList/myEchoList.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+    <link rel="preload" href="{{pluginResources}}/fonts/framdit.ttf" as="font" />
+</head>
+<body id="body" {{sys.scale}}>
+    <div id="container">
+        <div id="header">
+            <div id="user-id">UID:{{ playerUid }}</div>
+        </div>
+        <div id="table">
+            {{each phantoms phantom}}
+            <div class="phantom-list">
+                <div class="phantom-header">
+                    {{if phantom.iconUrl}}
+                    <img src="{{ phantom.iconUrl }}" class="phantom-icon">
+                    {{/if}}
+                    {{if phantom.fetterIcon}}
+                    <img src="{{ phantom.fetterIcon }}" class="fetter-icon">
+                    {{/if}}
+                    <div class="phantom-level">+{{ phantom.level }}</div>
+                    <div class="phantom-header-right">
+                        <div class="phantom-name">{{ phantom.name }}</div>
+                        <div class="phantom-rank-score" style="color: {{ phantom.scoreColor }};">{{ phantom.scoreDisplay }}</div>
+                        <div class="phantom-role">{{ phantom.equippedRole }}</div>
+                    </div>
+                </div>
+                <div class="phantom-attribute" style="background-image: url('{{ phantom.roleIcon }}');">
+                    {{each phantom.mainProps prop}}
+                    <div class="phantom-attribute-item" style="font-weight: bold;">
+                        <span class="phantom-attribute-key">{{ prop.attributeName }}</span>
+                        <span class="phantom-attribute-value">{{ prop.attributeValue }}</span>
+                    </div>
+                    {{/each}}
+                    {{each phantom.subProps sp}}
+                    <div class="phantom-attribute-item" style="color: {{ sp.color || '#a0a0a0' }};">
+                        <span class="phantom-attribute-key">{{ sp.attributeName }}</span>
+                        <span class="phantom-attribute-value">{{ sp.attributeValue }}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        <div id="copyright">{{@ copyright }}</div>
+    </div>
+</body>
+</html>

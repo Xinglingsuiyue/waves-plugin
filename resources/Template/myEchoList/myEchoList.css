@@ -1,1 +1,221 @@
-
+@font-face {
+  font-family: "Guruwords";
+  src: url("../../fonts/Guruwords.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "framdit";
+  src: url("../../fonts/Guruwords.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  font-family: Guruwords;
+}
+#body {
+  transform-origin: top left;
+}
+#container {
+  position: relative;
+  width: 860px;
+  background-color: #f1eff1;
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+#header {
+  position: relative;
+  width: 860px;
+  height: 44px;
+}
+#user-id {
+  position: absolute;
+  top: 10px;
+  left: 30px;
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 600;
+  color: #d3d3d3;
+}
+#role-info-container {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 5px;
+  z-index: 2;
+}
+#role-info {
+  display: flex;
+  justify-content: flex-start;
+  gap: 5px;
+  align-items: center;
+}
+#text-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 300px;
+}
+#role-name {
+  font-size: 36px;
+  color: #4e4e4e;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+#role-level {
+  font-size: 26px;
+  color: #4e4e4e;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+#table {
+  position: relative;
+  margin: 4px 0px 0px 24px;
+  display: grid;
+  grid-template-columns: 150px 150px 150px 150px 150px;
+  column-gap: 14px;
+  row-gap: 12px;
+  width: 806px;
+}
+#table > * {
+  position: relative;
+  width: 150px;
+  height: 260px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.phantom-list {
+  position: relative;
+}
+.phantom-header {
+  position: relative;
+  width: 100%;
+  height: 80px;
+}
+.phantom-level {
+  position: absolute;
+  padding: 0px 2px;
+  left: 0;
+  bottom: 0;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+}
+.phantom-header-right {
+  position: relative;
+  height: 80px;
+  width: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.phantom-icon {
+  height: 80px;
+  float: left;
+  mask-image: linear-gradient(to left, transparent 0%, #000 70%);
+  -webkit-mask-image: linear-gradient(to left, transparent 0%, #000 70%);
+}
+.fetter-icon {
+  position: absolute;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+}
+.phantom-name {
+  position: absolute;
+  margin-top: -24px;
+  color: #4e4e4e;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.phantom-rank-score {
+  position: absolute;
+  margin-top: 30px;
+  font-size: 16px;
+  font-weight: 700;
+  font-style: italic;
+  white-space: nowrap;
+}
+.phantom-role {
+  position: absolute;
+  margin-top: 52px;
+  font-size: 11px;
+  color: #8a8a8a;
+  white-space: nowrap;
+}
+.phantom-attribute {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.phantom-attribute::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(241, 236, 241, 0.5);
+  z-index: 0;
+}
+.phantom-attribute > div {
+  position: relative;
+  z-index: 1;
+}
+.phantom-attribute > div:nth-child(odd) {
+  background-color: rgba(225, 225, 225, 0.7);
+}
+.phantom-attribute > div:nth-child(even) {
+  background-color: rgba(240, 236, 240, 0.5);
+}
+.phantom-attribute-item {
+  width: 100%;
+  height: 26px;
+}
+.phantom-attribute-key {
+  float: left;
+  padding: 5px 0px 0px 6px;
+  font-size: 12px;
+}
+.phantom-attribute-value {
+  font-family: "framdit";
+  float: right;
+  padding: 5px 6px 0px 0px;
+  font-size: 12px;
+}
+.total-score-key {
+  line-height: 30px;
+  background-color: #d8d8d8;
+  color: #000;
+  font-size: 20px;
+}
+.total-score-value {
+  line-height: 60px;
+  font-family: "framdit";
+  background-color: #f3f3f3;
+  color: #e9c130;
+  font-weight: 700;
+  font-size: 46px;
+}
+#copyright {
+  position: relative;
+  margin: 22px auto 4px;
+  width: 100%;
+  font-size: 18px;
+  font-weight: bold;
+  color: #6a6a6a;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+#copyright .version {
+  color: #b09a5e;
+  display: inline-block;
+  padding: 0 3px;
+}
