@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 
 import { WAVERIDER_ATTRIBUTES } from '../utils/damage/waveriderMap.js';
+import Zhinengshanghai from '../utils/Zhinengshanghai.js';
 
 export class CharacterMAX extends plugin {
     constructor() {
@@ -69,9 +70,20 @@ export class CharacterMAX extends plugin {
                 data: roleDetailData
             };
 
+            // 保留原始面板数据
+            const rawRoleDetailData = JSON.parse(JSON.stringify(roleDetail.data));
+
             // 计算角色数据和声骸评分
             const calculated = new WeightCalculator(roleDetail.data).calculate();
             roleDetail.data = calculated;
+
+            // 伤害计算
+            const damageResult = await Zhinengshanghai.calc(rawRoleDetailData, {
+                enemyName: '无妄者',
+                enemyLevel: 90,
+                resistance: 0.1,
+                ignoreDefense: 0
+            });
 
             if (!roleDetail.data.weightVersion) {
                 roleDetail.data.weightVersion = '1.0';
@@ -102,6 +114,7 @@ export class CharacterMAX extends plugin {
                 uid: '000000000', 
                 rolePicUrl: rolePicUrl,
                 roleDetail: roleDetail,
+                damageResult: damageResult,
             };
 
             const imageCard = await Render.render('Template/charProfile/charProfile', {
