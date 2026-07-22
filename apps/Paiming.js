@@ -13,7 +13,7 @@ export class CharacterRanking extends plugin {
             priority: 1010,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(?!(?:开启|关闭))(.*?)(总)?(?:排行|排名|排名榜|排行榜)$",
+                    reg: "^(?:～|~|鸣潮)(?!(?:开启|关闭))(.*?)(总)?(?:排行|排名|排名榜|排行榜)([1-5])?$",
                     fnc: "characterRank"
                 },
                 {
@@ -81,6 +81,7 @@ export class CharacterRanking extends plugin {
         
         const charName = matchResult[1].trim();
         const isGlobal = matchResult[2] === "总";
+        const page = matchResult[3] ? parseInt(matchResult[3]) : 1;
         const groupId = e.isGroup ? e.group_id : 'private';
         
         if (!charName) return e.reply('请输入角色名称，例如：~安可排名');
@@ -108,14 +109,19 @@ export class CharacterRanking extends plugin {
                 this.getGlobalRankFilePath(name) : 
                 this.getGroupRankFilePath(groupId, name);
             
-            const rankResult = this.loadRankData(filePath, currentUserUIDs);
+            const rankResult = this.loadRankData(filePath, currentUserUIDs, page);
             const rankData = rankResult.topList;
             const currentUserEntry = rankResult.currentUserEntry;
             const currentUserInRank = rankData.some(entry => entry.isCurrentUser);
             
+            if (rankResult.totalCount > 0 && rankData.length === 0) {
+                return e.reply(`「${name}」${isGlobal ? '总' : '群'}排名最多只有 ${rankResult.totalPages} 页（共 ${rankResult.totalCount} 人），请输入 1-${rankResult.totalPages} 之间的页码`);
+            }
+            
             let imageCard = await this.generateRankImage(
                 e, name, rankData, isGlobal ? '总' : '群',
-                currentUserUIDs, currentUserInRank, currentUserEntry
+                currentUserUIDs, currentUserInRank, currentUserEntry,
+                page, rankResult.totalPages, rankResult.totalCount
             );
             
             await e.reply(imageCard);
@@ -126,17 +132,22 @@ export class CharacterRanking extends plugin {
         return true;
     }
 
-    loadRankData(filePath, currentUserUIDs = []) {
+    loadRankData(filePath, currentUserUIDs = [], page = 1) {
         if (!fs.existsSync(filePath)) {
-            return { topList: [], currentUserEntry: null };
+            return { topList: [], currentUserEntry: null, totalCount: 0, totalPages: 0 };
         }
         
         try {
             const rawData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
             const sortedData = rawData.sort((a, b) => b.score - a.score);
+            const totalCount = sortedData.length;
+            const pageSize = 20;
+            const maxPages = 5;
+            const totalPages = Math.min(Math.ceil(totalCount / pageSize), maxPages);
             
-            const topList = sortedData.slice(0, 20).map((entry, index) => ({
-                rank: index + 1,
+            const startIndex = (page - 1) * pageSize;
+            const topList = sortedData.slice(startIndex, startIndex + pageSize).map((entry, index) => ({
+                rank: startIndex + index + 1,
                 score: entry.score.toFixed(2),
                 uid: entry.uid,
                 charInfo: entry.charInfo,
@@ -153,14 +164,14 @@ export class CharacterRanking extends plugin {
                 }
             }
             
-            return { topList, currentUserEntry };
+            return { topList, currentUserEntry, totalCount, totalPages };
         } catch (err) {
             logger.error(`[角色声骸排名] 解析排名文件错误: ${err.stack}`);
-            return { topList: [], currentUserEntry: null };
+            return { topList: [], currentUserEntry: null, totalCount: 0, totalPages: 0 };
         }
     }
 
-    async generateRankImage(e, charName, rankData, rankType, currentUserUIDs, currentUserInRank, currentUserEntry) {
+    async generateRankImage(e, charName, rankData, rankType, currentUserUIDs, currentUserInRank, currentUserEntry, currentPage = 1, totalPages = 0, totalCount = 0) {
         try {
             const roleList = rankData.map(entry => {
                 const charInfo = entry.charInfo || {};
@@ -239,7 +250,10 @@ export class CharacterRanking extends plugin {
                 rankType,
                 pluginResources: this.pluginResources,
                 showCurrentUserRow,
-                currentUserRow
+                currentUserRow,
+                currentPage,
+                totalPages,
+                totalCount
             }, { e, retType: 'base64' });
         } catch (err) {
             logger.error(`[角色声骸排名] 生成排名图片错误: ${err.stack}`);
