@@ -318,7 +318,6 @@ li:first-child {
     text-shadow: 0 0 3px #000, 1px 1px 5px #000 !important;
 }
 
-/* 新增: 触发者高亮样式 */
 .highlighted-row {
     background-color: rgba(255, 0, 0, 0.1) !important;
     box-shadow: 0 0 15px rgba(255, 0, 0, 0.3) !important;
@@ -340,7 +339,6 @@ li:first-child {
     to { text-shadow: 0 0 10px #fff, 0 0 20px #ff0000, 0 0 30px #ff0000; }
 }
 
-/* 新增: 触发者未上榜时的展示区域 */
 #current-user-section {
     background: rgba(255, 230, 230, 0.9);
     border-top: 3px solid #ff0000;
@@ -385,7 +383,6 @@ li:first-child {
     font-style: italic;
 }
 
-/* 新增: 100+ 排名特殊样式 */
 .rank-over100 {
     font-size: 36px !important;
     font-weight: 900 !important;
@@ -396,7 +393,6 @@ li:first-child {
     letter-spacing: 1px;
 }
 
-/* 确保排名列有足够宽度 */
 .rank-number {
     min-width: 100px;
 }

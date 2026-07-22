@@ -27,8 +27,8 @@
                     <div class="center">声骸</div>
                 </li>
                 {{each roleList entry idx}}
-                <li class="{{idx < 3 ? 'top-' + (idx+1) : ''}} {{entry.isCurrentUser ? 'highlighted-row' : ''}}">
-                    <div class="rank-number center">{{idx + 1}}</div>
+                <li class="{{entry.rank <= 3 ? 'top-' + entry.rank : ''}} {{entry.isCurrentUser ? 'highlighted-row' : ''}}">
+                    <div class="rank-number center">{{entry.rank}}</div>
                     <div class="role center">
                         <div class="level">
                             Lv{{entry.level}}
