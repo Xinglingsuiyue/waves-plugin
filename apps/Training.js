@@ -46,10 +46,12 @@ export class Training extends plugin {
                 waves.getRoleData(serverId, uid, token, did)
             ]);
 
-            if (!baseData.status || !roleData.status) {
-                data.push({ message: baseData.msg || roleData.msg });
+            if (!roleData.status) {
+                data.push({ message: roleData.msg });
                 return;
             }
+
+            const baseDataResult = baseData.status ? baseData.data : { id: uid };
 
             const Promises = roleData.data.roleList.map(role =>
                 waves.getRoleDetail(serverId, uid, role.roleId, token, did).then(data =>
@@ -60,7 +62,7 @@ export class Training extends plugin {
             const roleList = (await Promise.all(Promises)).filter(Boolean).map(role => {
                 const calculatedRole = new WeightCalculator(role).calculate();
                 calculatedRole.chainCount = calculatedRole.chainList.filter(chain => chain.unlocked).length;
-                
+
                 // 处理漂泊者角色名
                 if (calculatedRole.roleName === '漂泊者') {
                     const attribute = WAVERIDER_ATTRIBUTES[calculatedRole.roleId];
@@ -68,9 +70,14 @@ export class Training extends plugin {
                         calculatedRole.roleName = `漂泊者${attribute}`;
                     }
                 }
-                
+
                 return calculatedRole;
             });
+
+            if (roleList.length === 0) {
+                data.push({ message: `UID: ${uid} 未获取到任何角色详情数据，请检查库街区数据终端中角色详情板块的对外展示开关是否打开` });
+                return;
+            }
             
             await Promise.all(roleList.map(async (role) => {
                 const phantomScore = role?.phantomData?.statistic?.totalScore || 0;
@@ -141,7 +148,7 @@ export class Training extends plugin {
             });
 
             const imageCard = await Render.render('Template/training/training', {
-                baseData: baseData.data,
+                baseData: baseDataResult,
                 roleList,
             }, { e, retType: 'base64' });
 
