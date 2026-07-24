@@ -2,6 +2,8 @@ import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
 import Render from '../components/Render.js';
+import MatrixRankUtil from '../utils/MatrixRankUtil.js';
+import { CharacterRanking } from './Paiming.js';
 
 export class NewTowerDeta extends plugin {
     constructor() {
@@ -44,13 +46,14 @@ export class NewTowerDeta extends plugin {
             let data = [];
             let deleteroleId = [];
 
-            await Promise.all(accountList.map(async (account) => {
+            // 顺序处理每个账号，避免并发请求导致状态冲突
+            for (let account of accountList) {
                 const usability = await waves.isAvailable(account.serverId, account.roleId, account.token, account.did);
 
                 if (!usability) {
                     data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
                     deleteroleId.push(account.roleId);
-                    return;
+                    continue;
                 }
 
                 try {
@@ -61,12 +64,12 @@ export class NewTowerDeta extends plugin {
 
                     if (!matrixData?.status) {
                         data.push({ message: `账号 ${account.roleId} ${this.normalizeErrorMsg(matrixData?.msg, false)}` });
-                        return;
+                        continue;
                     }
 
                     if (!matrixData.data || matrixData.data.isUnlock === false) {
                         data.push({ message: `账号 ${account.roleId} 尚未解锁终焉矩阵` });
-                        return;
+                        continue;
                     }
 
                     const renderData = await this.formatData(
@@ -79,7 +82,7 @@ export class NewTowerDeta extends plugin {
 
                     if (!renderData) {
                         data.push({ message: `账号 ${account.roleId} 数据格式化失败` });
-                        return;
+                        continue;
                     }
 
                     const image = await Render.render('Template/newTowerDeta/newTowerDeta', renderData, {
@@ -88,6 +91,9 @@ export class NewTowerDeta extends plugin {
                         copyright: `数据来源: 库街区 · 生成时间: ${new Date().toLocaleString()}`
                     });
 
+                    // 录入矩阵排名数据
+                    await this.recordMatrixRank(e, renderData, false);
+
                     data.push({ message: image });
                 } catch (err) {
                     logger.error('[终焉矩阵查询异常]', err);
@@ -95,7 +101,7 @@ export class NewTowerDeta extends plugin {
                         message: `账号 ${account.roleId} 查询异常: ${err.message || '未知错误'}`
                     });
                 }
-            }));
+            }
 
             if (deleteroleId.length) {
                 let newAccountList = accountList.filter(account => !deleteroleId.includes(account.roleId));
@@ -164,6 +170,9 @@ export class NewTowerDeta extends plugin {
             retType: 'base64',
             copyright: `数据来源: 库街区 · 生成时间: ${new Date().toLocaleString()}`
         });
+
+        // 录入矩阵排名数据（isOther=true时使用公共Cookie查询）
+        await this.recordMatrixRank(e, renderData, isOther);
 
         return await e.reply(image);
     }
@@ -278,6 +287,81 @@ export class NewTowerDeta extends plugin {
         } catch (err) {
             logger.error('[终焉矩阵格式化数据异常]', err);
             return null;
+        }
+    }
+
+    async recordMatrixRank(e, renderData, isOther) {
+        try {
+            if (!renderData || !renderData.userInfo || !renderData.userInfo.uid) return;
+
+            const groupId = e.isGroup ? e.group_id : 'private';
+            const uid = renderData.userInfo.uid;
+
+            // 仅录入奇点扩张(modeId === 1)的分数和阵容
+            const singularityMode = (renderData.modeDetails || []).find(mode => mode.modeId === 1);
+            if (!singularityMode) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow('矩阵排名录入: 未找到奇点扩张模式数据，跳过录入'));
+                return;
+            }
+
+            const rankScore = singularityMode.score || 0;
+
+            // 提取奇点扩张模式的队伍，按分数降序取前两队
+            const allTeams = (singularityMode.teams || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+            const topTeams = allTeams.slice(0, 2).map(team => ({
+                score: team.score || 0,
+                roleIcons: team.roleIcons || [],
+                buffIcons: (team.buffs || []).map(buff => buff.buffIcon).filter(Boolean)
+            }));
+
+            // 汇总所有队伍的角色图标（兼容旧字段 teamIcons）
+            const teamIcons = [];
+            for (const team of topTeams) {
+                teamIcons.push(...team.roleIcons);
+            }
+
+            const playerInfo = {
+                name: renderData.userInfo.name || '鸣潮玩家',
+                uid: uid,
+                avatar: renderData.userInfo.avatar || '',
+                modeScores: [{
+                    modeName: '奇点扩张',
+                    score: rankScore
+                }],
+                teamIcons: [...new Set(teamIcons)].slice(0, 8),
+                topTeams
+            };
+
+            // 判断是否为公共Cookie查询
+            // isOther=true 表示使用公共Cookie查询他人数据
+            const isPublicCookie = isOther;
+
+            const promises = [];
+
+            // 群排名：仅群聊时录入
+            if (e.isGroup) {
+                const groupEnabled = await CharacterRanking.isGroupRankingEnabled(groupId);
+                const allowPublic = await CharacterRanking.isAllowPublicCookie(groupId, 'group');
+                if (groupEnabled && (allowPublic || !isPublicCookie)) {
+                    promises.push(MatrixRankUtil.updateRankData('group', playerInfo, rankScore, groupId));
+                }
+            }
+
+            // 总排名
+            const globalEnabled = await CharacterRanking.isGlobalRankingEnabled();
+            const allowPublicGlobal = await CharacterRanking.isAllowPublicCookie('global', 'global');
+            if (globalEnabled && (allowPublicGlobal || !isPublicCookie)) {
+                promises.push(MatrixRankUtil.updateRankData('global', playerInfo, rankScore, groupId));
+            }
+
+            // bot排名：总是录入（包括公共Cookie查询的数据）
+            promises.push(MatrixRankUtil.updateRankData('bot', playerInfo, rankScore, groupId));
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+            }
+        } catch (err) {
+            logger.error('[矩阵排名录入异常]', err);
         }
     }
 

@@ -70,7 +70,7 @@ function getNextOcrKey() {
 import { WAVERIDER_ATTRIBUTES } from '../utils/damage/waveriderMap.js';
 
 
-// 伤害加成
+// 六种伤害加成白名单
 const ELEMENT_DMG_ELEMENTS = ['热熔', '导电', '冷凝', '气动', '湮灭', '衍射'];
 
 function extractElementDamageAttr(text) {
@@ -164,6 +164,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/發/g, ''],
         [/延迟/g, ''],
         [/今/g, ''],
         [/葱/g, ''],
