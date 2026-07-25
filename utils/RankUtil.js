@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import Config from '../components/Config.js';
 
 // 漂泊者属性ID映射
 const WAVERIDER_ATTRIBUTES = {
     '1604': '湮灭', '1605': '湮灭',
+    '1309': '导电', '1310': '导电',
     '1501': '衍射', '1502': '衍射',
     '1406': '气动', '1408': '气动'
 };
@@ -26,8 +28,22 @@ export default class RankUtil {
         }
     }
 
+    static async isGroupStrictMode(groupId) {
+        try {
+            const key = `Yunzai:waves:ranking_reject_public:${groupId}`;
+            const value = await redis.get(key);
+            if (value !== null) {
+                return value !== '0';
+            }
+            const config = Config.getConfig();
+            return config.ranking_reject_public_cookie_group !== false;
+        } catch {
+            return false;
+        }
+    }
+
     // 更新排行榜数据
-    static async updateRankData(charName, uid, score, groupId = 'private', charInfo = null) {
+    static async updateRankData(charName, uid, score, groupId = 'private', charInfo = null, isPublicCookie = false) {
         try {
             // 处理漂泊者角色名
             let finalCharName = charName;
@@ -50,28 +66,33 @@ export default class RankUtil {
                 groupId = 'private';
             }
             
-            // 全局排名更新
-            await this.updateRankFile(
-                path.join(paths.globalDir, `${finalCharName}.json`), 
-                uid, 
-                score,
-                charInfo
-            );
-            
-            // 群排名更新
-            if (groupId !== 'private') {
-                // 当前是群聊查询，更新该群的排名
-                const groupDirPath = paths.groupDir(groupId);
-                this.ensureDirectoryExists(groupDirPath);
+            // 全局排名更新：严格模式下跳过未登录数据
+            const allowPublicGlobal = !isPublicCookie || (Config.getConfig().ranking_reject_public_cookie_global === false);
+            if (allowPublicGlobal) {
                 await this.updateRankFile(
-                    path.join(groupDirPath, `${finalCharName}.json`), 
+                    path.join(paths.globalDir, `${finalCharName}.json`), 
                     uid, 
                     score,
                     charInfo
                 );
+            }
+            
+            // 群排名更新
+            if (groupId !== 'private') {
+                // 严格模式下跳过未登录数据
+                const allowPublicGroup = !isPublicCookie || !(await this.isGroupStrictMode(groupId));
+                if (allowPublicGroup) {
+                    const groupDirPath = paths.groupDir(groupId);
+                    this.ensureDirectoryExists(groupDirPath);
+                    await this.updateRankFile(
+                        path.join(groupDirPath, `${finalCharName}.json`), 
+                        uid, 
+                        score,
+                        charInfo
+                    );
+                }
             } else {
-                // 同步更新
-                await this.syncToAllGroups(finalCharName, uid, score, charInfo, paths);
+                await this.syncToAllGroups(finalCharName, uid, score, charInfo, paths, isPublicCookie);
             }
         } catch (err) {
             logger.error(`[排行榜工具] 更新排名错误: ${err.stack}`);
@@ -79,7 +100,7 @@ export default class RankUtil {
     }
 
     // 同步更新
-    static async syncToAllGroups(charName, uid, score, charInfo, paths) {
+    static async syncToAllGroups(charName, uid, score, charInfo, paths, isPublicCookie = false) {
         const groupsDir = path.join(paths.basePath, 'groups');
         
         if (!fs.existsSync(groupsDir)) {
@@ -107,6 +128,11 @@ export default class RankUtil {
                     const hasRecord = this.checkUidInFile(rankFilePath, uid);
                     
                     if (hasRecord) {
+                        // 严格模式下的群在未登录查询时不同步
+                        const groupId = groupDirName.substring('group_'.length);
+                        if (isPublicCookie && await this.isGroupStrictMode(groupId)) {
+                            continue;
+                        }
                         await this.updateRankFile(rankFilePath, uid, score, charInfo);
                     }
                 }
@@ -123,7 +149,8 @@ export default class RankUtil {
                 return false;
             }
             const rankData = JSON.parse(fileContent);
-            return rankData.some(entry => entry.uid === uid);
+            const uidStr = String(uid);
+            return rankData.some(entry => String(entry.uid) === uidStr);
         } catch (err) {
             return false;
         }
@@ -153,10 +180,10 @@ export default class RankUtil {
         }
         
         // 查找或创建用户记录
-        let userEntry = rankData.find(entry => entry.uid === uid);
+        let userEntry = rankData.find(entry => String(entry.uid) === String(uid));
         if (!userEntry) {
             userEntry = { 
-                uid, 
+                uid: String(uid), 
                 score: newScore, 
                 timestamp: now,
                 charInfo

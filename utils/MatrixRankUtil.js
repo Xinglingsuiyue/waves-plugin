@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import Config from '../components/Config.js';
 
 export default class MatrixRankUtil {
     // 获取数据存储路径
@@ -39,37 +40,79 @@ export default class MatrixRankUtil {
         }
     }
 
-    // 更新排行榜数据
-    // scope: 'group' | 'global' | 'bot'
-    // playerInfo: { name, uid, avatar, modeScores, teamIcons }
-    static async updateRankData(scope, playerInfo, score, groupId = 'private') {
+    static readSeasonFile(filePath) {
+        if (!fs.existsSync(filePath)) {
+            return { seasons: [] };
+        }
+        try {
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            if (!fileContent.trim()) {
+                return { seasons: [] };
+            }
+            const parsed = JSON.parse(fileContent);
+            if (Array.isArray(parsed)) {
+                return { seasons: [{ seasonKey: 'legacy', endTime: 0, rankData: parsed }] };
+            }
+            if (parsed && Array.isArray(parsed.seasons)) {
+                return parsed;
+            }
+            return { seasons: [] };
+        } catch (err) {
+            logger.error(`[矩阵排名工具] 读取赛季文件错误: ${err.stack}`);
+            return { seasons: [] };
+        }
+    }
+
+    static writeSeasonFile(filePath, data) {
+        try {
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        } catch (err) {
+            logger.error(`[矩阵排名工具] 写入排名文件错误: ${err.stack}`);
+        }
+    }
+
+    static timestampToSeasonKey(timestamp) {
+        if (!timestamp) return 'unknown';
+        const d = new Date(timestamp);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    static cleanupSeasons(seasonData) {
+        if (!seasonData.seasons || seasonData.seasons.length <= 2) {
+            return seasonData;
+        }
+        seasonData.seasons.sort((a, b) => (b.endTime || 0) - (a.endTime || 0));
+        const removed = seasonData.seasons.splice(2);
+        if (removed.length > 0) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`矩阵排名: 自动清理了 ${removed.length} 期过期数据`));
+        }
+        return seasonData;
+    }
+
+    static findSeason(seasonData, seasonEndTime = 0) {
+        if (!seasonData.seasons || seasonData.seasons.length === 0) return null;
+        if (seasonEndTime) {
+            const key = this.timestampToSeasonKey(seasonEndTime);
+            return seasonData.seasons.find(s => s.seasonKey === key) || null;
+        }
+        const sorted = [...seasonData.seasons].sort((a, b) => (b.endTime || 0) - (a.endTime || 0));
+        return sorted[0] || null;
+    }
+
+    static async updateRankData(scope, playerInfo, score, groupId = 'private', seasonEndTime = 0) {
         try {
             const filePath = this.getRankFilePath(scope, groupId);
             if (!filePath) return;
-
-            await this.updateRankFile(filePath, playerInfo.uid, score, playerInfo);
-
-            // 如果是群排名更新，同时更新全局和bot排名
-            if (scope === 'group') {
-                const globalPath = this.getRankFilePath('global');
-                await this.updateRankFile(globalPath, playerInfo.uid, score, playerInfo);
-
-                const botPath = this.getRankFilePath('bot');
-                await this.updateRankFile(botPath, playerInfo.uid, score, playerInfo);
-            }
-
-            // 如果是全局排名更新，同时更新bot排名
-            if (scope === 'global') {
-                const botPath = this.getRankFilePath('bot');
-                await this.updateRankFile(botPath, playerInfo.uid, score, playerInfo);
-            }
+            await this.updateRankFile(filePath, playerInfo.uid, score, playerInfo, seasonEndTime);
         } catch (err) {
             logger.error(`[矩阵排名工具] 更新排名错误: ${err.stack}`);
         }
     }
 
-    // 同步到所有群
-    static async syncToAllGroups(uid, score, playerInfo) {
+    static async syncToAllGroups(uid, score, playerInfo, seasonEndTime = 0, isPublicCookie = false) {
         const paths = this.getRankDataPath();
         const groupsDir = path.join(paths.basePath, 'groups');
 
@@ -82,10 +125,15 @@ export default class MatrixRankUtil {
                 const groupDirPath = path.join(groupsDir, groupDirName);
                 if (!fs.statSync(groupDirPath).isDirectory()) continue;
 
+                const groupId = groupDirName.substring('group_'.length);
+
                 const rankFilePath = path.join(groupDirPath, 'matrix.json');
                 if (fs.existsSync(rankFilePath)) {
-                    if (this.checkUidInFile(rankFilePath, uid)) {
-                        await this.updateRankFile(rankFilePath, uid, score, playerInfo);
+                    if (this.checkUidInFile(rankFilePath, uid, seasonEndTime)) {
+                        if (isPublicCookie && await this.isGroupStrictMode(groupId)) {
+                            continue;
+                        }
+                        await this.updateRankFile(rankFilePath, uid, score, playerInfo, seasonEndTime);
                     }
                 }
             }
@@ -94,37 +142,55 @@ export default class MatrixRankUtil {
         }
     }
 
-    static checkUidInFile(filePath, uid) {
+    static async isGroupStrictMode(groupId) {
         try {
-            const fileContent = fs.readFileSync(filePath, 'utf8');
-            if (!fileContent.trim()) return false;
-            const rankData = JSON.parse(fileContent);
-            return rankData.some(entry => entry.uid === uid);
+            const key = `Yunzai:waves:matrix_reject_public:${groupId}`;
+            const value = await redis.get(key);
+            if (value !== null) {
+                return value !== '0';
+            }
+            const config = Config.getConfig();
+            return config.matrix_reject_public_cookie_group !== false;
         } catch {
             return false;
         }
     }
 
-    // 更新排名文件
-    static async updateRankFile(filePath, uid, newScore, playerInfo = null) {
+    static checkUidInFile(filePath, uid, seasonEndTime = 0) {
+        try {
+            const seasonData = this.readSeasonFile(filePath);
+            const uidStr = String(uid);
+            const season = this.findSeason(seasonData, seasonEndTime);
+            if (!season) return false;
+            return season.rankData.some(entry => String(entry.uid) === uidStr);
+        } catch {
+            return false;
+        }
+    }
+
+    static async updateRankFile(filePath, uid, newScore, playerInfo = null, seasonEndTime = 0) {
         const now = Date.now();
         const fileDir = path.dirname(filePath);
         this.ensureDirectoryExists(fileDir);
 
-        let rankData = [];
-        if (fs.existsSync(filePath)) {
-            try {
-                const fileContent = fs.readFileSync(filePath, 'utf8');
-                if (fileContent.trim()) {
-                    rankData = JSON.parse(fileContent);
-                }
-            } catch {}
+        const seasonData = this.readSeasonFile(filePath);
+        const seasonKey = seasonEndTime ? this.timestampToSeasonKey(seasonEndTime) : 'current';
+
+        let season = seasonData.seasons.find(s => s.seasonKey === seasonKey);
+        if (!season) {
+            season = {
+                seasonKey,
+                endTime: seasonEndTime || 0,
+                rankData: []
+            };
+            seasonData.seasons.push(season);
         }
 
-        let userEntry = rankData.find(entry => entry.uid === uid);
+        const rankData = season.rankData;
+        let userEntry = rankData.find(entry => String(entry.uid) === String(uid));
         if (!userEntry) {
             userEntry = {
-                uid,
+                uid: String(uid),
                 score: newScore,
                 timestamp: now,
                 playerInfo
@@ -134,30 +200,45 @@ export default class MatrixRankUtil {
             userEntry.score = newScore;
             userEntry.timestamp = now;
             if (playerInfo) {
+                const newHasTeams = playerInfo.topTeams && playerInfo.topTeams.length > 0;
+                const oldHasTeams = userEntry.playerInfo &&
+                    userEntry.playerInfo.topTeams && userEntry.playerInfo.topTeams.length > 0;
+                if (!newHasTeams && oldHasTeams) {
+                    playerInfo.topTeams = userEntry.playerInfo.topTeams;
+                    playerInfo.teamIcons = userEntry.playerInfo.teamIcons;
+                    playerInfo.teamCount = userEntry.playerInfo.teamCount;
+                }
                 userEntry.playerInfo = playerInfo;
             }
         }
 
-        try {
-            fs.writeFileSync(filePath, JSON.stringify(rankData, null, 2));
-        } catch (err) {
-            logger.error(`[矩阵排名工具] 写入排名文件错误: ${err.stack}`);
-        }
+        this.cleanupSeasons(seasonData);
+
+        this.writeSeasonFile(filePath, seasonData);
     }
 
-    // 加载排名数据
-    static loadRankData(filePath, currentUserUIDs = [], page = 1) {
+    static loadRankData(filePath, currentUserUIDs = [], page = 1, seasonOffset = 0) {
         if (!fs.existsSync(filePath)) {
-            return { topList: [], currentUserEntry: null, totalCount: 0, totalPages: 0 };
+            return { topList: [], currentUserEntries: [], totalCount: 0, totalPages: 0, seasonInfo: null };
         }
 
         try {
-            const rawData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            const seasonData = this.readSeasonFile(filePath);
+            const sortedSeasons = [...seasonData.seasons].sort((a, b) => (b.endTime || 0) - (a.endTime || 0));
+
+            const targetSeason = sortedSeasons[seasonOffset];
+            if (!targetSeason) {
+                return { topList: [], currentUserEntries: [], totalCount: 0, totalPages: 0, seasonInfo: null };
+            }
+
+            const rawData = targetSeason.rankData || [];
             const sortedData = rawData.sort((a, b) => b.score - a.score);
             const totalCount = sortedData.length;
             const pageSize = 20;
             const maxPages = 5;
             const totalPages = Math.min(Math.ceil(totalCount / pageSize), maxPages);
+
+            const uidStrSet = currentUserUIDs.map(uid => String(uid));
 
             const startIndex = (page - 1) * pageSize;
             const topList = sortedData.slice(startIndex, startIndex + pageSize).map((entry, index) => ({
@@ -166,23 +247,36 @@ export default class MatrixRankUtil {
                 uid: entry.uid,
                 playerInfo: entry.playerInfo || {},
                 timestamp: entry.timestamp,
-                isCurrentUser: currentUserUIDs.includes(entry.uid)
+                isCurrentUser: uidStrSet.includes(String(entry.uid))
             }));
 
-            let currentUserEntry = null;
+            let currentUserEntries = [];
             for (let i = 0; i < sortedData.length; i++) {
                 const entry = sortedData[i];
-                if (currentUserUIDs.includes(entry.uid)) {
+                if (uidStrSet.includes(String(entry.uid))) {
                     const rankDisplay = i < 100 ? i + 1 : "100+";
-                    currentUserEntry = { ...entry, rank: rankDisplay, isCurrentUser: true };
-                    break;
+                    currentUserEntries.push({ ...entry, rank: rankDisplay, isCurrentUser: true });
                 }
             }
 
-            return { topList, currentUserEntry, totalCount, totalPages };
+            let seasonLabel = '';
+            const rawKey = targetSeason.seasonKey;
+            if (rawKey && rawKey !== 'current' && rawKey !== 'legacy' && rawKey !== 'unknown') {
+                const dateKey = /^\d+$/.test(rawKey) ? this.timestampToSeasonKey(Number(rawKey)) : rawKey;
+                seasonLabel = `截止${dateKey}`;
+            }
+
+            const seasonInfo = {
+                seasonKey: targetSeason.seasonKey,
+                seasonLabel,
+                endTime: targetSeason.endTime,
+                totalSeasons: sortedSeasons.length
+            };
+
+            return { topList, currentUserEntries, totalCount, totalPages, seasonInfo };
         } catch (err) {
             logger.error(`[矩阵排名工具] 解析排名文件错误: ${err.stack}`);
-            return { topList: [], currentUserEntry: null, totalCount: 0, totalPages: 0 };
+            return { topList: [], currentUserEntries: [], totalCount: 0, totalPages: 0, seasonInfo: null };
         }
     }
 }
