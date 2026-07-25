@@ -38,7 +38,7 @@
 
                 <div class="overview-score">
                     <img src="{{pluginResources}}/Template/newTowerDeta/imgs/JF.png" class="score-icon-large">
-                    <span class="score">{{mode.score || 0}}</span>
+                    <span class="score {{mode.ratingTier}}">{{mode.score || 0}}</span>
                 </div>
 
                 {{if !isOther}}

@@ -181,6 +181,42 @@
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+.score.rating-b {
+    color: #4EE8BE;
+    text-shadow: 0 0 4px #fff, 0 0 10px rgba(78, 232, 190, 0.6);
+}
+
+.score.rating-a {
+    color: #29A8FF;
+    text-shadow: 0 0 4px #fff, 0 0 10px rgba(41, 168, 255, 0.6);
+}
+
+.score.rating-s {
+    color: #E3B243;
+    text-shadow: 0 0 4px #fff, 0 0 10px rgba(227, 178, 67, 0.6);
+}
+
+.score.rating-ss {
+    color: #EFC062;
+}
+
+.score.rating-sss {
+    color: #FFC94D;
+}
+
+.score.rating-maxy {
+    color: #FFDD5C;
+}
+
+.score.rating-maxc {
+    background: linear-gradient(90deg, #59C6E3, #BFB9E6, #F2DDB6, #8096BF, #59C6E3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+}
+
 .progress-container {
     position: absolute;
     top: 80%;
