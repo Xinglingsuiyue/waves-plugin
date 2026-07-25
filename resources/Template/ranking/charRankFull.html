@@ -80,56 +80,58 @@
                 {{/each}}
                 
                 {{if showCurrentUserRow}}
+                {{each currentUserRows row rowIdx}}
                 <li class="highlighted-row">
                     <div class="rank-number center">
-                        {{@currentUserRow.rank}}
+                        {{@row.rank}}
                     </div>
                     <div class="role center">
                         <div class="level">
-                            Lv{{currentUserRow.level}}
+                            Lv{{row.level}}
                         </div>
                         <div class="role-pic">
-                            <img src="{{currentUserRow.roleIconUrl}}" onerror="this.style.display='none'">
+                            <img src="{{row.roleIconUrl}}" onerror="this.style.display='none'">
                         </div>
-                        <div class="reson reson-{{currentUserRow.chainCount}}">
-                            {{currentUserRow.chainCount}}
+                        <div class="reson reson-{{row.chainCount}}">
+                            {{row.chainCount}}
                         </div>
                         <div class="name">
-                            {{currentUserRow.roleName}}
+                            {{row.roleName}}
                         </div>
                     </div>
                     <div class="weapon center">
                         <div class="level">
-                            Lv{{currentUserRow.weaponData.level}}
+                            Lv{{row.weaponData.level}}
                         </div>
                         <div class="weapon-pic">
-                            <img src="{{currentUserRow.weaponData.weapon.iconUrl}}" onerror="this.style.display='none'">
+                            <img src="{{row.weaponData.weapon.iconUrl}}" onerror="this.style.display='none'">
                         </div>
-                        <div class="reson reson-{{currentUserRow.weaponData.resonLevel}}">
-                            {{currentUserRow.weaponData.resonLevel}}
+                        <div class="reson reson-{{row.weaponData.resonLevel}}">
+                            {{row.weaponData.resonLevel}}
                         </div>
                         <div class="name">
-                            {{currentUserRow.weaponData.weapon.weaponName}}
+                            {{row.weaponData.weapon.weaponName}}
                         </div>
                     </div>
                     <div class="uid center current-user">
-                        {{currentUserRow.uid}}
+                        {{row.uid}}
                     </div>
                     <div class="phantom center">
                         <div class="phantom-pic">
-                            {{if currentUserRow.phantomData.equipPhantomList.length}}
-                                <img src="{{currentUserRow.phantomData.equipPhantomList[0].phantomProp.iconUrl}}" onerror="this.style.display='none'">
+                            {{if row.phantomData.equipPhantomList.length}}
+                                <img src="{{row.phantomData.equipPhantomList[0].phantomProp.iconUrl}}" onerror="this.style.display='none'">
                             {{/if}}
                         </div>
-                        <div class="phantom-rank" style="background-color: {{currentUserRow.phantomData.statistic.color}};">
-                            {{currentUserRow.phantomData.statistic.rank}}
+                        <div class="phantom-rank" style="background-color: {{row.phantomData.statistic.color}};">
+                            {{row.phantomData.statistic.rank}}
                         </div>
                         <div class="phantom-score">
-                            {{typeof currentUserRow.phantomData.statistic.totalScore === 'number' ?
-                            currentUserRow.phantomData.statistic.totalScore.toFixed(2) : currentUserRow.phantomData.statistic.totalScore}}
+                            {{typeof row.phantomData.statistic.totalScore === 'number' ?
+                            row.phantomData.statistic.totalScore.toFixed(2) : row.phantomData.statistic.totalScore}}
                         </div>
                     </div>
                 </li>
+                {{/each}}
                 {{/if}}
             </ul>
         </div>
