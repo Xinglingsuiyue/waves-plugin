@@ -75,7 +75,12 @@
             if (!jiejindanCur || !jiejindanTs || jiejindanDate < now) {
                 jiejindanEl.style.display = 'none';
             } else {
-                jiejindanEl.innerText = `${jiejindanDate.getDate() > now.getDate() ? '明天' : ''}${jiejindanDate.getHours()}:${jiejindanDate.getMinutes()}恢满`;
+                const jiejindanRemain = formatRemain(jiejindanTs);
+                if (jiejindanRemain) {
+                    jiejindanEl.innerText = jiejindanRemain.replace('剩余', '');
+                } else {
+                    jiejindanEl.style.display = 'none';
+                }
             }
 
 
