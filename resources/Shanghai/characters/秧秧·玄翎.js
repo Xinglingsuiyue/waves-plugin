@@ -9,6 +9,16 @@ function getSkillLevel(roleDetailData, typeName) {
   return target?.level || 10;
 }
 
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(chain => chain?.unlocked).length;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, Number(value) || 0));
+}
+
 function parseMultiplierExpr(expr) {
   if (typeof expr === 'number') return expr;
   const clean = String(expr)
@@ -34,8 +44,9 @@ const WIKI_DETAIL = {"id": "1519669180526559232", "name": "秧秧·玄翎", "org
 
 const SKILLS = {
   skill1: {
+    key: "liberation",
     name: "裁羽寂万音伤害",
-    type: "liberation",
+    type: "heavy",
     levelFrom: "共鸣解放",
     levelMap: levelMap(
       "1000.00%",
@@ -51,6 +62,7 @@ const SKILLS = {
     )
   },
   skill2: {
+    key: "heavyCang",
     name: "重击·苍剑式伤害",
     type: "heavy",
     levelFrom: "共鸣回路",
@@ -68,8 +80,9 @@ const SKILLS = {
     )
   },
   skill3: {
+    key: "normalFenghua",
     name: "普攻·湮象风华第三段伤害",
-    type: "hack",
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(
       "12.06%*5+140.68%",
@@ -85,8 +98,9 @@ const SKILLS = {
     )
   },
   skill4: {
+    key: "dodgeFenghua",
     name: "闪避反击·湮象风华第三段伤害",
-    type: "hack",
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(
       "12.06%*5+140.68%",
@@ -103,20 +117,96 @@ const SKILLS = {
   }
 };
 
+const EXTRA_SKILLS = {
+  liberationEcho: {
+    key: 'liberationEcho',
+    name: '玄翎之影伤害',
+    type: 'heavy',
+    levelFrom: '共鸣解放',
+    multiplier: 3.3798
+  },
+  c1Echo: {
+    key: 'c1Echo',
+    name: '玄翎之影·抗坠伤害',
+    type: 'heavy',
+    minChain: 1,
+    multiplier: 3.3798
+  },
+  c2Echo: {
+    key: 'c2Echo',
+    name: '玄翎之影·贯珠伤害',
+    type: 'heavy',
+    minChain: 2,
+    multiplier: 3.3798
+  },
+  c6Echo: {
+    key: 'c6Echo',
+    name: '玄翎之影·止如槁木',
+    type: 'heavy',
+    minChain: 6,
+    multiplier: 3.3798,
+    forceCrit: true
+  }
+};
+
 function getPanelDamageBonus(attrMap, skillType) {
-  const elementKeys = ['冷凝伤害加成', '热熔伤害加成', '导电伤害加成', '气动伤害加成', '衍射伤害加成', '湮灭伤害加成'];
-  let total = elementKeys.reduce((sum, key) => sum + getPercentAttr(attrMap, key), 0);
-  if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
+  let total = getPercentAttr(attrMap, '湮灭伤害加成');
   if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
-  if (skillType === 'skill') total += getPercentAttr(attrMap, '共鸣技能伤害加成');
-  if (skillType === 'liberation') total += getPercentAttr(attrMap, '共鸣解放伤害加成');
-  if (skillType === 'intro') total += getPercentAttr(attrMap, '变奏技能伤害加成');
   return total;
 }
 
-function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
-  const skill = SKILLS[skillKey];
+function getRoleSelfBuff({ skill, chainCount, options }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    multiplierBonus: 0,
+    deepen: 0,
+    critRate: 0,
+    critDamage: 0,
+    ignoreDefense: 0,
+    source: '秧秧·玄翎·自身'
+  };
+
+  const skillCritActive = options?.xuanlingSkillCritBuffActive ?? true;
+  const featherOathStacks = clamp(options?.xuanlingFeatherOathStacks ?? 6, 0, 6);
+  const skillCritKeys = ['heavyCang', 'normalFenghua', 'dodgeFenghua'];
+  if (skillCritActive && skillCritKeys.includes(skill.key)) {
+    buff.critDamage += 1.60;
+  }
+  if (skillCritKeys.includes(skill.key)) {
+    buff.critDamage += featherOathStacks * 0.25;
+  }
+
+  if (chainCount >= 2 && skillCritKeys.includes(skill.key)) {
+    buff.damageBonus += 1.00;
+  }
+  if (chainCount >= 3 && skill.key === 'liberation') {
+    buff.deepen += 1.75;
+  }
+  if (chainCount >= 4 && (options?.xuanlingC4AttackActive ?? true)) {
+    buff.attackPercent += 0.20;
+  }
+  if (chainCount >= 6 && skill.type === 'heavy' && (options?.xuanlingC6HeavyDeepenActive ?? true)) {
+    buff.deepen += 0.40;
+  }
+
+  return buff;
+}
+
+function getSkillMultiplier(skill, level, options) {
+  if (skill.key === 'c6Echo') {
+    const count = clamp(options?.xuanlingC6EchoCount ?? 5, 0, 5);
+    return skill.multiplier * count;
+  }
+  return skill.multiplier ?? skill.levelMap?.[level] ?? skill.levelMap?.[10] ?? 0;
+}
+
+function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skill }) {
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  if (chainCount < Number(skill.minChain || 0)) return null;
+
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const roleBuff = getRoleSelfBuff({ skill, chainCount, options });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -127,20 +217,26 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
     ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
 
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const extraCritRate = Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
-  const extraCritDamage = Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
+    + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
+  const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
+    + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
   const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const multiplier = getSkillMultiplier(skill, level, options);
+  const echoCount = skill.key === 'c6Echo'
+    ? clamp(options?.xuanlingC6EchoCount ?? 5, 0, 5)
+    : 0;
 
   return {
-    name: skill.name,
+    name: skill.key === 'c6Echo' ? `${skill.name}（${echoCount}次）` : skill.name,
     ...calcSingleDamage({
       attack: finalAttack,
-      skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+      skillMultiplier: multiplier,
       multiplierBonus: mergedBuff.multiplierBonus || 0,
       damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
       deepen: mergedBuff.deepen || 0,
-      critRate: panel.critRate + extraCritRate,
+      critRate: skill.forceCrit ? 1 : panel.critRate + extraCritRate,
       critDamage: panel.critDamage + extraCritDamage,
       attackerLevel: panel.level || 90,
       enemyLevel: enemy?.level || 90,
@@ -165,7 +261,8 @@ export default {
 
   async calc({ roleDetailData, panel, equipment, enemy, modules = {}, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
-    const items = pickTopItems(["skill1", "skill2", "skill3", "skill4"].map(skillKey => calcOneSkill({ ...args, skillKey })));
+    const candidates = [...Object.values(SKILLS), ...Object.values(EXTRA_SKILLS)];
+    const items = pickTopItems(candidates.map(skill => calcOneSkill({ ...args, skill })));
     return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1519669180526559232', items };
   }
 };

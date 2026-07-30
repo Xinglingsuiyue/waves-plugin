@@ -2,6 +2,8 @@ export function createEmptyBuff() {
   return {
     attackPercent: 0,
     flatAttack: 0,
+    hpPercent: 0,
+    flatHp: 0,
 
     // 通用伤害加成
     damageBonus: 0,
@@ -29,6 +31,8 @@ export function mergeBuff(...buffs) {
 
     result.attackPercent += Number(buff.attackPercent || 0);
     result.flatAttack += Number(buff.flatAttack || 0);
+    result.hpPercent += Number(buff.hpPercent || 0);
+    result.flatHp += Number(buff.flatHp || 0);
     result.damageBonus += Number(buff.damageBonus || 0);
     result.elementDamageBonus += Number(buff.elementDamageBonus || 0);
     result.skillDamageBonus += Number(buff.skillDamageBonus || 0);
@@ -43,6 +47,8 @@ export function mergeBuff(...buffs) {
         source: buff.source,
         attackPercent: Number(buff.attackPercent || 0),
         flatAttack: Number(buff.flatAttack || 0),
+        hpPercent: Number(buff.hpPercent || 0),
+        flatHp: Number(buff.flatHp || 0),
         damageBonus: Number(buff.damageBonus || 0),
         elementDamageBonus: Number(buff.elementDamageBonus || 0),
         skillDamageBonus: Number(buff.skillDamageBonus || 0),
