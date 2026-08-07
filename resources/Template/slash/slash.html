@@ -28,7 +28,7 @@
             {{each challengeList challenge index}}
             <div class="tower-area">
                 <span class="tower-name">{{challenge.challengeId}}. {{challenge.challengeName}}</span>
-                <span class="tower-star"><span class="rank">{{challenge.rank}}</span> 积分: <span class="score">{{challenge.score}}</span></span>
+                <span class="tower-star"><img src="{{pluginResources}}/Template/slash/imgs/{{challenge.rank}}.png" class="rank-icon" onerror="this.style.display='none'"> 积分: <span class="score">{{challenge.score}}</span></span>
             </div>
 
             {{each challenge.halfList half idx}}

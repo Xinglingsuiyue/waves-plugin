@@ -216,6 +216,15 @@
 
 
 
+/* 评级图标 */
+.rank-icon {
+    width: 90px;
+    height: 90px;
+    margin-right: 8px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
 /* 评级 sss ss */
 .rank {
     color: var(--star5-color);
