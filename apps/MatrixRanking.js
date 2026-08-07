@@ -13,28 +13,28 @@ export class MatrixRanking extends plugin {
             priority: 1008,
             rule: [
                 {
-                    reg: "^(?:～|~|鸣潮)(上期)?矩阵(群)?排名([1-5])?$",
+                    reg: "^(?:～|~|鸣潮)(上期)?矩阵(群)?(?:排行|排行榜|排名)([1-5])?$",
                     fnc: "matrixGroupRank"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(上期)?矩阵总排名([1-5])?$",
+                    reg: "^(?:～|~|鸣潮)(上期)?矩阵总(?:排行|排行榜|排名)([1-5])?$",
                     fnc: "matrixGlobalRank"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(上期)?矩阵(bot|BOT)排名([1-5])?$",
+                    reg: "^(?:～|~|鸣潮)(上期)?矩阵(bot|BOT)(?:排行|排行榜|排名)([1-5])?$",
                     fnc: "matrixBotRank"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)矩阵总排名$",
+                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)矩阵总(?:排行|排行榜|排名)$",
                     fnc: "toggleMatrixGlobalRanking",
                     permission: "master"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)矩阵群排名$",
+                    reg: "^(?:～|~|鸣潮)(?:开启|关闭)矩阵群(?:排行|排行榜|排名)$",
                     fnc: "toggleMatrixGroupRanking"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)矩阵(?:排名|排行)(?:状态|开关)$",
+                    reg: "^(?:～|~|鸣潮)矩阵(?:排行|排行榜|排名)(?:状态|开关)$",
                     fnc: "checkMatrixRankStatus"
                 }
             ]
