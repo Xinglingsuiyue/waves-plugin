@@ -194,17 +194,19 @@ export default class HaixuRankUtil {
             };
             rankData.push(userEntry);
         } else {
-            userEntry.score = newScore;
-            userEntry.timestamp = now;
-            if (playerInfo) {
-                const newHasTeams = playerInfo.topTeams && playerInfo.topTeams.length > 0;
-                const oldHasTeams = userEntry.playerInfo &&
-                    userEntry.playerInfo.topTeams && userEntry.playerInfo.topTeams.length > 0;
-                if (!newHasTeams && oldHasTeams) {
-                    playerInfo.topTeams = userEntry.playerInfo.topTeams;
-                    playerInfo.teamIcons = userEntry.playerInfo.teamIcons;
+            if (newScore > userEntry.score) {
+                userEntry.score = newScore;
+                userEntry.timestamp = now;
+                if (playerInfo) {
+                    const newHasTeams = playerInfo.topTeams && playerInfo.topTeams.length > 0;
+                    const oldHasTeams = userEntry.playerInfo &&
+                        userEntry.playerInfo.topTeams && userEntry.playerInfo.topTeams.length > 0;
+                    if (!newHasTeams && oldHasTeams) {
+                        playerInfo.topTeams = userEntry.playerInfo.topTeams;
+                        playerInfo.teamIcons = userEntry.playerInfo.teamIcons;
+                    }
+                    userEntry.playerInfo = playerInfo;
                 }
-                userEntry.playerInfo = playerInfo;
             }
         }
 

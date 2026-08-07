@@ -3,7 +3,6 @@ import path from 'path';
 import Config from '../components/Config.js';
 
 export default class MatrixRankUtil {
-    // 获取数据存储路径
     static getRankDataPath() {
         const pluginResources = path.join(process.cwd(), 'plugins', 'waves-plugin', 'resources');
         return {
@@ -14,14 +13,12 @@ export default class MatrixRankUtil {
         };
     }
 
-    // 确保目录存在
     static ensureDirectoryExists(dirPath) {
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath, { recursive: true });
         }
     }
 
-    // 获取矩阵排名文件路径
     static getRankFilePath(scope, groupId = null) {
         const paths = this.getRankDataPath();
         switch (scope) {
@@ -197,18 +194,20 @@ export default class MatrixRankUtil {
             };
             rankData.push(userEntry);
         } else {
-            userEntry.score = newScore;
-            userEntry.timestamp = now;
-            if (playerInfo) {
-                const newHasTeams = playerInfo.topTeams && playerInfo.topTeams.length > 0;
-                const oldHasTeams = userEntry.playerInfo &&
-                    userEntry.playerInfo.topTeams && userEntry.playerInfo.topTeams.length > 0;
-                if (!newHasTeams && oldHasTeams) {
-                    playerInfo.topTeams = userEntry.playerInfo.topTeams;
-                    playerInfo.teamIcons = userEntry.playerInfo.teamIcons;
-                    playerInfo.teamCount = userEntry.playerInfo.teamCount;
+            if (newScore > userEntry.score) {
+                userEntry.score = newScore;
+                userEntry.timestamp = now;
+                if (playerInfo) {
+                    const newHasTeams = playerInfo.topTeams && playerInfo.topTeams.length > 0;
+                    const oldHasTeams = userEntry.playerInfo &&
+                        userEntry.playerInfo.topTeams && userEntry.playerInfo.topTeams.length > 0;
+                    if (!newHasTeams && oldHasTeams) {
+                        playerInfo.topTeams = userEntry.playerInfo.topTeams;
+                        playerInfo.teamIcons = userEntry.playerInfo.teamIcons;
+                        playerInfo.teamCount = userEntry.playerInfo.teamCount;
+                    }
+                    userEntry.playerInfo = playerInfo;
                 }
-                userEntry.playerInfo = playerInfo;
             }
         }
 
