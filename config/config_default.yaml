@@ -69,3 +69,9 @@ ranking_reject_public_cookie_group: false
 matrix_reject_public_cookie_global: false
 # 矩阵群排名严格模式：开启时仅自己~登录用户数据录入，关闭时允许未~登录用户数据录入（群主/管理员可控制各自群，Bot 主人可控制所有群）
 matrix_reject_public_cookie_group: false
+
+# ---------- 海墟排名功能开关配置 ----------
+# 海墟总排名严格模式：开启时仅自己~登录用户数据录入，关闭时允许未~登录用户数据录入（仅Bot主人可控制）
+haixu_reject_public_cookie_global: false
+# 海墟群排名严格模式：开启时仅自己~登录用户数据录入，关闭时允许未~登录用户数据录入（群主/管理员可控制各自群，Bot 主人可控制所有群）
+haixu_reject_public_cookie_group: false
