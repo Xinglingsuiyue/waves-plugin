@@ -330,7 +330,20 @@ export class Fuke extends plugin {
             logger.info(`[复刻] 已自动更新 ${updatedChars.length} 个角色: ${updatedChars.join(',')}`);
         }
 
-        const upIds = pool ? pool.upEntryIds : [];
+        let upIds = pool ? [...pool.upEntryIds] : [];
+
+        for (const [name, data] of Object.entries(rerunData)) {
+            if (RESIDENT_5STAR.has(name)) continue;
+            if (data.rarity === 4) continue;
+            const entryId = charMap.get(name);
+            if (!entryId || upIds.includes(entryId)) continue;
+            const last = data.history[data.history.length - 1];
+            if (last && last.endDate && new Date(last.endDate) > new Date()) {
+                upIds.push(entryId);
+                logger.info(`[复刻] 从本地数据补充当期角色: ${name}, 结束日期: ${last.endDate}`);
+            }
+        }
+
         const list = [];
 
         for (const [name, data] of Object.entries(rerunData)) {
@@ -356,13 +369,42 @@ export class Fuke extends plugin {
         const normal = list.filter(c => !c.isInPool).sort((a, b) => b.daysSinceLastRerun - a.daysSinceLastRerun);
         const up = list.filter(c => c.isInPool);
 
+        let currentPool = pool;
+        if (up.length > 0) {
+            let maxEndDate = null;
+            for (const [name, data] of Object.entries(rerunData)) {
+                if (!up.some(c => c.name === name)) continue;
+                const last = data.history[data.history.length - 1];
+                if (last && last.endDate) {
+                    const end = new Date(last.endDate);
+                    if (!maxEndDate || end > maxEndDate) {
+                        maxEndDate = end;
+                    }
+                }
+            }
+            if (maxEndDate) {
+                const diff = maxEndDate - new Date();
+                const localDaysLeft = diff > 0 ? Math.floor(diff / 86400000) : 0;
+                if (!currentPool) {
+                    currentPool = {
+                        name: '当期卡池',
+                        daysLeft: localDaysLeft
+                    };
+                    logger.info(`[复刻] 根据本地数据计算当期卡池剩余天数: ${currentPool.daysLeft}天`);
+                } else if (localDaysLeft > currentPool.daysLeft) {
+                    currentPool.daysLeft = localDaysLeft;
+                    logger.info(`[复刻] 合并本地数据更新卡池剩余天数: ${currentPool.daysLeft}天`);
+                }
+            }
+        }
+
         logger.info(`[复刻] 排行: 非UP=${normal.length}, 当期UP=${up.map(c => c.name).join(',')}`);
 
         const image = await Render.render('Template/Fuke/FukeA', {
             data: {
                 ranking: normal,
                 currentUp: up,
-                currentPool: pool,
+                currentPool: currentPool,
                 updateTime: new Date().toLocaleDateString('zh-CN')
             }
         }, { e, retType: 'base64' });
