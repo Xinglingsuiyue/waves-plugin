@@ -53,28 +53,37 @@ export class Training extends plugin {
 
             const baseDataResult = baseData.status ? baseData.data : { id: uid };
 
-            const Promises = roleData.data.roleList.map(role =>
-                waves.getRoleDetail(serverId, uid, role.roleId, token, did).then(data =>
-                    data.status && data.data.role ? { ...role, ...data.data } : null
-                )
+            const detailPromises = roleData.data.roleList.map(role =>
+                waves.getRoleDetail(serverId, uid, role.roleId, token, did).then(detail => ({
+                    role,
+                    detail
+                }))
             );
 
-            const roleList = (await Promise.all(Promises)).filter(Boolean).map(role => {
-                const calculatedRole = new WeightCalculator(role).calculate();
-                calculatedRole.chainCount = calculatedRole.chainList.filter(chain => chain.unlocked).length;
+            const detailResults = await Promise.all(detailPromises);
+            const roleList = detailResults
+                .filter(({ detail }) => detail.status && detail.data.role)
+                .map(({ role, detail }) => {
+                    const calculatedRole = new WeightCalculator({ ...role, ...detail.data }).calculate();
+                    calculatedRole.chainCount = calculatedRole.chainList.filter(chain => chain.unlocked).length;
 
-                // 处理漂泊者角色名
-                if (calculatedRole.roleName === '漂泊者') {
-                    const attribute = WAVERIDER_ATTRIBUTES[calculatedRole.roleId];
-                    if (attribute) {
-                        calculatedRole.roleName = `漂泊者${attribute}`;
+                    // 处理漂泊者角色名
+                    if (calculatedRole.roleName === '漂泊者') {
+                        const attribute = WAVERIDER_ATTRIBUTES[calculatedRole.roleId];
+                        if (attribute) {
+                            calculatedRole.roleName = `漂泊者${attribute}`;
+                        }
                     }
-                }
 
-                return calculatedRole;
-            });
+                    return calculatedRole;
+                });
 
             if (roleList.length === 0) {
+                const networkError = detailResults.find(({ detail }) => !detail.status && detail.msg && detail.msg.includes('疑似网络问题'));
+                if (networkError) {
+                    data.push({ message: networkError.detail.msg });
+                    return;
+                }
                 data.push({ message: `UID: ${uid} 未获取到任何角色详情数据，请检查库街区数据终端中角色详情板块的对外展示开关是否打开` });
                 return;
             }
