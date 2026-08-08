@@ -25,7 +25,7 @@ export class Setting extends plugin {
                     fnc: "setAutoNews"
                 },
                 {
-                    reg: "^(?:～|~|鸣潮)(?:波片|体力)阈值(.*)$",
+                    reg: "^(～|~|鸣潮)(?:波片|体力)阈值(.*)$",
                     fnc: "setThreshold"
                 }
             ]
