@@ -1,1 +1,167 @@
+<!doctype html>
+<html>
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <title>海墟{{rankType}}排名 · {{updateTime}}</title>
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="{{pluginResources}}/Template/haixuRank/haixuRank.css" />
+    <link rel="preload" href="{{pluginResources}}/fonts/Guruwords.ttf" as="font" />
+</head>
+
+<body id="body" {{sys.scale}}>
+    <div id="box">
+        <div id="header">
+            <div id="user-name">海墟{{rankType}}排名</div>
+        </div>
+
+        <div id="container-1">
+            <ul>
+                <li>
+                    <div class="center">排名</div>
+                    <div class="center">玩家</div>
+                    <div class="center">阵容</div>
+                    <div class="center">无尽湍渊</div>
+                </li>
+
+                {{each roleList entry idx}}
+                <li class="{{entry.rank <= 3 ? 'top-' + entry.rank : ''}} {{entry.isCurrentUser ? 'highlighted-row' : ''}}">
+                    <div class="rank-number center">{{entry.rank}}</div>
+                    <div class="player">
+                        {{if entry.avatar}}
+                        <div class="player-avatar">
+                            <img src="{{entry.avatar}}" onerror="this.style.display='none'">
+                        </div>
+                        {{/if}}
+                        <div class="player-text">
+                            <div class="player-name">{{entry.name}}</div>
+                            <div class="player-uid {{entry.isCurrentUser ? 'current-user' : ''}}">{{entry.uid}}</div>
+                        </div>
+                    </div>
+                    <div class="teams">
+                        {{if entry.topTeams && entry.topTeams.length > 0}}
+                        {{each entry.topTeams team teamIdx}}
+                        {{if teamIdx < 2}}
+                        <div class="team-block">
+                            <div class="team-content">
+                                <div class="team-roles">
+                                    {{each team.roleIcons icon iconIdx}}
+                                    {{if iconIdx < 4}}
+                                    <div class="avatar-frame">
+                                        <img src="{{icon}}" class="avatar" onerror="this.style.display='none'">
+                                    </div>
+                                    {{/if}}
+                                    {{/each}}
+                                </div>
+                                {{if team.buffIcons && team.buffIcons.length > 0}}
+                                <div class="team-buffs">
+                                    {{each team.buffIcons buff buffIdx}}
+                                    {{if buffIdx < 3}}
+                                    <div class="avatar-frame buff-frame buff-quality-{{buff.quality}}">
+                                        <img src="{{buff.icon}}" class="avatar" onerror="this.style.display='none'">
+                                    </div>
+                                    {{/if}}
+                                    {{/each}}
+                                </div>
+                                {{/if}}
+                            </div>
+                            {{if team.score > 0}}
+                            <div class="team-score">{{team.score}}</div>
+                            {{/if}}
+                        </div>
+                        {{/if}}
+                        {{/each}}
+                        {{else}}
+                        <div class="no-teams">暂无队伍数据</div>
+                        {{/if}}
+                    </div>
+                    <div class="score-cell center">
+                        {{if entry.ratingIcon}}
+                        <img src="{{pluginResources}}/{{entry.ratingIcon}}" class="score-rating-bg" onerror="this.style.display='none'">
+                        {{/if}}
+                        <span class="score-value {{entry.ratingTier}}">{{entry.score}}</span>
+                        <div class="score-bg-box"></div>
+                    </div>
+                </li>
+                {{/each}}
+
+                {{if showCurrentUserRow}}
+                {{each currentUserRows row rowIdx}}
+                <li class="highlighted-row">
+                    <div class="rank-number center">
+                        {{@row.rank}}
+                    </div>
+                    <div class="player">
+                        {{if row.avatar}}
+                        <div class="player-avatar">
+                            <img src="{{row.avatar}}" onerror="this.style.display='none'">
+                        </div>
+                        {{/if}}
+                        <div class="player-text">
+                            <div class="player-name">{{row.name}}</div>
+                            <div class="player-uid current-user">{{row.uid}}</div>
+                        </div>
+                    </div>
+                    <div class="teams">
+                        {{if row.topTeams && row.topTeams.length > 0}}
+                        {{each row.topTeams team teamIdx}}
+                        {{if teamIdx < 2}}
+                        <div class="team-block">
+                            <div class="team-content">
+                                <div class="team-roles">
+                                    {{each team.roleIcons icon iconIdx}}
+                                    {{if iconIdx < 4}}
+                                    <div class="avatar-frame">
+                                        <img src="{{icon}}" class="avatar" onerror="this.style.display='none'">
+                                    </div>
+                                    {{/if}}
+                                    {{/each}}
+                                </div>
+                                {{if team.buffIcons && team.buffIcons.length > 0}}
+                                <div class="team-buffs">
+                                    {{each team.buffIcons buff buffIdx}}
+                                    {{if buffIdx < 3}}
+                                    <div class="avatar-frame buff-frame buff-quality-{{buff.quality}}">
+                                        <img src="{{buff.icon}}" class="avatar" onerror="this.style.display='none'">
+                                    </div>
+                                    {{/if}}
+                                    {{/each}}
+                                </div>
+                                {{/if}}
+                            </div>
+                            {{if team.score > 0}}
+                            <div class="team-score">{{team.score}}</div>
+                            {{/if}}
+                        </div>
+                        {{/if}}
+                        {{/each}}
+                        {{else}}
+                        <div class="no-teams">暂无队伍数据</div>
+                        {{/if}}
+                    </div>
+                    <div class="score-cell center">
+                        {{if row.ratingIcon}}
+                        <img src="{{pluginResources}}/{{row.ratingIcon}}" class="score-rating-bg" onerror="this.style.display='none'">
+                        {{/if}}
+                        <span class="score-value {{row.ratingTier}}">{{row.score}}</span>
+                        <div class="score-bg-box"></div>
+                    </div>
+                </li>
+                {{/each}}
+                {{/if}}
+            </ul>
+        </div>
+
+        <div id="pagination">
+            {{if totalPages > 1}}
+            <span class="page-info">第 {{currentPage}}/{{totalPages}} 页 · 共 {{totalCount}} 人</span>
+            {{/if}}
+        </div>
+
+        <div id="copyright">{{@copyright}}</div>
+    </div>
+</body>
+
+</html>
