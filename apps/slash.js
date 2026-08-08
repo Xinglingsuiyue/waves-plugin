@@ -2,6 +2,8 @@ import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
 import Render from '../components/Render.js';
+import HaixuRankUtil from '../utils/HaixuRankUtil.js';
+import { HaixuRanking } from './HaixuRanking.js';
 import sharp from 'sharp';
 
 export class Slash extends plugin {
@@ -176,6 +178,8 @@ export class Slash extends plugin {
                     copyright: `数据来源: 库街区 · 生成时间: ${new Date().toLocaleString()}`
                 });
 
+                await this.recordHaixuRank(e, slashData.data, baseData.data, false);
+
                 rawImageCards.push(image);
                 const buf = this.extractImageBuffer(image);
                 if (buf) {
@@ -262,6 +266,8 @@ export class Slash extends plugin {
             retType: 'base64',
             copyright: `数据来源: 库街区 · 生成时间: ${new Date().toLocaleString()}`
         });
+
+        await this.recordHaixuRank(e, slashData.data, baseData.data, isOther);
 
         return await e.reply(image);
     }
@@ -368,6 +374,122 @@ export class Slash extends plugin {
                 return challengeList
                     .sort((a, b) => (b.challengeId || 0) - (a.challengeId || 0))
                     .slice(0, 4);
+        }
+    }
+
+    async recordHaixuRank(e, slashData, baseData, isOther) {
+        try {
+            if (!slashData || !baseData || !baseData.id) return;
+
+            const groupId = e.isGroup ? e.group_id : 'private';
+            const uid = String(baseData.id);
+
+            const DAY_MS = 24 * 3600 * 1000;
+            const seasonEndTime = slashData.seasonEndTime
+                ? Math.floor((Date.now() + slashData.seasonEndTime) / DAY_MS) * DAY_MS
+                : 0;
+
+            const difficulty2 = (slashData.difficultyList || []).find(d => d.difficulty === 2);
+            if (!difficulty2 || !difficulty2.challengeList || difficulty2.challengeList.length === 0) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow('海墟排名录入: 未找到无尽湍渊数据，跳过录入'));
+                return;
+            }
+
+            const level12 = difficulty2.challengeList.find(
+                c => c.challengeId === 12 || c.challengeName === '无尽湍渊'
+            );
+
+            if (!level12) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow('海墟排名录入: 未找到无尽湍渊第12关，跳过录入'));
+                return;
+            }
+
+            const rankScore = level12.score || 0;
+
+            if (rankScore === 0) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow('海墟排名录入: 无尽湍渊分数为0，跳过录入'));
+                return;
+            }
+
+            let avatar = '';
+            try {
+                if (e.isGroup) {
+                    avatar = await e.group.pickMember(e.user_id).getAvatarUrl();
+                } else {
+                    avatar = await e.friend.getAvatarUrl();
+                }
+            } catch {}
+
+            const teamIcons = [];
+            const topTeams = [];
+            const halfList = level12.halfList || [];
+            for (const half of halfList) {
+                if (half.roleList && half.roleList.length > 0) {
+                    const roleIconUrls = half.roleList.map(r => r.iconUrl).filter(Boolean);
+                    topTeams.push({
+                        score: half.score || 0,
+                        roleIcons: roleIconUrls.slice(0, 4),
+                        buffIcons: half.buffIcon ? [{ icon: half.buffIcon, quality: half.buffQuality || 2 }] : []
+                    });
+                    teamIcons.push(...roleIconUrls);
+                }
+            }
+
+            const haixuRank = level12.rank || '';
+            const levelMaxScore = difficulty2.maxScore
+                ? Math.floor(difficulty2.maxScore / (difficulty2.challengeList || []).length)
+                : 0;
+
+            const playerInfo = {
+                name: baseData.name || '鸣潮玩家',
+                uid: uid,
+                avatar: avatar,
+                levelName: '无尽湍渊',
+                rank: haixuRank,           // 海墟游戏内评级
+                levelMaxScore: levelMaxScore, // 关卡满分
+                teamIcons: [...new Set(teamIcons)].slice(0, 8),
+                topTeams: topTeams.slice(0, 2)
+            };
+
+            const isPublicCookie = isOther;
+
+            const scopes = [];
+
+            if (e.isGroup) {
+                const groupEnabled = await HaixuRanking.isHaixuGroupRankingEnabled(groupId);
+                const allowPublic = await HaixuRanking.isHaixuAllowPublicCookie(groupId, 'group');
+                if (groupEnabled && (allowPublic || !isPublicCookie)) {
+                    scopes.push('group');
+                }
+            }
+
+            const globalEnabled = await HaixuRanking.isHaixuGlobalRankingEnabled();
+            const allowPublicGlobal = await HaixuRanking.isHaixuAllowPublicCookie('global', 'global');
+            if (globalEnabled && (allowPublicGlobal || !isPublicCookie)) {
+                scopes.push('global');
+            }
+
+            if (allowPublicGlobal || !isPublicCookie) {
+                scopes.push('bot');
+            }
+
+            if (scopes.length === 0) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`海墟排名录入: 严格模式已开启，跳过未登录用户 ${uid} 的录入`));
+                return;
+            }
+
+            for (const scope of scopes) {
+                const filePath = HaixuRankUtil.getRankFilePath(scope, groupId);
+                if (filePath) {
+                    await HaixuRankUtil.updateRankFile(filePath, uid, rankScore, playerInfo, seasonEndTime);
+                }
+            }
+
+            await HaixuRankUtil.syncToAllGroups(uid, rankScore, playerInfo, seasonEndTime, isPublicCookie);
+
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`海墟排名录入: ${baseData.name}(${uid}) 第12关分数 ${rankScore}`));
+        } catch (err) {
+            logger.error('[海墟排名录入异常]', err);
         }
     }
 
