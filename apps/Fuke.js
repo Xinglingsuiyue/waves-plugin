@@ -12,6 +12,7 @@ import Config from '../components/Config.js';
 const RERUN_DATA_PATH = path.join(pluginResources, 'Wiki', 'Fuke.yaml');
 const AVATAR_CACHE_PATH = path.join(pluginResources, 'data', 'avatarCache.json');
 const RESIDENT_5STAR = new Set(['鉴心', '卡卡罗', '安可', '维里奈', '凌阳']);
+const FOUR_STAR = new Set(['秧秧', '炽霞', '白芷', '丹瑾', '散华', '桃祈', '秋水', '渊武', '釉瑚', '灯灯', '莫特斐', '卜灵']);
 
 function safeJSONParse(jsonString) {
     const processed = jsonString.replace(/"entryId":(\d+)/g, '"entryId":"$1"');
@@ -258,6 +259,8 @@ export class Fuke extends plugin {
 
             if (!charName) continue;
 
+            if (FOUR_STAR.has(charName)) continue;
+
             if (!rerunData[charName]) {
                 rerunData[charName] = {
                     rarity: 5,
@@ -310,6 +313,16 @@ export class Fuke extends plugin {
 
     async rerunRanking(e) {
         const rerunData = this.loadRerunData();
+
+        let cleaned = false;
+        for (const name of FOUR_STAR) {
+            if (rerunData[name]) {
+                delete rerunData[name];
+                cleaned = true;
+                logger.warn(`[复刻] 清理四星角色误记录: ${name}`);
+            }
+        }
+
         const charMap = await this.getCharacterMap();
         const [pool, currentVersion] = await Promise.all([
             this.getCurrentPool(),
@@ -325,7 +338,7 @@ export class Fuke extends plugin {
         const avatarCache = await this.getAvatarMap(upNames);
 
         const updatedChars = this.syncRerunData(rerunData, charMap, pool, currentVersion);
-        if (updatedChars.length > 0) {
+        if (cleaned || updatedChars.length > 0) {
             this.saveRerunData(rerunData);
             logger.info(`[复刻] 已自动更新 ${updatedChars.length} 个角色: ${updatedChars.join(',')}`);
         }
