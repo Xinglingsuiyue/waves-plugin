@@ -5,6 +5,12 @@ sanity_push_time: 0 */7 * * * ?
 news_push_time: 0 */15 * * * ?
 
 # ---------- 通用配置 ----------
+# 是否必须携带前缀
+require_prefix: true
+# 自定义命令前缀
+custom_prefix: ''
+# 是否开启自定义前缀
+override_prefix: false
 # 签到间隔时间
 signin_interval: 37
 # 任务间隔时间
@@ -55,7 +61,7 @@ allow_img_delete: false
 allow_set_alias: false
 
 # ---------- 角色评分 OCR 配置 ----------
-# OCR API Key 列表，支持多个 Key
+# OCR API Key 列表
 ocr_keys: []
 
 # ---------- 排名功能开关配置 ----------
