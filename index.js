@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import Init from './model/init.js'
+import { withPrefixSupport } from './components/Prefix.js'
 
 if (!global.segment) {
   global.segment = (await import("oicq")).segment;
@@ -29,7 +30,8 @@ for (let i in files) {
     logger.error(ret[i].reason);
     continue;
   }
-  apps[name] = ret[i].value[Object.keys(ret[i].value)[0]];
+  // 包装插件类，使所有指令前缀（鸣潮/~/～）是否必填由 config.require_prefix 控制
+  apps[name] = withPrefixSupport(ret[i].value[Object.keys(ret[i].value)[0]]);
 }
 
 logger.info(logger.green("- WAVES-PLUGIN 载入成功"));

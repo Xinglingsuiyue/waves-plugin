@@ -15,12 +15,8 @@ export function supportGuoba() {
       isV2: false,
       showInMenu: true,
       description: '基于 Yunzai 的鸣潮游戏数据查询插件',
-      // 显示图标，此为个性化配置
-      // 图标可在 https://icon-sets.iconify.design 这里进行搜索
       icon: 'icon-park:game-ps',
-      // 图标颜色，例：#FF0000 或 rgb(255, 0, 0)
       iconColor: '#d19f56',
-      // 如果想要显示成图片，也可以填写图标路径（绝对路径）
       iconPath: path.join(pluginRoot, 'resources/readme/girl.png'),
     },
     configInfo: {
@@ -304,6 +300,27 @@ export function supportGuoba() {
         {
           component: "SOFT_GROUP_BEGIN",
           label: "其他配置"
+        },
+        {
+          field: "config.require_prefix",
+          label: "需要命令前缀",
+          bottomHelpMessage: "开启后命令需带 鸣潮/~/～ 前缀触发，关闭后可省略前缀，修改后即时生效",
+          component: "Switch",
+        },
+        {
+          field: "config.custom_prefix",
+          label: "自定义命令前缀",
+          bottomHelpMessage: "在内置前缀（鸣潮/~/～/∽）之外额外支持的触发前缀，多个用逗号或空格分隔，如：# , / , 小鸣。留空则只用内置前缀",
+          component: "Input",
+          componentProps: {
+            placeholder: '例：# , / , 小鸣',
+          },
+        },
+        {
+          field: "config.override_prefix",
+          label: "覆盖内置前缀",
+          bottomHelpMessage: "开启后仅使用自定义前缀，内置的 鸣潮/~/～ 将失效，请先填写自定义命令前缀",
+          component: "Switch",
         },
         {
           field: "config.use_public_cookie",
