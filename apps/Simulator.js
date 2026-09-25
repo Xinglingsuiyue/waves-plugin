@@ -56,7 +56,7 @@ export class Simulator extends plugin {
 
     // 切换卡池功能
     async switchPool(e) {
-        const match = e.msg.match(/^(～|~|鸣潮)切换卡池(.+)$/)
+        const match = e.msg.match(this.rule[4].reg)
         if (!match) return false
         
         const poolName = match[2].trim()

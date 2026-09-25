@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Wiki from '../components/Wiki.js';
 import Render from '../components/Render.js';
+import { isWavesCommand } from '../components/Prefix.js';
 
 const typeMap = {
     "共鸣者": "1105",
@@ -39,7 +40,7 @@ export class Guide extends plugin {
 
         const wiki = new Wiki()
 
-        if (/^(～|~|鸣潮)/.test(e.msg)) {
+        if (isWavesCommand(e.msg)) {
             let typeList = await wiki.getTypeList(message)
             if (typeList.status) {
                 let imageCard = await Render.render('Wiki/search/search', {
@@ -64,7 +65,7 @@ export class Guide extends plugin {
         const entryData = await wiki.getEntry(name, type)
 
         if (!entryData.status) {
-            if (/^(～|~|鸣潮)/.test(e.msg)) {
+            if (isWavesCommand(e.msg)) {
                 logger.mark(logger.blue('[WAVES PLUGIN]'), logger.yellow(`尝试搜索图鉴：${message}`));
                 let result = await wiki.search(message)
                 if (!result.status) {

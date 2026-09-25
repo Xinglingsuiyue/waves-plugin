@@ -3,6 +3,7 @@ import { pluginResources } from '../model/path.js';
 import Config from "../components/Config.js";
 import Wiki from '../components/Wiki.js';
 import CommunityGuide from '../components/CommunityGuide.js';
+import { isWavesCommand } from '../components/Prefix.js';
 import fs from 'fs';
 
 const AUTHORS = [
@@ -80,7 +81,7 @@ export class Strategy extends plugin {
         }
 
         if (messages.length === 0) {
-            if (/^(～|~|鸣潮)/.test(e.msg)) {
+            if (isWavesCommand(e.msg)) {
                 await e.reply(`暂时还没有${message}的攻略`);
                 return true;
             }

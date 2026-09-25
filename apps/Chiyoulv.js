@@ -32,7 +32,7 @@ export class HoldingRate extends plugin {
     }
 
     async groupBotHoldingRate(e) {
-        const match = e.msg.match(/^(～|~|∽∽∽∽|#?鸣潮)(群|bot)((4|5|四|五)星)?(角色)?持有率(查询)?$/);
+        const match = e.msg.match(this.rule[0].reg);
         const type = match[2];
         const starMatch = match[3];
         const pickStar = starMatch && /4|四/.test(starMatch) ? 4 : 5;

@@ -21,7 +21,7 @@ export class WeaponInfo extends plugin {
                     fnc: 'weaponQuery'
                 },
                 {
-                    reg: '^(?:～|~|鸣潮)?武器列表$',
+                    reg: '^(?:～|~|鸣潮)武器列表$',
                     fnc: 'weaponList'
                 }
             ]
