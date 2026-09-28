@@ -304,22 +304,22 @@ export function supportGuoba() {
         {
           field: "config.require_prefix",
           label: "需要命令前缀",
-          bottomHelpMessage: "开启后命令需带 鸣潮/~/～ 前缀触发，关闭后可省略前缀，修改后即时生效",
+          bottomHelpMessage: "关闭后可省略前缀",
           component: "Switch",
         },
         {
           field: "config.custom_prefix",
           label: "自定义命令前缀",
-          bottomHelpMessage: "在内置前缀（鸣潮/~/～/∽）之外额外支持的触发前缀，多个用逗号或空格分隔，如：# , / , 小鸣。留空则只用内置前缀",
+          bottomHelpMessage: "留空则只用内置前缀",
           component: "Input",
           componentProps: {
-            placeholder: '例：# , / , 小鸣',
+            placeholder: '例：JX，WW',
           },
         },
         {
           field: "config.override_prefix",
           label: "覆盖内置前缀",
-          bottomHelpMessage: "开启后仅使用自定义前缀，内置的 鸣潮/~/～ 将失效，请先填写自定义命令前缀",
+          bottomHelpMessage: "开启后仅使用自定义前缀",
           component: "Switch",
         },
         {
@@ -424,6 +424,45 @@ export function supportGuoba() {
           required: true,
           componentProps: {
             placeholder: '请输入反向代理地址，例：https://api.kurobbs.com',
+          },
+        },
+        {
+          component: "SOFT_GROUP_BEGIN",
+          label: "数据源配置"
+        },
+        {
+          field: "config.data_source",
+          label: "游戏数据来源",
+          bottomHelpMessage: "信息查询的数据来源。encore；nanoka",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "Encore（api-v2.encore.moe）", value: "encore" },
+              { label: "Nanoka（static.nanoka.cc）", value: "nanoka" },
+            ],
+          },
+        },
+        {
+          field: "config.nanoka_version",
+          label: "Nanoka 数据版本",
+          bottomHelpMessage: "auto：自动跟随官网「最新数据版本」",
+          component: "Input",
+          componentProps: {
+            placeholder: 'auto',
+          },
+        },
+        {
+          field: "config.nanoka_lang",
+          label: "Nanoka 数据语言",
+          bottomHelpMessage: "仅数据来源为 nanoka 时生效",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "简体中文", value: "zh" },
+              { label: "English", value: "en" },
+              { label: "日本語", value: "ja" },
+              { label: "한국어", value: "ko" },
+            ],
           },
         },
         {
