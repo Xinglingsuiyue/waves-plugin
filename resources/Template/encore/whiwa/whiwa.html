@@ -56,7 +56,11 @@
                             <div class="score-stages">
                                 {{each floorData.scoreStages ss}}
                                 <div class="score-stage-item">
+                                    {{if ss.icon}}
                                     <img class="score-stage-icon" src="{{ss.icon}}" />
+                                    {{else}}
+                                    <span class="score-stage-badge">{{ss.label}}</span>
+                                    {{/if}}
                                     <span class="score-stage-val">{{ss.score}}</span>
                                 </div>
                                 {{/each}}
