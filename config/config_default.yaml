@@ -34,6 +34,13 @@ proxy_url: ''
 # 反向代理地址
 reverse_proxy_url: 'https://api.kurobbs.com'
 
+# ---------- 数据源相关 ----------
+# 游戏数据来源：encore（api-v2.encore.moe）或 nanoka（static.nanoka.cc）
+data_source: encore
+# nanoka 数据版本
+nanoka_version: auto
+nanoka_lang: zh
+
 # ---------- 登录服务器配置 ----------
 # 允许在线登录
 allow_login: false
