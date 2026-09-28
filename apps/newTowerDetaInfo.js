@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Render from '../components/Render.js'
+import { isNanoka, resolveIcon, readLocalData, readLocalDetail, ensureList, fetchDetail, dataHint } from '../components/DataSource.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
@@ -64,13 +65,16 @@ export class DpMatrixInfo extends plugin {
     /** 获取终焉矩阵列表（本地优先 → Redis → API） */
     async getDpMatrixList() {
         try {
-            const { readLocalData } = await import('./EncoreSync.js')
             let data = readLocalData('dpmatrix')
+            if ((!data || !Array.isArray(data) || data.length === 0) && isNanoka()) data = await ensureList('dpmatrix')
             if (data && Array.isArray(data) && data.length > 0) {
                 console.log('[DpMatrixInfo] 使用本地 dpmatrix 数据')
                 return data
             }
         } catch {}
+
+        if (isNanoka()) return null
+
         const cacheKey = 'Yunzai:waves:dpmatrixList'
         try { let c = await redis.get(cacheKey); if (c) { console.log('[DpMatrixInfo] 使用 Redis 缓存'); return JSON.parse(c) } } catch {}
         try {
@@ -85,11 +89,15 @@ export class DpMatrixInfo extends plugin {
         } catch (e) { console.error('[DpMatrixInfo] API 请求失败:', e); return null }
     }
 
-    /** 获取终焉矩阵详情（本地优先 → Redis → API） */
     async fetchDpMatrixDetail(seasonId) {
+        if (isNanoka()) {
+            const local = readLocalDetail('dpmatrix', seasonId)
+            if (local) { console.log(`[DpMatrixInfo] 使用本地详情 #${seasonId}`); return local }
+            return await fetchDetail('dpmatrix', seasonId)
+        }
+
         try {
-            const { readLocalDetail } = await import('./EncoreSync.js')
-            let local = readLocalDetail('dpmatrix', seasonId)
+            const local = readLocalDetail('dpmatrix', seasonId)
             if (local) { console.log(`[DpMatrixInfo] 使用本地详情 #${seasonId}`); return local }
         } catch {}
         const cacheKey = `Yunzai:waves:dpmatrix:detail:${seasonId}`
@@ -124,19 +132,19 @@ export class DpMatrixInfo extends plugin {
 
     async dpmatrixCurrent(e) {
         const list = await this.getDpMatrixList()
-        if (!list || !Array.isArray(list)) return e.reply('获取终焉矩阵数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取终焉矩阵数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const season = this.findCurrentSeason(list)
         return this.showDetail(e, list, season)
     }
     async dpmatrixPrev(e) {
         const list = await this.getDpMatrixList()
-        if (!list || !Array.isArray(list)) return e.reply('获取终焉矩阵数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取终焉矩阵数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const curSeason = this.findCurrentSeason(list)
         return this.showDetail(e, list, curSeason - 1)
     }
     async dpmatrixNext(e) {
         const list = await this.getDpMatrixList()
-        if (!list || !Array.isArray(list)) return e.reply('获取终焉矩阵数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取终焉矩阵数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const curSeason = this.findCurrentSeason(list)
         return this.showDetail(e, list, curSeason + 1)
     }
@@ -144,13 +152,13 @@ export class DpMatrixInfo extends plugin {
         const match = e.msg.match(/(\d+)/)
         if (!match) return e.reply('请指定期数，如: ~4期矩阵')
         const list = await this.getDpMatrixList()
-        if (!list || !Array.isArray(list)) return e.reply('获取终焉矩阵数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取终焉矩阵数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const season = parseInt(match[1])
         return this.showDetail(e, list, season)
     }
     async dpmatrixList(e) {
         const list = await this.getDpMatrixList()
-        if (!list || !Array.isArray(list)) return e.reply('获取终焉矩阵数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取终焉矩阵数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         list.sort((a, b) => (b.Season || 0) - (a.Season || 0))
         const curSeason = this.findCurrentSeason(list)
         let msg = '终焉矩阵 周期列表:\n'
@@ -178,24 +186,30 @@ export class DpMatrixInfo extends plugin {
 
     /** 构建渲染数据 */
     async buildRenderData(item) {
-        const begin = new Date(item.start + 'T04:00:00')
-        const end = new Date(item.finish + 'T04:00:00')
-        const now = new Date()
-        let leftTime = '已结束'
-        if (now < begin) {
-            const diff = Math.ceil((begin - now) / (1000 * 60 * 60 * 24))
-            leftTime = `还有约 ${diff} 天开启`
-        } else if (now <= end) {
-            const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
-            if (diff > 0) {
-                const hours = Math.floor((end - now) / (1000 * 60 * 60))
-                const days = Math.floor(hours / 24)
-                const remainHours = hours % 24
-                leftTime = days ? `${days}天${remainHours}小时` : `${hours}小时`
-            } else { leftTime = '即将结束' }
+        let leftTime = '未知'
+        if (item.start && item.finish) {
+            const begin = new Date(item.start + 'T04:00:00')
+            const end = new Date(item.finish + 'T04:00:00')
+            const now = new Date()
+            leftTime = '已结束'
+            if (now < begin) {
+                const diff = Math.ceil((begin - now) / (1000 * 60 * 60 * 24))
+                leftTime = `还有约 ${diff} 天开启`
+            } else if (now <= end) {
+                const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+                if (diff > 0) {
+                    const hours = Math.floor((end - now) / (1000 * 60 * 60))
+                    const days = Math.floor(hours / 24)
+                    const remainHours = hours % 24
+                    leftTime = days ? `${days}天${remainHours}小时` : `${hours}小时`
+                } else { leftTime = '即将结束' }
+            }
         }
 
         const urlFix = (url) => url ? url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/') : ''
+        // 图标解析：nanoka 用静态资源/本地缓存，encore 用本地缓存/原地址
+        const nanoka = isNanoka()
+        const iconUrl = (url) => nanoka ? resolveIcon(url, 'dpmatrix') : this._localUrl(urlFix(url))
 
         const detail = await this.fetchDpMatrixDetail(item.Season)
         const seasonName = detail ? (detail.SeasonName || '') : ''
@@ -211,7 +225,7 @@ export class DpMatrixInfo extends plugin {
                         buffs.push({
                             name: b.Name || '',
                             desc: this._cleanDesc(b.Desc || ''),
-                            icon: this._localUrl(urlFix(b.Icon || ''))
+                            icon: b.Icon ? iconUrl(b.Icon) : ''
                         })
                     }
                 }
@@ -227,7 +241,7 @@ export class DpMatrixInfo extends plugin {
                         if (!levelIcon) {
                             if (LEVEL_ICON_OVERRIDE[level.Name]) {
                                 levelIcon = LEVEL_ICON_OVERRIDE[level.Name]
-                            } else {
+                            } else if (!nanoka) {
                                 const baseIconUrl = 'https://api-v2.encore.moe/resource/Data/Game/Aki/UI/UIResources/UiActivity/Image/Activity32/MowingTower/BossLevelItemTex/T_BossLevelItemTex'
                                 levelIcon = this._localUrl(urlFix(`${baseIconUrl}${level.Id}.webp`))
                             }
@@ -237,7 +251,7 @@ export class DpMatrixInfo extends plugin {
                             for (const t of w.Tags) {
                                 tags.push({
                                     name: t.Name || '',
-                                    path: this._localUrl(urlFix(t.Path || '')),
+                                    path: t.Path ? iconUrl(t.Path) : '',
                                     color: t.Color || ''
                                 })
                             }
@@ -266,7 +280,7 @@ export class DpMatrixInfo extends plugin {
                             wave: w.Wave || w.Round || 0,
                             name: w.Name || '',
                             monsterLevel: w.MonsterLevel || 0,
-                            icon: this._localUrl(urlFix(w.Icon || '')),
+                            icon: w.Icon ? iconUrl(w.Icon) : '',
                             elementId: w.ElementId || 0,
                             tags,
                             recommendFeatures,
@@ -283,7 +297,7 @@ export class DpMatrixInfo extends plugin {
                         scoreLevels.push({
                             key: rule.Key,
                             value: rule.Value,
-                            icon: this._localUrl(urlFix(rule.Icon || ''))
+                            icon: rule.Icon ? iconUrl(rule.Icon) : ''
                         })
                     }
                 }

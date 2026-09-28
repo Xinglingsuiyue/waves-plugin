@@ -3,7 +3,7 @@ import Render from '../components/Render.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
-import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js'
+import { readLocalData, readLocalDetail, saveLocalDetail, isNanoka, resolveIcon, fetchDetail, dataHint, ensureList } from '../components/DataSource.js'
 
 const ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'echo', 'icon')
 
@@ -36,11 +36,12 @@ export class EchoInfo extends plugin {
         })
     }
 
-    getEchoData() { return readLocalData('echo') }
+    async getEchoData() { return await ensureList('echo') }
 
     async fetchEchoDetail(id) {
         let data = readLocalDetail('echo', id)
         if (data) return data
+        if (isNanoka()) return await fetchDetail('echo', id)
         const cacheKey = `Yunzai:waves:echoDetail:${id}`
         try {
             let cached = await redis.get(cacheKey)
@@ -62,10 +63,9 @@ export class EchoInfo extends plugin {
         const keyword = (e.msg.match(this.rule[0].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入声骸名称或序号查询，如: ~声骸查询 幼猿 或 ~声骸查询 01')
 
-        const data = this.getEchoData()
-        if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getEchoData()
+        if (!data || !Array.isArray(data)) return e.reply(`声骸数据获取失败，请执行 ${dataHint()} 后重试`)
 
-        // 先尝试序号查询（纯数字，如 01、1、02、2）
         const isNumeric = /^\d{1,3}$/.test(keyword)
         let results = isNumeric ? this._queryByIndex(data, keyword) : null
 
@@ -102,9 +102,9 @@ export class EchoInfo extends plugin {
         return e.reply(img, false)
     }
 
-    /** 本地图标URL — 本地优先 */
     getLocalIconUrl(url) {
         if (!url) return ''
+        if (isNanoka()) return resolveIcon(url, 'echo')
         let fixed = url.replace(/\.png$/i, '.webp')
         fixed = fixed.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
         try {
@@ -115,7 +115,6 @@ export class EchoInfo extends plugin {
         return fixed
     }
 
-    /** 构建渲染数据 — 完整展示所有字段 */
     buildRenderData(echo, detail) {
         const stars = { 5: '★★★★★', 4: '★★★★', 3: '★★★', 2: '★★', 1: '★', 0: '' }
         const q = detail.QualityId || 0
@@ -244,9 +243,9 @@ export class EchoInfo extends plugin {
         }
     }
 
-    /** 获取排序后的声骸扁平列表 — 与 echoList 排序完全一致 */
+    /** 获取排序后的声骸扁平列表 — 与 echoList 排序完全一致（同步，使用已落盘数据） */
     _getSortedEchoList() {
-        const data = this.getEchoData()
+        const data = readLocalData('echo')
         if (!data || !Array.isArray(data)) return []
 
         // 建立 FetterGroup ID → {name} 映射
@@ -318,12 +317,13 @@ export class EchoInfo extends plugin {
     }
 
     async echoList(e) {
-        const data = this.getEchoData()
-        if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getEchoData()
+        if (!data || !Array.isArray(data)) return e.reply(`声骸数据获取失败，请执行 ${dataHint()} 后重试`)
 
         // 域名修正
         const fixUrl = (url) => {
             if (!url) return ''
+            if (isNanoka()) return resolveIcon(url, 'echo')
             return url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
         }
 
@@ -416,8 +416,8 @@ export class EchoInfo extends plugin {
     async fetterQuery(e) {
         const keyword = (e.msg.match(this.rule[2].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入合鸣名称查询，如: ~合鸣查询 不绝余音')
-        const data = this.getEchoData()
-        if (!data || !Array.isArray(data)) return e.reply('声骸数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getEchoData()
+        if (!data || !Array.isArray(data)) return e.reply(`声骸数据获取失败，请执行 ${dataHint()} 后重试`)
 
         let targetId = null
         for (const echo of data) {
@@ -446,6 +446,7 @@ export class EchoInfo extends plugin {
 
         const fixUrl = (url) => {
             if (!url) return ''
+            if (isNanoka()) return resolveIcon(url, 'echo')
             return url.replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
         }
 

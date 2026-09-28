@@ -3,7 +3,7 @@ import Render from '../components/Render.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
-import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js'
+import { readLocalDetail, saveLocalDetail, isNanoka, resolveIcon, fetchDetail, dataHint, ensureList } from '../components/DataSource.js'
 import Wiki from '../components/Wiki.js'
 
 const ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'weapon', 'icon')
@@ -28,11 +28,12 @@ export class WeaponInfo extends plugin {
         })
     }
 
-    getWeaponData() { return readLocalData('weapon') }
+    async getWeaponData() { return await ensureList('weapon') }
 
     async fetchWeaponDetail(id) {
         let data = readLocalDetail('weapon', id)
         if (data) return data
+        if (isNanoka()) return await fetchDetail('weapon', id)
         const cacheKey = `Yunzai:waves:weaponDetail:${id}`
         let cached = await redis.get(cacheKey)
         if (cached) { try { data = JSON.parse(cached); saveLocalDetail('weapon', id, data); return data } catch {} }
@@ -52,8 +53,8 @@ export class WeaponInfo extends plugin {
         const keyword = (e.msg.match(this.rule[0].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入武器名称查询，如: ~武器查询 存帧')
 
-        const data = this.getWeaponData()
-        if (!data || !Array.isArray(data)) return e.reply('武器数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getWeaponData()
+        if (!data || !Array.isArray(data)) return e.reply(`武器数据获取失败，请执行 ${dataHint()} 后重试`)
 
         // 别名解析
         const wiki = new Wiki()
@@ -87,9 +88,9 @@ export class WeaponInfo extends plugin {
         return e.reply(img, false)
     }
 
-    /** 从HTTP URL提取文件名并检查本地 */
     getLocalUrl(httpUrl) {
         if (!httpUrl) return ''
+        if (isNanoka()) return resolveIcon(httpUrl, 'weapon')
         try {
             const filename = path.basename(new URL(httpUrl).pathname)
             const localPath = path.join(ICON_DIR, filename)
@@ -100,28 +101,23 @@ export class WeaponInfo extends plugin {
         return httpUrl
     }
 
-    /** 从 UE 路径提取图标文件名 */
     iconFilenameFromPath(uePath) {
         if (!uePath || typeof uePath !== 'string') return ''
-        // /Game/.../T_IconWeapon21050030_UI.T_IconWeapon21050030_UI → T_IconWeapon21050030_UI
         const lastSlash = uePath.lastIndexOf('/')
         const filename = lastSlash >= 0 ? uePath.slice(lastSlash + 1) : uePath
         const dotIdx = filename.lastIndexOf('.')
         return dotIdx > 0 ? filename.substring(0, dotIdx) : filename
     }
 
-    /** 获取武器图标URL — 本地文件优先，否则用在线URL */
     getWeaponIconUrl(iconPath) {
         if (!iconPath) return ''
+        if (isNanoka()) return resolveIcon(iconPath, 'weapon')
         const filename = this.iconFilenameFromPath(iconPath)
         if (!filename) return ''
-        // 本地优先：先查武器目录
         const weaponPath = path.join(ICON_DIR, `${filename}.webp`)
         if (fs.existsSync(weaponPath)) return `file://${weaponPath}`
-        // 武器类型图标和角色武器类型图标是同一套，也查角色目录
         const charPath = path.join(CHAR_ICON_DIR, `${filename}.webp`)
         if (fs.existsSync(charPath)) return `file://${charPath}`
-        // 从UE路径构造在线URL
         const webPath = iconPath.replace(/\.([^./]+)$/, '.webp')
         return `https://api.encore.moe/resource/Data${webPath}`
     }
@@ -136,10 +132,8 @@ export class WeaponInfo extends plugin {
         const q = detail.QualityId || 0
         const props = detail.Properties || []
 
-        // 武器图片 — 从Icon字段提取真实文件名，本地优先
         const wpIcon = this.getWeaponIconUrl(detail.Icon || '')
 
-        // 主属性 — Properties[0] 对应 FirstPropId，直接取 GrowthValues 最大值
         const fp = detail.FirstPropId || {}
         let firstProp = {
             name: '',
@@ -154,7 +148,6 @@ export class WeaponInfo extends plugin {
             }
         }
 
-        // 副属性 — Properties[1] 对应 SecondPropId
         let secondProp = null
         if (detail.SecondPropId && detail.SecondPropId.Id && props.length >= 2
             && props[1].GrowthValues && props[1].GrowthValues.length > 0) {
@@ -166,10 +159,8 @@ export class WeaponInfo extends plugin {
             }
         }
 
-        // 谐振技能描述 — 合并重复值（12/12/12/12/12→12），保留不同值（12%/15%/18%/21%/24%），数值金色
         const resonDesc = this.processResonDesc(detail.Desc || '')
 
-        // 武器类型图标 — 本地优先
         const typeIconUrl = this.getWeaponIconUrl(detail.TypeIcon || '')
 
         return {
@@ -190,7 +181,6 @@ export class WeaponInfo extends plugin {
         }
     }
 
-    /** 处理谐振技能描述：合并重复的 / 分隔值，数值保留金色渲染 */
     processResonDesc(desc) {
         if (!desc) return ''
         return desc.replace(/<span[^>]*>([^<]+)<\/span>/g, (match, content) => {
@@ -203,8 +193,8 @@ export class WeaponInfo extends plugin {
     }
 
     async weaponList(e) {
-        const data = this.getWeaponData()
-        if (!data || !Array.isArray(data)) return e.reply('武器数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getWeaponData()
+        if (!data || !Array.isArray(data)) return e.reply(`武器数据获取失败，请执行 ${dataHint()} 后重试`)
 
         const qualityColors = { 5: '#ffd700', 4: '#a080c0', 3: '#5898b8', 2: '#6b8e6b', 1: '#888' }
 
@@ -223,7 +213,6 @@ export class WeaponInfo extends plugin {
             })
         }
 
-        // 按品质降序 → 同品质同类型武器在一起 → 按名称排序
         list.sort((a, b) => b.quality - a.quality || a.typeName.localeCompare(b.typeName, 'zh') || a.name.localeCompare(b.name, 'zh'))
 
         const renderData = { list }

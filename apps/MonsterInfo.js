@@ -3,7 +3,7 @@ import Render from '../components/Render.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
-import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js'
+import { readLocalDetail, saveLocalDetail, isNanoka, resolveIcon, fetchDetail, dataHint, ensureList } from '../components/DataSource.js'
 
 const MONSTER_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'monster', 'icon')
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
@@ -21,7 +21,7 @@ export class MonsterInfo extends plugin {
         })
     }
 
-    getMonsterData() { return readLocalData('monster') }
+    async getMonsterData() { return await ensureList('monster') }
 
     _fixUrl(url) {
         if (!url) return ''
@@ -31,6 +31,7 @@ export class MonsterInfo extends plugin {
     async fetchMonsterDetail(id) {
         let data = readLocalDetail('monster', id)
         if (data) return data
+        if (isNanoka()) return await fetchDetail('monster', id)
         const cacheKey = `Yunzai:waves:monsterDetail:${id}`
         try { let cached = await redis.get(cacheKey); if (cached) { try { data = JSON.parse(cached); saveLocalDetail('monster', id, data); return data } catch {} } } catch (e) {}
         try {
@@ -45,11 +46,9 @@ export class MonsterInfo extends plugin {
         } catch (e) { console.error(`[MonsterInfo] 获取 ${id} 详情失败:`, e); return null }
     }
 
-    /** 按列表序号查询（列表排序后第N个，1-based） */
     _queryByIndex(data, keyword) {
         const num = parseInt(keyword, 10)
         if (isNaN(num) || num < 1) return null
-        // 排序规则与 monsterList 一致：按品质降序，同品质按名称排序
         const rarityRank = { '海啸级': 4, '怒涛级': 3, '巨浪级': 2, '轻波级': 1 }
         const sorted = [...data].filter(Boolean).sort((a, b) => {
             const ra = rarityRank[a.Rarity] || 0
@@ -65,10 +64,9 @@ export class MonsterInfo extends plugin {
         const keyword = (e.msg.match(this.rule[0].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入残像名称或序号查询，如: ~残像查询 芙露德莉斯 或 ~残像查询 01')
 
-        const data = this.getMonsterData()
-        if (!data || !Array.isArray(data)) return e.reply('残像数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getMonsterData()
+        if (!data || !Array.isArray(data)) return e.reply(`残像数据获取失败，请执行 ${dataHint()} 后重试`)
 
-        // 先尝试序号查询（纯数字，如 01、1、02、2）
         const isNumeric = /^\d{1,3}$/.test(keyword)
         let results = isNumeric ? this._queryByIndex(data, keyword) : null
 
@@ -217,8 +215,8 @@ export class MonsterInfo extends plugin {
     }
 
     async monsterList(e) {
-        const data = this.getMonsterData()
-        if (!data || !Array.isArray(data)) return e.reply('残像数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getMonsterData()
+        if (!data || !Array.isArray(data)) return e.reply(`残像数据获取失败，请执行 ${dataHint()} 后重试`)
 
         const rarityColors = { '海啸级': '#ffd700', '怒涛级': '#a080c0', '巨浪级': '#5898b8', '轻波级': '#6b8e6b' }
         const rarityOrder = { '海啸级': 4, '怒涛级': 3, '巨浪级': 2, '轻波级': 1 }
@@ -266,6 +264,7 @@ export class MonsterInfo extends plugin {
     /** 图标URL — 本地优先（残像目录 → 角色目录），.png 转 .webp */
     _getLocalUrl(httpUrl) {
         if (!httpUrl) return ''
+        if (isNanoka()) return resolveIcon(httpUrl, 'monster')
         try {
             const u = new URL(httpUrl)
             const filename = u.pathname.split('/').pop() || ''

@@ -3,7 +3,7 @@ import Render from '../components/Render.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
-import { readLocalData, readLocalDetail, saveLocalDetail } from './EncoreSync.js'
+import { readLocalData, readLocalDetail, saveLocalDetail, isNanoka, resolveIcon, fetchDetail, dataHint, ensureList } from '../components/DataSource.js'
 import Wiki from '../components/Wiki.js'
 
 const CHAR_ICON_DIR = path.join(pluginResources, 'data', 'encore', 'details', 'character', 'icon')
@@ -31,11 +31,12 @@ export class CharacterInfo extends plugin {
         })
     }
 
-    getCharacterData() { return readLocalData('character') }
+    async getCharacterData() { return await ensureList('character') }
 
     async fetchCharacterDetail(id) {
         let data = readLocalDetail('character', id)
         if (data) return data
+        if (isNanoka()) return await fetchDetail('character', id)
         const cacheKey = `Yunzai:waves:charDetail:${id}`
         let cached = await redis.get(cacheKey)
         if (cached) {
@@ -57,28 +58,23 @@ export class CharacterInfo extends plugin {
         const keyword = (e.msg.match(this.rule[0].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入角色名称查询，如: ~角色查询 今汐')
 
-        const data = this.getCharacterData()
-        if (!data || !Array.isArray(data)) return e.reply('角色数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getCharacterData()
+        if (!data || !Array.isArray(data)) return e.reply(`角色数据获取失败，请执行 ${dataHint()} 后重试`)
 
-        // 别名解析 — 使用 Wiki.getAlias()（与面板功能共用同一套别名系统）
         const wiki = new Wiki()
         const resolved = (await wiki.getAlias(keyword)) || keyword
         const kw = keyword.toLowerCase()
         const resolvedKw = resolved.toLowerCase()
 
-        // 搜索 — 别名命中用官方名精确匹配，否则回退模糊匹配
         let results = []
         if (resolved !== keyword) {
-            // 别名命中 → 用解析后的官方名匹配
             results = data.filter(c => c && (c.Name || '').toLowerCase().includes(resolvedKw))
             if (results.length === 0) {
-                // 精确匹配失败 → 回退模糊匹配
                 results = data.filter(c => c && ((c.Name || '').toLowerCase().includes(kw)
                     || String(c.Id) === kw || (c.Element?.Name || '').toLowerCase().includes(kw)
                     || (c.WeaponType?.Name || '').toLowerCase().includes(kw)))
             }
         } else {
-            // 无别名 → 原模糊匹配
             results = data.filter(c => c && ((c.Name || '').toLowerCase().includes(kw) || String(c.Id) === kw
                 || (c.Element?.Name || '').toLowerCase().includes(kw) || (c.WeaponType?.Name || '').toLowerCase().includes(kw)))
         }
@@ -97,7 +93,6 @@ export class CharacterInfo extends plugin {
         return e.reply(img, false)
     }
 
-    /** 统一encore查询 — ~xxxen查询，先查角色再查武器 */
     async encoreQuery(e) {
         const keyword = (e.msg.match(this.rule[2].reg)?.[1] || '').trim()
         if (!keyword) return e.reply('请输入名称查询，如: ~今汐en查询 或 ~存帧en查询')
@@ -107,7 +102,7 @@ export class CharacterInfo extends plugin {
         const kw = resolved.toLowerCase()
 
         // 1. 先查角色
-        const charData = readLocalData('character')
+        const charData = await ensureList('character')
         if (charData && Array.isArray(charData)) {
             const chars = charData.filter(c => c && (c.Name || '').toLowerCase().includes(kw))
             if (chars.length === 1) {
@@ -121,7 +116,7 @@ export class CharacterInfo extends plugin {
         }
 
         // 2. 再查武器
-        const weaponData = readLocalData('weapon')
+        const weaponData = await ensureList('weapon')
         if (weaponData && Array.isArray(weaponData)) {
             const weapons = weaponData.filter(w => w && (w.Name || '').toLowerCase().includes(kw))
             if (weapons.length === 1) {
@@ -169,6 +164,7 @@ export class CharacterInfo extends plugin {
     async _fetchWeaponDetail(id) {
         let data = readLocalDetail('weapon', id)
         if (data) return data
+        if (isNanoka()) return await fetchDetail('weapon', id)
         const cacheKey = `Yunzai:waves:weaponDetail:${id}`
         try {
             let cached = await redis.get(cacheKey)
@@ -184,16 +180,15 @@ export class CharacterInfo extends plugin {
         } catch (e) { return null }
     }
 
-    /** 构建武器渲染数据（精简版，复用 WeaponInfo.getWeaponIconUrl 逻辑） */
     _buildWeaponData(detail) {
         const stars = { 5: '★★★★★', 4: '★★★★', 3: '★★★', 2: '★★', 1: '★' }
         const q = detail.QualityId || 0
         const props = detail.Properties || []
 
         // 武器图标
-        const wpIcon = this._getIconUrl(detail.Icon || '')
+        const wpIcon = this._getIconUrl(detail.Icon || '', 'weapon')
         // 武器类型图标
-        const wpTypeIcon = this._getIconUrl(detail.TypeIcon || '')
+        const wpTypeIcon = this._getIconUrl(detail.TypeIcon || '', 'weapon')
 
         // 主属性
         let firstProp = { name: '', display: String(detail.FirstPropId?.Value || 0) }
@@ -304,8 +299,9 @@ export class CharacterInfo extends plugin {
     }
 
     /** 图标URL — 本地优先，武器/角色图标目录均可，支持完整HTTP URL */
-    _getIconUrl(iconPath) {
+    _getIconUrl(iconPath, type = 'character') {
         if (!iconPath) return ''
+        if (isNanoka()) return resolveIcon(iconPath, type)
         // 完整HTTP URL — 本地优先，否则直接返回（修正域名和扩展名）
         if (iconPath.startsWith('http')) {
             let url = iconPath.replace(/\.png$/i, '.webp')
@@ -509,6 +505,7 @@ export class CharacterInfo extends plugin {
     /** 图标URL — 本地文件优先，否则用原始URL */
     getLocalCharIcon(url) {
         if (!url) return ''
+        if (isNanoka()) return resolveIcon(url, 'character')
         try {
             const u = new URL(url)
             const filename = path.basename(u.pathname)
@@ -597,8 +594,8 @@ export class CharacterInfo extends plugin {
     }
 
     async characterList(e) {
-        const data = this.getCharacterData()
-        if (!data || !Array.isArray(data)) return e.reply('角色数据未下载，请先使用 ~下载encore资源')
+        const data = await this.getCharacterData()
+        if (!data || !Array.isArray(data)) return e.reply(`角色数据获取失败，请执行 ${dataHint()} 后重试`)
 
         const qMap = { 5: '★★★★★', 4: '★★★★', 3: '★★★', 2: '★★', 1: '★' }
         // 品质对应的底部色条颜色
@@ -609,11 +606,16 @@ export class CharacterInfo extends plugin {
             if (!c) continue
             const q = c.QualityId || 0
             const elemIconPath = c.Element?.Icon || ''
-            const elemIconUrl = elemIconPath
-                ? `https://api-v2.encore.moe/resource/Data/Game/Aki/${elemIconPath.replace(/^\/Game\/Aki\//, '')}.webp`
-                : ''
+            // nanoka 模式：元素图标/头像走 nanoka 静态资源；encore 模式保持原逻辑
+            const elemIconUrl = isNanoka()
+                ? this.getLocalCharIcon(elemIconPath)
+                : (elemIconPath
+                    ? `https://api-v2.encore.moe/resource/Data/Game/Aki/${elemIconPath.replace(/^\/Game\/Aki\//, '')}.webp`
+                    : '')
             // 列表直接使用原始URL，不走本地缓存（头像数量多，file:// 在 puppeteer 中不可靠）
-            const avatarUrl = (c.RoleHeadIcon || '').replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
+            const avatarUrl = isNanoka()
+                ? this.getLocalCharIcon(c.RoleHeadIcon || '')
+                : (c.RoleHeadIcon || '').replace(/^https:\/\/api\.encore\.moe\//, 'https://api-v2.encore.moe/')
             list.push({
                 id: c.Id,
                 name: c.Name || '',

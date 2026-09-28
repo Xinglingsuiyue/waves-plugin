@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Render from '../components/Render.js'
+import { isNanoka, resolveIcon, readLocalData, readLocalDetail, ensureList, fetchDetail, dataHint } from '../components/DataSource.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
@@ -42,15 +43,17 @@ export class WhiWaInfo extends plugin {
     }
 
     async getWhiWaList() {
-        // 本地文件优先
         try {
-            const { readLocalData } = await import('./EncoreSync.js')
             let data = readLocalData('whiwa')
+            if ((!data || !Array.isArray(data) || data.length === 0) && isNanoka()) data = await ensureList('whiwa')
             if (data && Array.isArray(data) && data.length > 0) {
                 console.log('[WhiWaInfo] 使用本地 whiwa 数据')
                 return data
             }
         } catch {}
+
+        if (isNanoka()) return null
+
         const cacheKey = 'Yunzai:waves:whiwaList'
         try { let c = await redis.get(cacheKey); if (c) { console.log('[WhiWaInfo] 使用 Redis 缓存'); return JSON.parse(c) } } catch {}
         try {
@@ -65,12 +68,16 @@ export class WhiWaInfo extends plugin {
         } catch (e) { console.error('[WhiWaInfo] API 请求失败:', e); return null }
     }
 
-    /** 获取冥歌海墟详情 — 本地文件优先 → Redis → API，并回写本地 */
     async fetchWhiWaDetail(seasonId) {
+        if (isNanoka()) {
+            const local = readLocalDetail('whiwa', seasonId)
+            if (local) { console.log(`[WhiWaInfo] 使用本地详情 S${seasonId}`); return local }
+            return await fetchDetail('whiwa', seasonId)
+        }
+
         // 1. 本地详情文件优先
         try {
-            const { readLocalDetail } = await import('./EncoreSync.js')
-            let local = readLocalDetail('whiwa', seasonId)
+            const local = readLocalDetail('whiwa', seasonId)
             if (local) { console.log(`[WhiWaInfo] 使用本地详情 S${seasonId}`); return local }
         } catch {}
 
@@ -95,7 +102,6 @@ export class WhiWaInfo extends plugin {
         } catch (e) { console.error('[WhiWaInfo] 获取详情失败:', e); return null }
     }
 
-    /** 根据日期找到当前赛季：now 在 start ~ finish 之间 */
     findCurrentSeason(list) {
         const now = new Date()
         for (const item of list) {
@@ -110,7 +116,7 @@ export class WhiWaInfo extends plugin {
     /** 当前期 */
     async whiwaCurrent(e) {
         const list = await this.getWhiWaList()
-        if (!list || !Array.isArray(list)) return e.reply('获取冥歌海墟数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取冥歌海墟数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const season = this.findCurrentSeason(list)
         return this.showDetail(e, list, season)
     }
@@ -118,7 +124,7 @@ export class WhiWaInfo extends plugin {
     /** 上期 */
     async whiwaPrev(e) {
         const list = await this.getWhiWaList()
-        if (!list || !Array.isArray(list)) return e.reply('获取冥歌海墟数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取冥歌海墟数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const curSeason = this.findCurrentSeason(list)
         return this.showDetail(e, list, curSeason - 1)
     }
@@ -126,7 +132,7 @@ export class WhiWaInfo extends plugin {
     /** 下期 */
     async whiwaNext(e) {
         const list = await this.getWhiWaList()
-        if (!list || !Array.isArray(list)) return e.reply('获取冥歌海墟数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取冥歌海墟数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const curSeason = this.findCurrentSeason(list)
         return this.showDetail(e, list, curSeason + 1)
     }
@@ -136,7 +142,7 @@ export class WhiWaInfo extends plugin {
         const match = e.msg.match(/(\d+)/)
         if (!match) return e.reply('请指定期数，如: ~16期海墟')
         const list = await this.getWhiWaList()
-        if (!list || !Array.isArray(list)) return e.reply('获取冥歌海墟数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取冥歌海墟数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         const season = parseInt(match[1])
         return this.showDetail(e, list, season)
     }
@@ -144,7 +150,7 @@ export class WhiWaInfo extends plugin {
     /** 列表 */
     async whiwaList(e) {
         const list = await this.getWhiWaList()
-        if (!list || !Array.isArray(list)) return e.reply('获取冥歌海墟数据失败，请稍后重试')
+        if (!list || !Array.isArray(list)) return e.reply(`获取冥歌海墟数据失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
         list.sort((a, b) => (b.Season || 0) - (a.Season || 0))
         const curSeason = this.findCurrentSeason(list)
         let msg = '冥歌海墟 赛季列表:\n'
@@ -202,6 +208,9 @@ export class WhiWaInfo extends plugin {
             } catch {}
             return url
         }
+        // 图标解析：nanoka 用静态资源/本地缓存，encore 用本地缓存/原地址
+        const nanoka = isNanoka()
+        const iconUrl = (url) => nanoka ? resolveIcon(url, 'whiwa') : localUrl(urlFix(url))
 
         const detail = await this.fetchWhiWaDetail(item.Season)
         const seasonName = detail ? (detail.name || item.Name || '') : (item.Name || '')
@@ -232,6 +241,7 @@ export class WhiWaInfo extends plugin {
                         const levelDesc = level.desc ? this._cleanDesc(level.desc) : ''
 
                         // 评分图标 + 分数（B图标 1500 A图标 2000 ...）
+                        // nanoka 无评分图标资源，留空由模板回退显示等级字母
                         let scoreStages = []
                         if (level.scoreStage && Array.isArray(level.scoreStage) && level.targetScore && Array.isArray(level.targetScore)) {
                             const scoreIconBase = 'https://api-v2.encore.moe/resource/Data/Game/Aki/UI/UIResources/UiActivity/Image/ActivityMowingTower/T_Score'
@@ -240,7 +250,7 @@ export class WhiWaInfo extends plugin {
                                 scoreStages.push({
                                     label: level.scoreStage[si],
                                     score: level.targetScore[si],
-                                    icon: localUrl(urlFix(`${scoreIconBase}${level.scoreStage[si]}.webp`))
+                                    icon: nanoka ? '' : localUrl(urlFix(`${scoreIconBase}${level.scoreStage[si]}.webp`))
                                 })
                             }
                         }
@@ -271,7 +281,7 @@ export class WhiWaInfo extends plugin {
                                         Monsters[monIdx++] = {
                                             Name: m.name || '未知',
                                             Level: lv,
-                                            Icon: localUrl(urlFix(m.icon || '')),
+                                            Icon: iconUrl(m.icon || ''),
                                             ElementIds: elementIds,
                                             Life: hp,
                                             Atk: atk,
@@ -284,7 +294,7 @@ export class WhiWaInfo extends plugin {
                                     for (const b of stage.buffs) {
                                         Buffs[bufIdx++] = {
                                             Desc: (b.desc || b.name || '').toString(),
-                                            Icon: urlFix(b.path || ''),
+                                            Icon: b.path || b.icon ? iconUrl(b.path || b.icon) : '',
                                             Color: b.color || ''
                                         }
                                     }

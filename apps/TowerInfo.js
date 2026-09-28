@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Render from '../components/Render.js'
+import { isNanoka, resolveIcon, readLocalData, readLocalDetail, ensureList, fetchDetail, dataHint } from '../components/DataSource.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
@@ -43,7 +44,7 @@ export class TowerInfo extends plugin {
         try {
             const schedule = await this.fetchTowerSchedule()
             if (!schedule) {
-                return e.reply("获取深塔时间表失败，请稍后重试")
+                return e.reply(`获取深塔时间表失败，请稍后重试\n可先使用 ${dataHint()} 下载数据`)
             }
             let targetPhase = this.calculateTargetPhase(phaseType, schedule)
             if (targetPhase < 1) {
@@ -104,38 +105,50 @@ export class TowerInfo extends plugin {
 
     processMonsterIcons(towerData) {
         if (!towerData?.Area) return
+        const nanoka = isNanoka()
         Object.values(towerData.Area).forEach(area => {
             if (!area?.Floor) return
             Object.values(area.Floor).forEach(floor => {
                 if (!floor?.Monsters) return
                 Object.values(floor.Monsters).forEach(monster => {
-                    if (monster?.Icon) monster.IconUrl = this._localUrl(monster.Icon)
+                    if (monster?.Icon) monster.IconUrl = nanoka
+                        ? resolveIcon(monster.Icon, 'toa')
+                        : this._localUrl(monster.Icon)
                 })
             })
         })
     }
 
+    /** 由 toa 列表数据构造时间表 */
+    _toSchedule(data) {
+        if (!data || !data.seasons) return null
+        const schedule = { currentId: null }
+        data.seasons.forEach(s => {
+            if (s.id != null && s.start && s.finish) {
+                schedule[s.id] = { begin: s.start, end: s.finish }
+                if (s.current) schedule.currentId = s.id
+            }
+        })
+        if (schedule.currentId === null) {
+            const ids = Object.keys(schedule).map(Number).filter(id => !isNaN(id))
+            schedule.currentId = ids.length ? Math.max(...ids) : 1
+        }
+        return schedule
+    }
+
     async fetchTowerSchedule() {
-        // 本地优先
+        // 本地优先（按数据源自动适配）
         try {
-            const { readLocalData } = await import('./EncoreSync.js')
             let data = readLocalData('toa')
-            if (data && data.seasons) {
+            if ((!data || !data.seasons) && isNanoka()) data = await ensureList('toa')
+            const schedule = this._toSchedule(data)
+            if (schedule) {
                 console.log('[TowerInfo] 使用本地 toa 数据')
-                const schedule = { currentId: null }
-                data.seasons.forEach(s => {
-                    if (s.id != null && s.start && s.finish) {
-                        schedule[s.id] = { begin: s.start, end: s.finish }
-                        if (s.current) schedule.currentId = s.id
-                    }
-                })
-                if (schedule.currentId === null) {
-                    const ids = Object.keys(schedule).map(Number).filter(id => !isNaN(id))
-                    schedule.currentId = ids.length ? Math.max(...ids) : 1
-                }
                 return schedule
             }
         } catch {}
+
+        if (isNanoka()) return null
 
         const cacheKey = 'Yunzai:waves:towerSchedule'
         let cached = await redis.get(cacheKey)
@@ -162,21 +175,10 @@ export class TowerInfo extends plugin {
             }
             const data = await res.json()
             console.log('[TowerInfo] 时间表原始数据:', JSON.stringify(data).slice(0, 300) + '...')
-            if (!data.seasons) {
+            const schedule = this._toSchedule(data)
+            if (!schedule) {
                 console.error('[TowerInfo] 时间表数据缺少 seasons 字段')
                 return null
-            }
-            const schedule = { currentId: null }
-            data.seasons.forEach(s => {
-                if (s.id != null && s.start && s.finish) {
-                    schedule[s.id] = { begin: s.start, end: s.finish }
-                    if (s.current) schedule.currentId = s.id
-                }
-            })
-            if (schedule.currentId === null) {
-                const ids = Object.keys(schedule).map(Number).filter(id => !isNaN(id))
-                schedule.currentId = ids.length ? Math.max(...ids) : 1
-                console.warn(`[TowerInfo] 未找到当前期数，使用最大期数 ${schedule.currentId}`)
             }
             console.log(`[TowerInfo] 时间表解析成功，当前期数: ${schedule.currentId}`)
             await redis.set(cacheKey, JSON.stringify(schedule), { EX: 864000 })
@@ -198,15 +200,25 @@ export class TowerInfo extends plugin {
     }
 
     async fetchTowerData(phase) {
-        // 本地详情优先
-        try {
-            const { readLocalDetail } = await import('./EncoreSync.js')
-            let local = readLocalDetail('toa', phase)
+        if (isNanoka()) {
+            const local = readLocalDetail('toa', phase)
             if (local) {
                 console.log(`[TowerInfo] 使用本地详情 #${phase}`)
                 return this._parseTowerData(local, phase)
             }
-        } catch {}
+            const online = await fetchDetail('toa', phase)
+            return online ? this._parseTowerData(online, phase) : null
+        }
+
+        try {
+            const local = readLocalDetail('toa', phase)
+            if (local) {
+                console.log(`[TowerInfo] 使用本地详情 #${phase}`)
+                return this._parseTowerData(local, phase)
+            }
+        } catch (err) {
+            console.error('[TowerInfo] 读取本地详情异常', err)
+        }
 
         const cacheKey = `Yunzai:waves:towerData:${phase}`
         let cached = await redis.get(cacheKey)

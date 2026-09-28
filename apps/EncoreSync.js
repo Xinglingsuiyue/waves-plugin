@@ -2,6 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 import fs from 'fs'
 import path from 'path'
 import { pluginResources } from '../model/path.js'
+import { diffEntries, formatDiff, deepFieldDiff, formatDetailDiff } from '../components/ResourceDiff.js'
 
 const API_BASE = 'https://api-v2.encore.moe/api/zh-Hans'
 const DATA_DIR = path.join(pluginResources, 'data', 'encore')
@@ -320,24 +321,35 @@ export class EncoreSync extends plugin {
     async _updateEndpoint(name, config, meta) {
         const idField = ID_FIELDS[name] || 'Id'
         const oldData = readJSON(getDataPath(name))
-        const oldIds = new Set(Array.isArray(oldData) ? oldData.map(d => String(d[idField])) : [])
 
         // 拉取最新列表
         const { count, data } = await this.downloadList(name, config)
         const items = Array.isArray(data) ? data : []
-        const newIds = new Set(items.map(d => String(d[idField])))
 
-        // 计算新增
-        const added = items.filter(d => !oldIds.has(String(d[idField])))
-        const removed = [...oldIds].filter(id => !newIds.has(id))
-        const unchanged = items.length - added.length
+        // 新旧差异：新增 / 变更 / 移除（变更条目会给出字段级 旧值 → 新值）
+        const diff = diffEntries(oldData, data, { idField })
+        const added = diff.added.map(a => diff.newMap[a.id])
+        const changedItems = diff.changed.map(c => diff.newMap[c.id])
+        const unchanged = items.length - added.length - changedItems.length
 
-        // 计算新增 + 缺失详情（对比磁盘上实际文件与期望 ID 列表）
+        // 计算新增 + 变更条目的详情下载/对比（详情字段级 旧→新）
         let toDownload = []
         let missingCount = 0
+        let detailDiffs = []
         if (config.hasDetail) {
             ensureDir(getDetailDir(name))
             const addedIds = new Set(added.map(d => String(d[idField])).filter(Boolean))
+
+            // 变更条目：拉取最新详情并与旧详情逐字段对比（顺带更新详情文件）
+            for (const c of diff.changed) {
+                const oldD = readJSON(getDetailPath(name, c.id))
+                if (!oldD) continue // 旧详情缺失则按新增处理，无需对比
+                const r = await this.downloadDetail(name, c.id)
+                if (!r.success) continue
+                const newD = readJSON(getDetailPath(name, c.id))
+                const fields = deepFieldDiff(oldD, newD)
+                if (fields.length) detailDiffs.push({ id: String(c.id), name: c.name, fields })
+            }
             toDownload = [...added]
 
             // 直接对比磁盘文件：找出期望 ID 中缺失的
@@ -386,7 +398,7 @@ export class EncoreSync extends plugin {
             }
         }
 
-        return { name, added: added.length, missing: missingCount, removed: removed.length, unchanged, total: items.length, detailOk: detailResult.ok, detailFail: detailResult.fail }
+        return { name, report: diff, detailDiffs, missing: missingCount, unchanged, total: items.length, detailOk: detailResult.ok, detailFail: detailResult.fail }
     }
 
     async updateAll(e) {
@@ -417,8 +429,11 @@ export class EncoreSync extends plugin {
         for (const r of results) {
             const desc = ENDPOINTS[r.name]?.desc || r.name
             if (r.success) {
-                msg += `\n✅ ${desc}: 新增 ${r.added}, 移除 ${r.removed}, 未变 ${r.unchanged} (共 ${r.total})`
-                if (r.missing > 0) msg += `  补缺 ${r.missing}`
+                // 新旧差异：新增 / 变更（含字段级 旧值 → 新值）/ 移除
+                msg += formatDiff(desc, r.report)
+                // 详情字段级差异（如 baseAttack: 963 → 962）
+                msg += formatDetailDiff(r.detailDiffs)
+                if (r.missing > 0) msg += `\n   补缺 ${r.missing}`
                 if (r.detailOk > 0) msg += `  详情 +${r.detailOk}`
                 if (r.detailFail > 0) msg += ` (失败${r.detailFail})`
             } else {
