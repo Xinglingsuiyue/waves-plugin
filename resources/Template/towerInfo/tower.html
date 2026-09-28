@@ -60,11 +60,13 @@
                                                     {{/each}}
                                                 </div>
                                             </div>
+                                            {{if monsterData.Life || monsterData.Atk || monsterData.Def}}
                                             <div class="monster-stats">
                                                 <span>生命: {{Math.round(monsterData.Life)}}</span>
                                                 <span>攻击: {{Math.round(monsterData.Atk)}}</span>
                                                 <span>防御: {{Math.round(monsterData.Def)}}</span>
                                             </div>
+                                            {{/if}}
                                         </div>
                                     </li>
                                     {{/each}}
