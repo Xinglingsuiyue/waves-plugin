@@ -1,7 +1,7 @@
-pool_name: 「斟雨祝荷风」
+pool_name: 「但愿长圆如此夜」
 five_star:
   up_pool:
-    - name: 穗穗
+    - name: 心
   other_pool:
     - name: 维里奈
     - name: 安可
@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 白芷
-    - name: 莫特斐
-    - name: 灯灯
+    - name: 卜灵
+    - name: 桃祈
+    - name: 釉瑚
   other_pool:
     # 4星角色
     - name: 秧秧
