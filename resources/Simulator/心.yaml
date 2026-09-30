@@ -13,9 +13,9 @@ five_star:
   other: 0.5
 four_star:
   up_pool:
-    - name: 白芷
-    - name: 渊武
-    - name: 秋水
+    - name: 卜灵
+    - name: 桃祈
+    - name: 釉瑚
   other_pool:
     # 4星角色
     - name: 秧秧
