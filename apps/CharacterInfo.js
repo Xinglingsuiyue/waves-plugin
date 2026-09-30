@@ -66,17 +66,19 @@ export class CharacterInfo extends plugin {
         const kw = keyword.toLowerCase()
         const resolvedKw = resolved.toLowerCase()
 
+        const exactMatch = (name) => data.filter(c => c && (c.Name || '').toLowerCase() === name.toLowerCase())
+        const fuzzyMatch = (k) => data.filter(c => c && ((c.Name || '').toLowerCase().includes(k)
+            || String(c.Id) === k || (c.Element?.Name || '').toLowerCase().includes(k)
+            || (c.WeaponType?.Name || '').toLowerCase().includes(k)))
+
         let results = []
         if (resolved !== keyword) {
-            results = data.filter(c => c && (c.Name || '').toLowerCase().includes(resolvedKw))
-            if (results.length === 0) {
-                results = data.filter(c => c && ((c.Name || '').toLowerCase().includes(kw)
-                    || String(c.Id) === kw || (c.Element?.Name || '').toLowerCase().includes(kw)
-                    || (c.WeaponType?.Name || '').toLowerCase().includes(kw)))
-            }
+            results = exactMatch(resolved)
+            if (results.length === 0) results = fuzzyMatch(resolvedKw)
+            if (results.length === 0) results = fuzzyMatch(kw)
         } else {
-            results = data.filter(c => c && ((c.Name || '').toLowerCase().includes(kw) || String(c.Id) === kw
-                || (c.Element?.Name || '').toLowerCase().includes(kw) || (c.WeaponType?.Name || '').toLowerCase().includes(kw)))
+            results = exactMatch(keyword)
+            if (results.length === 0) results = fuzzyMatch(kw)
         }
 
         if (!results || results.length === 0) return e.reply(`未找到与 "${keyword}" 相关的角色`)
@@ -180,6 +182,7 @@ export class CharacterInfo extends plugin {
         } catch (e) { return null }
     }
 
+    /** 构建武器渲染数据（精简版，复用 WeaponInfo.getWeaponIconUrl 逻辑） */
     _buildWeaponData(detail) {
         const stars = { 5: '★★★★★', 4: '★★★★', 3: '★★★', 2: '★★', 1: '★' }
         const q = detail.QualityId || 0
