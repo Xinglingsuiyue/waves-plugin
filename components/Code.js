@@ -29,7 +29,7 @@ const CONSTANTS = {
     RESOURCE_WEEK_URL: '/aki/resource/week',
     RESOURCE_MONTH_URL: '/aki/resource/month',
     RESOURCE_VERSION_URL: '/aki/resource/version',
-    KURO_VERSION: "2.9.1",
+    KURO_VERSION: "3.3.0",
     FORUM_LIST_URL: '/forum/list',
     FORUM_POST_DETAIL_URL: '/forum/post/detail',
     COSPLAY_TOPIC_ID: 90,
@@ -94,7 +94,7 @@ class Waves {
             headers["User-Agent"] = "okhttp/3.11.0";
             headers["osVersion"] = "35";
             headers["model"] = "V2243A";
-            headers["versionCode"] = "2500";
+            headers["versionCode"] = "3300";
             headers["channelId"] = "6";
             headers["lang"] = "zh-Hans";
             headers["countryCode"] = "CN";

@@ -12,6 +12,8 @@ const CONSTANTS = {
     GET_COIN_URL: '/encourage/gold/getTotalGold',
     FORUM_LIST: '/forum/list',
 
+    KURO_VERSION: "3.3.0",
+
     REQUEST_HEADERS_BASE: {
         "source": "ios",
     },
@@ -48,6 +50,7 @@ class Kuro {
     _buildHeaders(token, did = '') {
         const headers = {
             ...CONSTANTS.REQUEST_HEADERS_BASE,
+            'version': CONSTANTS.KURO_VERSION,
             'token': token
         };
 
