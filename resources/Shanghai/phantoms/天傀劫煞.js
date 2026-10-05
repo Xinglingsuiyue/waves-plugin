@@ -22,11 +22,14 @@ export default {
     };
   },
 
-  apply({ options = {} }) {
+  apply({ panel, options = {} }) {
     const effectActive = options.tiankuiJieshaEffectActive
       ?? options.phantomEffectActive
       ?? true;
     const targetMarked = options.tiankuiJieshaTargetMarked ?? true;
+    const attrMap = panel?.attrMap || {};
+    const aero = attrMap['气动伤害加成'];
+    const lacksAero = !aero || aero === '0%' || aero === 0;
     const buff = {
       attackPercent: 0,
       damageBonus: 0,
@@ -38,10 +41,11 @@ export default {
       source: "天傀劫煞"
     };
 
-    if (effectActive) {
-      buff.damageBonus += 0.10;
-      if (targetMarked) buff.damageBonus += 0.10;
-    }
+    // 首位装配的固定加成（气动 +10%）已计入角色总面板，缺失时才补，避免双计。
+    if (lacksAero) buff.damageBonus += 0.10;
+
+    // 动态效果：为目标附加【集谐·偏移】时，自身气动伤害额外 +10%。
+    if (effectActive && targetMarked) buff.damageBonus += 0.10;
     return buff;
   }
 };

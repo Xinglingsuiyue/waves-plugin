@@ -1,17 +1,12 @@
 export default {
   name: '共鸣回响·梦魇亚当·重锤',
 
-  apply({ panel }) {
-    const roleName = String(panel?.roleName || '');
-    const buff = {
-      critRate: 0,
-      source: '共鸣回响·梦魇亚当·重锤(主声骸)'
-    };
-
-    if (roleName === '露西' || roleName === '丽贝卡') {
-      buff.critRate += 0.15;
-    }
-
-    return buff;
+  // 数据来源：库街区 Wiki entryId=1512506285099139072。
+  //
+  // 「在首位装配该声骸技能时，若装配角色为露西或丽贝卡，自身暴击提升15%」属于
+  // 固定装配效果，已计入角色总面板，模块不再重复叠加。
+  // 该声骸对装配者自身的动态增伤为 0，保留模块以便首位声骸可正常解析。
+  apply() {
+    return { source: '共鸣回响·梦魇亚当·重锤(主声骸)' };
   }
 };
