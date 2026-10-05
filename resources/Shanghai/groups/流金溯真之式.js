@@ -6,20 +6,6 @@ const wiki = {
   "effectText": "流金溯真之式\n\n(2件套)\n\n衍射伤害提升10%\n\n流金溯真之式\n\n(5件套)\n\n角色造成普攻伤害时，自身衍射伤害提升10%，该效果可叠加3层，持续5秒。叠至3层时，施放共鸣解放时，普攻伤害加成提升40%。"
 };
 
-const EFFECT = {
-  "two": 0.1,
-  "five": 0.1,
-  "element": "衍射",
-  "liberation": 0,
-  "skill": 0,
-  "normal": 0.1,
-  "heavy": 0,
-  "attack": 0,
-  "critRate": 0,
-  "critDamage": 0,
-  "damage": 0.4
-};
-
 export default {
   name: "流金溯真之式",
   wiki,
@@ -31,21 +17,18 @@ export default {
       damageBonus: 0,
       critRate: 0,
       critDamage: 0,
-      source: "流金溯真之式" };
-    if (count >= 2) {
-      buff.damageBonus += Number(EFFECT.two || 0);
-      buff.attackPercent += Number(EFFECT.attack || 0);
-      buff.critRate += Number(EFFECT.critRate || 0);
-      buff.critDamage += Number(EFFECT.critDamage || 0);
-      buff.damageBonus += Number(EFFECT.damage || 0);
-    }
+      source: "流金溯真之式"
+    };
+
+    // (2件套) 衍射伤害提升 10%：固定加成，已计入角色总面板，不再重复计算。
+
     if (count >= 5) {
-      buff.damageBonus += Number(EFFECT.five || 0);
-      if (skillType === 'liberation') buff.damageBonus += Number(EFFECT.liberation || 0);
-      if (skillType === 'skill') buff.damageBonus += Number(EFFECT.skill || 0);
-      if (skillType === 'normal') buff.damageBonus += Number(EFFECT.normal || 0);
-      if (skillType === 'heavy') buff.damageBonus += Number(EFFECT.heavy || 0);
+      // (5件套) 造成普攻伤害时自身衍射伤害 +10%，最多 3 层 → +30%。
+      buff.damageBonus += 0.30;
+      // 叠满 3 层后施放共鸣解放时，普攻伤害加成 +40%（只作用于普攻伤害）。
+      if (skillType === 'normal') buff.damageBonus += 0.40;
     }
+
     return buff;
   }
 };

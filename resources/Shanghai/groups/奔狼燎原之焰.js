@@ -6,20 +6,6 @@ const wiki = {
   "effectText": "奔狼燎原之焰\n\n(2件套)\n\n热熔伤害提升10%\n\n奔狼燎原之焰\n\n(5件套)\n\n施放共鸣解放时，队伍中角色热熔伤害提升15%，自身共鸣解放伤害提升20%，持续35秒。"
 };
 
-const EFFECT = {
-  "two": 0.1,
-  "five": 0.15,
-  "element": "热熔",
-  "liberation": 0.2,
-  "skill": 0,
-  "normal": 0,
-  "heavy": 0,
-  "attack": 0,
-  "critRate": 0,
-  "critDamage": 0,
-  "damage": 0
-};
-
 export default {
   name: "奔狼燎原之焰",
   wiki,
@@ -31,21 +17,18 @@ export default {
       damageBonus: 0,
       critRate: 0,
       critDamage: 0,
-      source: "奔狼燎原之焰" };
-    if (count >= 2) {
-      buff.damageBonus += Number(EFFECT.two || 0);
-      buff.attackPercent += Number(EFFECT.attack || 0);
-      buff.critRate += Number(EFFECT.critRate || 0);
-      buff.critDamage += Number(EFFECT.critDamage || 0);
-      buff.damageBonus += Number(EFFECT.damage || 0);
-    }
+      source: "奔狼燎原之焰"
+    };
+
+    // (2件套) 热熔伤害提升 10%：固定加成，已计入角色总面板，不再重复计算。
+
     if (count >= 5) {
-      buff.damageBonus += Number(EFFECT.five || 0);
-      if (skillType === 'liberation') buff.damageBonus += Number(EFFECT.liberation || 0);
-      if (skillType === 'skill') buff.damageBonus += Number(EFFECT.skill || 0);
-      if (skillType === 'normal') buff.damageBonus += Number(EFFECT.normal || 0);
-      if (skillType === 'heavy') buff.damageBonus += Number(EFFECT.heavy || 0);
+      // (5件套) 施放共鸣解放时，队伍中角色热熔伤害 +15%（含自身）。
+      buff.damageBonus += 0.15;
+      // 自身共鸣解放伤害 +20%（只作用于共鸣解放）。
+      if (skillType === 'liberation') buff.damageBonus += 0.20;
     }
+
     return buff;
   }
 };
