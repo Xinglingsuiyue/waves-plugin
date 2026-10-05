@@ -116,13 +116,61 @@ export async function calcDamage(roleDetailData, options = {}) {
   const phantomModuleRaw = equipment.phantomName
     ? await loadPhantomModule(equipment.phantomName)
     : null
-  const groupModuleRaw = equipment.groupName
-    ? await loadGroupModule(equipment.groupName)
+
+  const groupRefs = Array.isArray(equipment.groups) && equipment.groups.length
+    ? equipment.groups
+    : (equipment.groupName ? [{ name: equipment.groupName, count: equipment.groupCount }] : [])
+
+  const groupParts = []
+  const groupNames = []
+  for (const ref of groupRefs) {
+    const count = Number(ref?.count || 0)
+    if (count < 1) continue
+    const raw = await loadGroupModule(ref.name)
+    const mod = raw?.default || raw
+    if (!mod || typeof mod.apply !== 'function') continue
+    groupParts.push({ mod, count })
+    groupNames.push(`${mod.name || ref.name}(${count}件)`)
+  }
+
+  const groupModule = groupParts.length
+    ? {
+        name: groupNames.join(' + '),
+        apply(ctx = {}) {
+          const merged = {
+            attackPercent: 0,
+            flatAttack: 0,
+            hpPercent: 0,
+            flatHp: 0,
+            damageBonus: 0,
+            elementDamageBonus: 0,
+            skillDamageBonus: 0,
+            deepen: 0,
+            multiplierBonus: 0,
+            ignoreDefense: 0,
+            critRate: 0,
+            critDamage: 0,
+            sources: []
+          }
+          for (const { mod, count } of groupParts) {
+            const buff = mod.apply({
+              ...ctx,
+              equipment: { ...(ctx.equipment || {}), groupName: mod.name, groupCount: count }
+            }) || {}
+            for (const key of ['attackPercent', 'flatAttack', 'hpPercent', 'flatHp', 'damageBonus', 'elementDamageBonus', 'skillDamageBonus', 'deepen', 'multiplierBonus', 'ignoreDefense', 'critRate', 'critDamage']) {
+              merged[key] += Number(buff[key] || 0)
+            }
+            if (buff.source) {
+              merged.sources.push({ ...buff, source: buff.source })
+            }
+          }
+          return merged
+        }
+      }
     : null
 
   const weaponModule = weaponModuleRaw?.default || weaponModuleRaw
   const phantomModule = phantomModuleRaw?.default || phantomModuleRaw
-  const groupModule = groupModuleRaw?.default || groupModuleRaw
 
   const enemyName = options.enemyName || '无妄者'
   const enemyModuleRaw = await loadEnemyModule(enemyName)
@@ -152,7 +200,7 @@ export async function calcDamage(roleDetailData, options = {}) {
 
   const displayRoleName = isWaverider && waveriderAttr ? `漂泊者(${waveriderAttr})` : panel.roleName
 
-  log(`▼▼▼ ${displayRoleName} → ${enemy.name} (等级${panel.level} vs ${enemy.level}) | 武器:${equipment.weaponName || '-'} | 主声骸:${equipment.phantomName || '-'} | 套装:${equipment.groupName || '-'}(${equipment.groupCount || 0}件) ▼▼▼`)
+  log(`▼▼▼ ${displayRoleName} → ${enemy.name} (等级${panel.level} vs ${enemy.level}) | 武器:${equipment.weaponName || '-'} | 主声骸:${equipment.phantomName || '-'} | 套装:${groupNames.join(' + ') || '-'} ▼▼▼`)
   log(`面板：攻击 ${fmtNumber(panel.attack)} | 暴击 ${fmtPercent(panel.critRate)} | 暴伤 ${fmtPercent(panel.critDamage - 1)}（暴伤乘区 ${panel.critDamage.toFixed(4)}） | 共鸣效率 ${fmtPercent(panel.resonanceEfficiency)}`)
 
   const result = await characterModule.calc(context)

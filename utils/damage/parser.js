@@ -132,10 +132,15 @@ export function parseEquipment(roleDetailData) {
     }
   }
 
+  const groups = Object.entries(groupCounter)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
   return {
     weaponName,
     phantomName: mainPhantom,
     groupName,
-    groupCount
+    groupCount,
+    groups
   };
 }
