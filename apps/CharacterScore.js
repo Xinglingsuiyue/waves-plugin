@@ -92,6 +92,22 @@ function cleanAttributeName(name) {
     return n;
 }
 
+const VALID_STAT_NAMES = new Set([
+    '暴击', '暴击伤害', '共鸣效率', '治疗效果加成',
+    '攻击', '攻击百分比', '生命', '生命百分比', '防御', '防御百分比',
+    '普攻伤害加成', '重击伤害加成', '共鸣技能伤害加成', '共鸣解放伤害加成',
+    ...ELEMENT_DMG_ELEMENTS.map(el => el + '伤害加成')
+]);
+
+function toCanonicalStatName(name) {
+    const n = cleanAttributeName(String(name || '')).replace(/\s+/g, '');
+    return VALID_STAT_NAMES.has(n) ? n : null;
+}
+
+function isValidStatName(name) {
+    return toCanonicalStatName(name) !== null;
+}
+
 function getCostByMainStat(mainStatName, mainStatValue) {
     const valStr = mainStatValue.replace('%', '');
     const val = parseFloat(valStr);
@@ -164,6 +180,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/簽/g, ''],
         [/發/g, ''],
         [/延迟/g, ''],
         [/光/g, ''],
@@ -561,26 +578,22 @@ function extractPhantomDataFromOCR(rawText) {
             continue;
         }
 
-        // 识别属性名
-        let isAttribute = false;
-        if (/[\u4e00-\u9fa5]/.test(line)) { 
-            for (const keyword of statKeywords) {
-                if (line.includes(keyword)) {
-                    pendingAttrs.push(line);
-                    isAttribute = true;
-                    break;
-                }
-            }
-            if (!isAttribute && /[伤害加成攻击暴击防御生命效率]/.test(line) && !/\d/.test(line)) {
-                pendingAttrs.push(line);
-                isAttribute = true;
-            }
+        // 识别属性名：只有白名单内的词条名才进入 pendingAttrs，
+        // 避免套装名/技能描述占用后面的数值导致错位
+        if (/[\u4e00-\u9fa5]/.test(line) && !/\d/.test(line) && isValidStatName(line)) {
+            pendingAttrs.push(line);
         }
     }
-    
+
     // 过滤垃圾数据
     for (let i = otherPairs.length - 1; i >= 0; i--) {
         const pair = otherPairs[i];
+        // 白名单：属性名不是合法词条（如套装名）直接丢弃
+        if (!isValidStatName(pair.attributeName)) {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '非词条属性名:', pair.attributeName, pair.attributeValue);
+            otherPairs.splice(i, 1);
+            continue;
+        }
         // 过滤过长的属性
         if (pair.attributeName.length > 15) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '过长属性名:', pair.attributeName);
@@ -592,6 +605,13 @@ function extractPhantomDataFromOCR(rawText) {
         if (skillKeywords.some(kw => pair.attributeName.includes(kw))) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '技能描述:', pair.attributeName);
             otherPairs.splice(i, 1);
+        }
+    }
+
+    for (let i = mainPairs.length - 1; i >= 0; i--) {
+        if (!isValidStatName(mainPairs[i].attributeName)) {
+            logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '非词条属性名(main):', mainPairs[i].attributeName);
+            mainPairs.splice(i, 1);
         }
     }
 
