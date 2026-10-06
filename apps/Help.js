@@ -147,7 +147,7 @@ export class Help extends plugin {
                     {
                         "icon": 40,
                         "title": "~开启/关闭UID",
-                        "desc": "设置查询结果中UID的显示方式"
+                        "desc": "设置UID显示方式"
                     },
                     {
                         "icon": 69,
