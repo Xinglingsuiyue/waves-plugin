@@ -1,5 +1,6 @@
 import Version from './Version.js'
 import Config from './Config.js'
+import Uid from './Uid.js'
 import { pluginRoot, pluginResources } from '../model/path.js'
 import fs from 'fs'
 
@@ -29,6 +30,11 @@ const Render = {
         let { e } = cfg
         if (!e.runtime) {
             logger.mark(logger.blue('[WAVES PLUGIN]'), logger.red(`未找到e.runtime，请升级至最新版Yunzai`));
+        }
+
+        const maskMap = await Uid.getMaskMap();
+        if (maskMap && params && typeof params === 'object') {
+            params = Uid.maskCopy(params, maskMap);
         }
 
         let BotName = Version.isMiao ? 'Miao-Yunzai' : Version.isTrss ? 'TRSS-Yunzai' : 'Yunzai-Bot'
