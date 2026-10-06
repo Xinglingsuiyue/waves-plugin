@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
+import Uid from "../components/Uid.js";
 import Render from '../components/Render.js';
 import pLimit from 'p-limit';
 import sharp from 'sharp';
@@ -130,6 +131,7 @@ export class Sanity extends plugin {
         }
 
         const waves = new Waves();
+        const maskMap = await Uid.getMaskMap();
         let errorMessages = [];
         let deleteroleId = [];
         let imageBuffers = [];
@@ -139,7 +141,7 @@ export class Sanity extends plugin {
             const usability = await waves.isAvailable(account.serverId, account.roleId, account.token, account.did ? account.did : '');
 
             if (!usability) {
-                errorMessages.push(`账号 ${account.roleId} 的Token已失效\n请重新登录Token`);
+                errorMessages.push(Uid.maskText(`账号 ${account.roleId} 的Token已失效\n请重新登录Token`, maskMap));
                 deleteroleId.push(account.roleId);
                 continue;
             }
@@ -226,6 +228,7 @@ export class Sanity extends plugin {
                 }
 
                 const waves = new Waves();
+                const maskMap = await Uid.getMaskMap();
                 let data = [];
                 let deleteroleId = [];
 
@@ -233,7 +236,7 @@ export class Sanity extends plugin {
                     const usability = await waves.isAvailable(account.serverId, account.roleId, account.token, account.did ? account.did : '');
 
                     if (!usability) {
-                        data.push({ message: `账号 ${account.roleId} 的Token已失效\n请重新登录Token` });
+                        data.push({ message: Uid.maskText(`账号 ${account.roleId} 的Token已失效\n请重新登录Token`, maskMap) });
                         deleteroleId.push(account.roleId);
                         continue;
                     }
@@ -250,7 +253,7 @@ export class Sanity extends plugin {
                     const threshold = await redis.get(`Yunzai:waves:sanity_threshold:${userId}`) || result.data.energyData.total;
                     const isFull = result.data.energyData.cur >= threshold;
                     if (isFull && !isPushed) {
-                        data.push({ message: `漂泊者${result.data.roleName}(${result.data.roleId})，你的结晶波片已经恢复至 ${threshold} 了哦~` })
+                        data.push({ message: Uid.maskText(`漂泊者${result.data.roleName}(${result.data.roleId})，你的结晶波片已经恢复至 ${threshold} 了哦~`, maskMap) })
                         await redis.set(key, 'true');
                     } else if (!isFull && isPushed) {
                         await redis.del(key);

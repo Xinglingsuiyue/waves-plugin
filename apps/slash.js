@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
+import Uid from "../components/Uid.js";
 import Render from '../components/Render.js';
 import HaixuRankUtil from '../utils/HaixuRankUtil.js';
 import { HaixuRanking } from './HaixuRanking.js';
@@ -88,6 +89,7 @@ export class Slash extends plugin {
     async slash(e) {
         if (e.at) e.user_id = e.at;
         const waves = new Waves();
+        const maskMap = await Uid.getMaskMap();
 
         let [, type, roleId] = e.msg.match(this.rule[0].reg);
 
@@ -99,7 +101,7 @@ export class Slash extends plugin {
             
             const usability = await waves.isAvailable(publicCookie.serverId, roleId, publicCookie.token);
             if (!usability) {
-                return await e.reply(`账号 ${roleId} 不可用或Token已失效`);
+                return await e.reply(Uid.maskText(`账号 ${roleId} 不可用或Token已失效`, maskMap));
             }
 
             publicCookie.roleId = roleId;
@@ -118,7 +120,7 @@ export class Slash extends plugin {
                 
                 const usability = await waves.isAvailable(publicCookie.serverId, bindUid, publicCookie.token);
                 if (!usability) {
-                    return await e.reply(`绑定的账号 ${bindUid} 不可用或Token已失效`);
+                    return await e.reply(Uid.maskText(`绑定的账号 ${bindUid} 不可用或Token已失效`, maskMap));
                 }
 
                 publicCookie.roleId = bindUid;
@@ -203,11 +205,11 @@ export class Slash extends plugin {
             const msg = errorMessages.length > 0
                 ? errorMessages.join('\n\n')
                 : '没有获取到有效的冥歌海墟数据';
-            return await e.reply(msg);
+            return await e.reply(Uid.maskText(msg, maskMap));
         }
 
         if (errorMessages.length > 0) {
-            await e.reply(errorMessages.join('\n\n'));
+            await e.reply(Uid.maskText(errorMessages.join('\n\n'), maskMap));
         }
 
         let finalImage = null;
@@ -235,6 +237,7 @@ export class Slash extends plugin {
     }
 
     async processData(e, waves, type, cookie, uid, isOther) {
+        const maskMap = await Uid.getMaskMap();
         const [baseData, slashData] = await Promise.all([
             waves.getBaseData(cookie.serverId, uid, cookie.token),
             isOther 
@@ -249,16 +252,16 @@ export class Slash extends plugin {
         if (!slashData.data || !slashData.data.difficultyList || 
             !Array.isArray(slashData.data.difficultyList) || 
             slashData.data.difficultyList.length === 0) {
-            return await e.reply(`账号 ${uid} 没有可用的海墟数据`);
+            return await e.reply(Uid.maskText(`账号 ${uid} 没有可用的海墟数据`, maskMap));
         }
 
         if (slashData.data.isUnlock === false) {
-            return await e.reply(`账号 ${uid} 尚未解锁冥歌海墟`);
+            return await e.reply(Uid.maskText(`账号 ${uid} 尚未解锁冥歌海墟`, maskMap));
         }
 
         const renderData = await this.formatData(slashData.data, baseData.data, type, e, isOther);
         if (!renderData) {
-            return await e.reply(`账号 ${uid} 数据格式化失败`);
+            return await e.reply(Uid.maskText(`账号 ${uid} 数据格式化失败`, maskMap));
         }
 
         const image = await Render.render('Template/slash/slash', renderData, {

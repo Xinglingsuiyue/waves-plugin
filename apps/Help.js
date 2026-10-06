@@ -145,6 +145,11 @@ export class Help extends plugin {
                         "desc": "设置体力阈值"
                     },
                     {
+                        "icon": 40,
+                        "title": "~开启/关闭UID",
+                        "desc": "设置查询结果中UID的显示方式"
+                    },
+                    {
                         "icon": 69,
                         "title": "~抽卡记录",
                         "desc": "查看抽卡记录"

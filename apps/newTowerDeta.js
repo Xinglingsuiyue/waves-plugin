@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js';
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
+import Uid from "../components/Uid.js";
 import Render from '../components/Render.js';
 import MatrixRankUtil from '../utils/MatrixRankUtil.js';
 import { MatrixRanking } from './MatrixRanking.js';
@@ -22,6 +23,7 @@ export class NewTowerDeta extends plugin {
     async newTowerDeta(e) {
         if (e.at) e.user_id = e.at;
         const waves = new Waves();
+        const maskMap = await Uid.getMaskMap();
         let [, , roleId] = e.msg.match(this.rule[0].reg);
 
         if (roleId) {
@@ -32,7 +34,7 @@ export class NewTowerDeta extends plugin {
 
             const usability = await waves.isAvailable(publicCookie.serverId, roleId, publicCookie.token, publicCookie.did);
             if (!usability) {
-                return await e.reply(`账号 ${roleId} 不可用或Token已失效`);
+                return await e.reply(Uid.maskText(`账号 ${roleId} 不可用或Token已失效`, maskMap));
             }
 
             publicCookie.roleId = roleId;
@@ -107,6 +109,10 @@ export class NewTowerDeta extends plugin {
                 Config.setUserData(e.user_id, newAccountList);
             }
 
+            for (const item of data) {
+                if (typeof item.message === 'string') item.message = Uid.maskText(item.message, maskMap);
+            }
+
             if (data.length === 1) {
                 await e.reply(data[0].message);
             } else if (data.length > 1) {
@@ -126,7 +132,7 @@ export class NewTowerDeta extends plugin {
 
             const usability = await waves.isAvailable(publicCookie.serverId, bindUid, publicCookie.token, publicCookie.did);
             if (!usability) {
-                return await e.reply(`绑定的账号 ${bindUid} 不可用或Token已失效`);
+                return await e.reply(Uid.maskText(`绑定的账号 ${bindUid} 不可用或Token已失效`, maskMap));
             }
 
             publicCookie.roleId = bindUid;
@@ -137,6 +143,7 @@ export class NewTowerDeta extends plugin {
     }
 
     async processData(e, waves, cookie, uid, isOther) {
+        const maskMap = await Uid.getMaskMap();
         const [baseData, matrixData] = await Promise.all([
             waves.getBaseData(cookie.serverId, uid, cookie.token, cookie.did),
             isOther
@@ -149,7 +156,7 @@ export class NewTowerDeta extends plugin {
         }
 
         if (!matrixData.data || matrixData.data.isUnlock === false) {
-            return await e.reply(`账号 ${uid} 尚未解锁终焉矩阵`);
+            return await e.reply(Uid.maskText(`账号 ${uid} 尚未解锁终焉矩阵`, maskMap));
         }
 
         const renderData = await this.formatData(
@@ -161,7 +168,7 @@ export class NewTowerDeta extends plugin {
         );
 
         if (!renderData) {
-            return await e.reply(`账号 ${uid} 数据格式化失败`);
+            return await e.reply(Uid.maskText(`账号 ${uid} 数据格式化失败`, maskMap));
         }
 
         const image = await Render.render('Template/newTowerDeta/newTowerDeta', renderData, {

@@ -1,5 +1,6 @@
 import plugin from "../../../lib/plugins/plugin.js"
 import Config from "../components/Config.js"
+import Uid from "../components/Uid.js"
 
 export class Setting extends plugin {
     constructor() {
@@ -27,6 +28,10 @@ export class Setting extends plugin {
                 {
                     reg: "^(?:～|~|鸣潮)(?:波片|体力)阈值(.*)$",
                     fnc: "setThreshold"
+                },
+                {
+                    reg: "^(?:～|~|鸣潮)(开启|关闭)[Uu][Ii][Dd]$",
+                    fnc: "setUidDisplay"
                 }
             ]
         })
@@ -188,5 +193,16 @@ export class Setting extends plugin {
         await redis.set(`Yunzai:waves:sanity_threshold:${e.user_id}`, threshold)
         await e.reply(`波片阈值已设置为 ${threshold}，使用[~开启体力推送]后，达到该设定值后会向您推送提醒哦`, true);
         return true
+    }
+
+    async setUidDisplay(e) {
+        const [, action] = e.msg.match(this.rule[5].reg);
+        const hidden = action === '关闭';
+        await Uid.setHidden(e.user_id, hidden);
+
+        if (hidden) {
+            return e.reply("已关闭UID显示", true);
+        }
+        return e.reply("已开启UID显示", true);
     }
 }

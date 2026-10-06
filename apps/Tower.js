@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Waves from "../components/Code.js";
 import Config from "../components/Config.js";
+import Uid from "../components/Uid.js";
 import Render from '../components/Render.js';
 import sharp from 'sharp';
 
@@ -87,6 +88,7 @@ export class TowerInfo extends plugin {
     async tower(e) {
         if (e.at) e.user_id = e.at;
         const waves = new Waves();
+        const maskMap = await Uid.getMaskMap();
 
         let [, key, roleId] = e.msg.match(this.rule[0].reg)
 
@@ -109,7 +111,7 @@ export class TowerInfo extends plugin {
             const Mapping = { '稳定': 1, '实验': 2, '深境': 3, '超载': 4 };
             if (!key) key = '深境';
             if (!towerData.data.difficultyList.some(item => item.difficulty === Mapping[key] && item.towerAreaList.length > 0)) {
-                return await e.reply(`账号 ${roleId} 没有${key}区数据`);
+                return await e.reply(Uid.maskText(`账号 ${roleId} 没有${key}区数据`, maskMap));
             }
             
             let leftTime = '未知';
@@ -163,7 +165,7 @@ export class TowerInfo extends plugin {
             const usability = await waves.isAvailable(account.serverId, account.roleId, account.token);
 
             if (!usability) {
-                errorMessages.push(`账号 ${account.roleId} 的Token已失效\n请重新登录Token`);
+                errorMessages.push(Uid.maskText(`账号 ${account.roleId} 的Token已失效\n请重新登录Token`, maskMap));
                 deleteroleId.push(account.roleId);
                 continue;
             }
@@ -174,14 +176,14 @@ export class TowerInfo extends plugin {
             ]);
 
             if (!baseData.status || !towerData.status) {
-                errorMessages.push(`账号 ${account.roleId}: ${baseData.msg || towerData.msg}`);
+                errorMessages.push(Uid.maskText(`账号 ${account.roleId}: ${baseData.msg || towerData.msg}`, maskMap));
                 continue;
             }
 
             const Mapping = { '稳定': 1, '实验': 2, '深境': 3, '超载': 4 };
             if (!key) key = '深境';
             if (!towerData.data.difficultyList.some(item => item.difficulty === Mapping[key] && item.towerAreaList.length > 0)) {
-                errorMessages.push(`账号 ${account.roleId} 没有${key}区数据`);
+                errorMessages.push(Uid.maskText(`账号 ${account.roleId} 没有${key}区数据`, maskMap));
                 continue;
             }
             

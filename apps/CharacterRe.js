@@ -4,6 +4,7 @@ import { pluginResources } from '../model/path.js';
 import Wiki from '../components/Wiki.js';
 import Render from '../components/Render.js';
 import Config from '../components/Config.js';
+import Uid from '../components/Uid.js';
 import Waves from "../components/Code.js";
 import path from 'path';
 import fs from 'fs';
@@ -45,6 +46,8 @@ export class PhantomReplace extends plugin {
         const accounts = await waves.getValidAccount(e);
         if (!accounts) return;
 
+        const maskMap = await Uid.getMaskMap();
+
         const wiki = new Wiki();
         const targetName = await wiki.getAlias(roleAName.trim());
         const sourceName = await wiki.getAlias(roleBName.trim());
@@ -62,28 +65,28 @@ export class PhantomReplace extends plugin {
             const roleData = await waves.getRoleData(serverId, uid, token, did);
 
             if (!roleData.status) {
-                data.push({ message: `UID ${uid}: ${roleData.msg}` });
+                data.push({ message: Uid.maskText(`UID ${uid}: ${roleData.msg}`, maskMap) });
                 return;
             }
 
             // 查找角色B
             const sourceChar = roleData.data.roleList.find(role => role.roleName === sourceNameForFile);
             if (!sourceChar) {
-                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${sourceName}` });
+                data.push({ message: Uid.maskText(`UID: ${uid} 还未拥有共鸣者 ${sourceName}`, maskMap) });
                 return;
             }
 
             // 获取角色B的详细数据
             const sourceRoleDetail = await waves.getRoleDetail(serverId, uid, sourceChar.roleId, token, did);
             if (!sourceRoleDetail.status || !sourceRoleDetail.data.role) {
-                data.push({ message: `UID: ${uid} :查询信息失败，请检查库街区数据终端中对应板块的对外展示开关是否打开` });
+                data.push({ message: Uid.maskText(`UID: ${uid} :查询信息失败，请检查库街区数据终端中对应板块的对外展示开关是否打开`, maskMap) });
                 return;
             }
 
             // 检查角色B是否有声骸数据
             const sourcePhantomList = sourceRoleDetail.data.phantomData?.equipPhantomList || [];
             if (sourcePhantomList.length === 0) {
-                data.push({ message: `UID: ${uid} 还未拥有共鸣者 ${sourceName} ` });
+                data.push({ message: Uid.maskText(`UID: ${uid} 还未拥有共鸣者 ${sourceName} `, maskMap) });
                 return;
             }
 
