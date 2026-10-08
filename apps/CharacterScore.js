@@ -100,8 +100,18 @@ const VALID_STAT_NAMES = new Set([
 ]);
 
 function toCanonicalStatName(name) {
-    const n = cleanAttributeName(String(name || '')).replace(/\s+/g, '');
-    return VALID_STAT_NAMES.has(n) ? n : null;
+    const n = cleanAttributeName(String(name || '')).replace(/[\s+＋\-—·.。,，:：]/g, '');
+    if (!n) return null;
+    if (VALID_STAT_NAMES.has(n)) return n;
+    let best = null;
+    for (const v of VALID_STAT_NAMES) {
+        const idx = n.indexOf(v);
+        if (idx === -1) continue;
+        if (idx <= 1 && n.length - idx - v.length <= 1) {
+            if (!best || v.length > best.length) best = v;
+        }
+    }
+    return best;
 }
 
 function isValidStatName(name) {
@@ -180,6 +190,11 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/侬/g, ''],
+        [/浓/g, ''],
+        [/茶/g, ''],
+        [/ズ/g, ''],
+        [/異/g, '暴'],
         [/簽/g, ''],
         [/發/g, ''],
         [/延迟/g, ''],
@@ -580,8 +595,9 @@ function extractPhantomDataFromOCR(rawText) {
 
         // 识别属性名：只有白名单内的词条名才进入 pendingAttrs，
         // 避免套装名/技能描述占用后面的数值导致错位
-        if (/[\u4e00-\u9fa5]/.test(line) && !/\d/.test(line) && isValidStatName(line)) {
-            pendingAttrs.push(line);
+        if (/[\u4e00-\u9fa5]/.test(line) && !/\d/.test(line)) {
+            const canon = toCanonicalStatName(line);
+            if (canon) pendingAttrs.push(canon);
         }
     }
 
@@ -589,11 +605,13 @@ function extractPhantomDataFromOCR(rawText) {
     for (let i = otherPairs.length - 1; i >= 0; i--) {
         const pair = otherPairs[i];
         // 白名单：属性名不是合法词条（如套装名）直接丢弃
-        if (!isValidStatName(pair.attributeName)) {
+        const canonName = toCanonicalStatName(pair.attributeName);
+        if (!canonName) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '非词条属性名:', pair.attributeName, pair.attributeValue);
             otherPairs.splice(i, 1);
             continue;
         }
+        pair.attributeName = canonName;
         // 过滤过长的属性
         if (pair.attributeName.length > 15) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '过长属性名:', pair.attributeName);
@@ -609,9 +627,12 @@ function extractPhantomDataFromOCR(rawText) {
     }
 
     for (let i = mainPairs.length - 1; i >= 0; i--) {
-        if (!isValidStatName(mainPairs[i].attributeName)) {
+        const canonMain = toCanonicalStatName(mainPairs[i].attributeName);
+        if (!canonMain) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '非词条属性名(main):', mainPairs[i].attributeName);
             mainPairs.splice(i, 1);
+        } else {
+            mainPairs[i].attributeName = canonMain;
         }
     }
 
