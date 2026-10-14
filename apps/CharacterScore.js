@@ -107,7 +107,8 @@ function toCanonicalStatName(name) {
     for (const v of VALID_STAT_NAMES) {
         const idx = n.indexOf(v);
         if (idx === -1) continue;
-        if (idx <= 1 && n.length - idx - v.length <= 1) {
+        const tail = n.slice(idx + v.length);
+        if (idx <= 1 && (tail.length <= 1 || (tail.length <= 4 && /加成$/.test(tail) && /加成$/.test(v)))) {
             if (!best || v.length > best.length) best = v;
         }
     }
@@ -413,15 +414,15 @@ function extractPhantomDataFromOCR(rawText) {
         [/衍射(?![\u4e00-\u9fa5])/g, '衍射伤害加成'],
         [/妨缷/g, '防御'],
         [/防御百分比/g, '防御百分比'],
-        [/重击(?!伤害加成)/g, '重击伤害加成'],
+        [/重击(?!伤害加成)(?:[\u4e00-\u9fa5]{1,3}加成)?/g, '重击伤害加成'],
         [/重击伤古如成/g, '重击伤害加成'],
         [/垂击/g, '重击'],
         [/双扱/g, '双极'],
         [/攻击百分比/g, '攻击百分比'],
         [/生命百分比/g, '生命百分比'],
         [/防御百分比/g, '防御百分比'],
-        [/共鸣技能(?!伤害加成)/g, '共鸣技能伤害加成'],
-        [/共鸣解放(?!伤害加成)/g, '共鸣解放伤害加成'],
+        [/共鸣技能(?!伤害加成)(?:[\u4e00-\u9fa5]{1,3}加成)?/g, '共鸣技能伤害加成'],
+        [/共鸣解放(?!伤害加成)(?:[\u4e00-\u9fa5]{1,3}加成)?/g, '共鸣解放伤害加成'],
     ];
 
     let text = rawText;
