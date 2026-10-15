@@ -55,6 +55,101 @@ function getOcrKeys() {
     return [];
 }
 
+const MAX_PHANTOMS = 5;
+
+async function requestOcr(buffer, mimeType, apikey, overlay = false) {
+    const base64Image = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const params = {
+        apikey,
+        base64Image,
+        language: 'chs',
+        OCREngine: '2',
+        scale: 'true',
+        detectOrientation: 'true'
+    };
+    if (overlay) params.isOverlayRequired = 'true';
+    const res = await fetch('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        body: new URLSearchParams(params),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    return await res.json();
+}
+
+function detectPanelSplitX(json, imgWidth) {
+    const lines = json?.ParsedResults?.[0]?.TextOverlay?.Lines;
+    if (!Array.isArray(lines) || !imgWidth) return null;
+
+    const boxes = [];
+    for (const ln of lines) {
+        const words = Array.isArray(ln.Words) ? ln.Words : [];
+        if (!words.length) continue;
+        const left = Math.min(...words.map(w => w.Left));
+        const right = Math.max(...words.map(w => w.Left + w.Width));
+        boxes.push({ text: String(ln.LineText || '').trim(), left, right });
+    }
+
+    const anchors = boxes
+        .filter(b => /声骸技能/.test(b.text) || /^COST\s*[134]$/i.test(b.text))
+        .map(b => b.left)
+        .sort((a, b) => a - b);
+    if (anchors.length < 2) return null;
+
+    const clusters = [];
+    for (const x of anchors) {
+        const last = clusters[clusters.length - 1];
+        if (last && x - last.max < imgWidth * 0.25) last.max = x;
+        else clusters.push({ min: x, max: x });
+    }
+    if (clusters.length < 2) return null;
+
+    const xR = clusters[1].min;
+    const leftPanelRight = Math.max(
+        ...boxes.filter(b => b.left < xR - imgWidth * 0.01).map(b => b.right)
+    );
+    let splitX = Number.isFinite(leftPanelRight) && leftPanelRight < xR
+        ? (leftPanelRight + xR) / 2
+        : xR - imgWidth * 0.02;
+
+    if (!(splitX > imgWidth * 0.2 && splitX < imgWidth * 0.8)) {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[双声骸]'), `切分坐标 ${splitX} 不合理，退回到图片正中间`);
+        splitX = imgWidth / 2;
+    }
+    return Math.round(splitX);
+}
+
+async function splitImageAtX(buffer, splitX) {
+    if (!sharp) return null;
+    try {
+        const meta = await sharp(buffer).metadata();
+        const { width, height } = meta;
+        if (!width || !height) return null;
+        const parts = [];
+        const regions = [
+            { left: 0, width: splitX },
+            { left: splitX, width: width - splitX }
+        ];
+        for (const r of regions) {
+            let img = sharp(buffer).extract({ left: r.left, top: 0, width: r.width, height });
+            if (r.width < 900) img = img.resize({ width: Math.round(r.width * 2) });
+            let out = await img.png().toBuffer();
+            let mime = 'image/png';
+            if (out.length > MAX_OCR_BYTES) {
+                const c = await compressImageUnderLimit(out, MAX_OCR_BYTES);
+                if (!c) return null;
+                out = c;
+                mime = 'image/jpeg';
+            }
+            parts.push({ buffer: out, mime });
+        }
+        return parts;
+    } catch (err) {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.red('拆分双声骸图片失败:'), logger.red(err));
+        return null;
+    }
+}
+
+
 let _ocrKeyIndex = 0;
 
 
@@ -191,6 +286,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/綦/g, '暴'],
         [/黑/g, '暴'],
         [/侬/g, ''],
         [/浓/g, ''],
@@ -1006,6 +1102,7 @@ export class CharacterScore extends plugin {
 
         // ====================== OCR识别图片 ======================
         for (let idx = 0; idx < imagesToProcess.length; idx++) {
+            if (ocrResults.length >= MAX_PHANTOMS) break;
             const rolePicUrl = imagesToProcess[idx];
 
             let ocrText = '';
@@ -1034,23 +1131,8 @@ export class CharacterScore extends plugin {
                     }
                 }
 
-                const base64Image = `data:${mimeType};base64,${buffer.toString('base64')}`;
+                const json = await requestOcr(buffer, mimeType, currentOcrKey, !!sharp);
 
-                const res = await fetch('https://api.ocr.space/parse/image', {
-                    method: 'POST',
-                    body: new URLSearchParams({
-                        apikey: currentOcrKey,
-                        base64Image,
-                        language: 'chs',
-                        OCREngine: '2',
-                        scale: 'true',
-                        detectOrientation: 'true'
-                    }),
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
-
-                const json = await res.json();
-                
                 // 调试日志：输出OCR API完整响应
                 logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), `第${idx + 1}张图片OCR响应:`);
                 logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'OCRExitCode:', json.OCRExitCode);
@@ -1061,32 +1143,65 @@ export class CharacterScore extends plugin {
                     logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedText存在:', !!json.ParsedResults[0].ParsedText);
                     logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedText前100字符:', json.ParsedResults[0].ParsedText?.substring(0, 100)?.replace(/\n/g, '\\n'));
                 }
-                
+
+                // 把一段 OCR 文本解析成声骸并登记结果
+                const pushPhantom = (text, label) => {
+                    const data = extractPhantomDataFromOCR(text);
+                    let summary = `✅ ${label}识别完成\n`;
+                    summary += `声骸: ${data.name || '未知'}\n`;
+                    summary += `等级: ${data.level || '未知'}\n`;
+                    if (data.mainStats.length > 0) {
+                        summary += `主词条: ${data.mainStats[0].attributeName} ${data.mainStats[0].attributeValue}\n`;
+                    }
+                    if (data.mainStats.length > 1) {
+                        summary += `次词条: ${data.mainStats[1].attributeName} ${data.mainStats[1].attributeValue}\n`;
+                    }
+                    summary += `副词条(${data.subStats.length}条):\n`;
+                    data.subStats.forEach((stat, i) => {
+                        summary += `  ${i + 1}. ${stat.attributeName} ${stat.attributeValue}\n`;
+                    });
+                    ocrResults.push({ index: ocrResults.length, phantomData: data, summary });
+                    forwardMessages.push({ message: summary, nickname: e.bot?.nickname || 'Bot' });
+                };
+
                 if (json.ParsedResults?.[0]?.ParsedText) {
                     ocrText = json.ParsedResults[0].ParsedText.trim();
-                    phantomData = extractPhantomDataFromOCR(ocrText);
-                    
-                    let summary = `✅ 第 ${idx + 1}/${imagesToProcess.length} 张图片识别完成\n`;
-                    summary += `声骸: ${phantomData.name || '未知'}\n`;
-                    summary += `等级: ${phantomData.level || '未知'}\n`;
-                    if (phantomData.mainStats.length > 0) {
-                        summary += `主词条: ${phantomData.mainStats[0].attributeName} ${phantomData.mainStats[0].attributeValue}\n`;
+
+                    // 检测一张图里是否并排放了两个声骸面板
+                    let splitParts = null;
+                    if (sharp && ocrResults.length < MAX_PHANTOMS - 1) {
+                        try {
+                            const meta = await sharp(buffer).metadata();
+                            const splitX = detectPanelSplitX(json, meta.width);
+                            if (splitX) {
+                                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[双声骸]'), `第${idx + 1}张图片检测到两个声骸面板，在 x=${splitX}/${meta.width} 处拆分`);
+                                splitParts = await splitImageAtX(buffer, splitX);
+                            }
+                        } catch (err) {
+                            logger.mark(logger.blue('[WAVES 评分]'), logger.red('[双声骸] 检测失败:'), logger.red(err));
+                        }
                     }
-                    if (phantomData.mainStats.length > 1) {
-                        summary += `次词条: ${phantomData.mainStats[1].attributeName} ${phantomData.mainStats[1].attributeValue}\n`;
+
+                    if (splitParts) {
+                        const sides = ['左', '右'];
+                        for (let k = 0; k < splitParts.length; k++) {
+                            if (ocrResults.length >= MAX_PHANTOMS) break;
+                            const label = `第 ${idx + 1}/${imagesToProcess.length} 张图片(${sides[k]})`;
+                            try {
+                                const subJson = await requestOcr(splitParts[k].buffer, splitParts[k].mime, getNextOcrKey(), false);
+                                const subText = subJson.ParsedResults?.[0]?.ParsedText?.trim();
+                                if (subText) {
+                                    pushPhantom(subText, label);
+                                } else {
+                                    forwardMessages.push({ message: `❌ ${label}未识别到文字`, nickname: e.bot?.nickname || 'Bot' });
+                                }
+                            } catch (err) {
+                                forwardMessages.push({ message: `❌ ${label}处理出错: ${err.message}`, nickname: e.bot?.nickname || 'Bot' });
+                            }
+                        }
+                    } else {
+                        pushPhantom(ocrText, `第 ${idx + 1}/${imagesToProcess.length} 张图片`);
                     }
-                    summary += `副词条(${phantomData.subStats.length}条):\n`;
-                    phantomData.subStats.forEach((stat, i) => {
-                        summary += `  ${i+1}. ${stat.attributeName} ${stat.attributeValue}\n`;
-                    });
-                    
-                    ocrResults.push({
-                        index: idx,
-                        phantomData: phantomData,
-                        summary: summary
-                    });
-                    
-                    forwardMessages.push({ message: summary, nickname: e.bot?.nickname || 'Bot' });
                 } else if (json.ErrorMessage) {
                     const errMsg = `❌ 第 ${idx + 1} 张图片识别失败: ${json.ErrorMessage.join('; ')}`;
                     forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
