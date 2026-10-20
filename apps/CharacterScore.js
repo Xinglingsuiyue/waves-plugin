@@ -426,6 +426,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/51%/g, ''],
         [/書/g, '害'],
         [/政击/g, '攻击'],
+        [/[斑玫玟]击/g, '攻击'],
         [/(?<![\d+])25(?!\d)/g, ''],
         [/生前/g, '生命'],
         [/焱/g, ''],
@@ -787,8 +788,6 @@ function extractPhantomDataFromOCR(rawText) {
             continue;
         }
 
-        // 识别属性名：只有白名单内的词条名才进入 pendingAttrs，
-        // 避免套装名/技能描述占用后面的数值导致错位
         if (/[\u4e00-\u9fa5]/.test(line) && !/\d/.test(line)) {
             const canon = toCanonicalStatName(line);
             if (canon) pendingAttrs.push(canon);
