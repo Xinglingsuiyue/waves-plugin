@@ -262,6 +262,99 @@ function normalizeNumber(line) {
     return line;
 }
 
+function parseTuningResultScreen(rawText) {
+    const LEVEL_RE = /(?:Lv|L)\.?\s*(\d{1,2})/gi;
+    const levelMatches = [...rawText.matchAll(LEVEL_RE)];
+    const hasTitle = /调谐成功|調諧成功/.test(rawText);
+    const hasHint = /点击任意位置|击任意位置/.test(rawText) && levelMatches.length >= 2;
+    if (!hasTitle && !hasHint) return null;
+
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const levelNumsInOrder = [];
+    const names = [];
+    let values = [];
+    for (const line of lines) {
+        if (/调谐成功|調諧成功|任意位置|特征码|特徵碼/.test(line)) continue;
+        if (/^max$/i.test(line)) continue;
+
+        // 等级行
+        const lvLine = line.match(/(?:Lv|L)\.?\s*(\d{1,2})/i);
+        if (lvLine) { levelNumsInOrder.push(lvLine[1]); continue; }
+        if (!/[\u4e00-\u9fa5%％]/.test(line) && !/\d\.\d/.test(line)) {
+            const nums = line.match(/\d+/g) || [];
+            if (nums.length === 1 && parseInt(nums[0], 10) >= 1 && parseInt(nums[0], 10) <= 25) {
+                levelNumsInOrder.push(nums[0]);
+                continue;
+            }
+        }
+
+        const namePart = line.replace(/[\d.%％▸▶►>→\-+＋\s]/g, '');
+        const canon = namePart ? toCanonicalStatName(namePart) : null;
+        if (canon) names.push(canon);
+
+        let valueText = line;
+        let lastCjk = -1;
+        for (let i = line.length - 1; i >= 0; i--) {
+            if (/[\u4e00-\u9fa5]/.test(line[i])) { lastCjk = i; break; }
+        }
+        if (lastCjk !== -1) valueText = line.slice(lastCjk + 1);
+
+        for (const m of valueText.matchAll(/(\d+(?:\.\d+)?)\s*[%％]?/g)) {
+            const raw = m[0].replace(/\s+/g, '').replace('％', '%');
+            if (!raw.includes('%') && !raw.includes('.') && m[1].length > 4) continue;
+            if (isNaN(parseFloat(m[1]))) continue;
+            values.push(raw);
+        }
+    }
+    const level = levelNumsInOrder.length
+        ? `+${levelNumsInOrder[levelNumsInOrder.length - 1]}`
+        : (levelMatches.length ? `+${levelMatches[levelMatches.length - 1][1]}` : '');
+    const levelNums = levelNumsInOrder.length ? levelNumsInOrder : levelMatches.map(m => m[1]);
+
+    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[调谐界面]'), '属性名:', JSON.stringify(names), '数值:', JSON.stringify(values), '等级:', level);
+    if (names.length < 2) return null;
+
+    if (values.length !== names.length + 2 && values.length !== names.length) {
+        const rest = [...levelNums];
+        const cleaned = [];
+        for (const v of values) {
+            const i = rest.indexOf(v);
+            if (i !== -1) { rest.splice(i, 1); continue; }
+            cleaned.push(v);
+        }
+        if (cleaned.length === names.length + 2 || cleaned.length === names.length) values = cleaned;
+    }
+
+    const isFlat = v => !v.includes('%') && parseFloat(v) >= 100;
+    let afterValues;
+    if (values.length === names.length + 2) {
+        const columnMode = isFlat(values[1]);
+        const main1 = columnMode ? values[2] : values[1];
+        afterValues = [main1, values[3], ...values.slice(4)];
+    } else if (values.length === names.length) {
+        afterValues = values;
+    } else {
+        logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[调谐界面]'), `名称数(${names.length})与数值数(${values.length})对不上，回退到通用解析`);
+        return null;
+    }
+
+    const pairs = names.map((n, i) => ({ attributeName: n, attributeValue: afterValues[i] }));
+    const phantomData = { name: '', level, mainStats: pairs.slice(0, 2), subStats: [] };
+
+    // 副词条：攻击/生命/防御 带 % 的是百分比词条
+    phantomData.subStats = pairs.slice(2, 7).map(p => {
+        if (p.attributeValue.includes('%') && ['攻击', '生命', '防御'].includes(p.attributeName)) {
+            return { ...p, attributeName: p.attributeName + '百分比' };
+        }
+        return p;
+    });
+
+    const cost = getCostByMainStat(phantomData.mainStats[0].attributeName, phantomData.mainStats[0].attributeValue);
+    phantomData.name = `未识别声骸-${cost}cost`;
+    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[调谐界面]'), '识别结果:', JSON.stringify(phantomData));
+    return phantomData;
+}
+
 //提取声骸词条信息
 function extractPhantomDataFromOCR(rawText) {
     const phantomData = {
@@ -275,7 +368,10 @@ function extractPhantomDataFromOCR(rawText) {
         logger.mark(logger.blue('[WAVES 评分]'), logger.red('[OCR调试]'), 'rawText 无效，不是字符串类型');
         return phantomData;
     }
-    
+
+    const tuned = parseTuningResultScreen(rawText);
+    if (tuned) return tuned;
+
     logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本长度:', rawText.length);
     logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), '原始文本前200字符:', rawText.substring(0, 200).replace(/\n/g, '\\n'));
     
@@ -1029,6 +1125,24 @@ function replacePhantomStats(targetPhantom, ocrData) {
     return true;
 }
 
+const ERROR_MESSAGE_RE = /^(❌|⚠️)|暂未收录|没有找到配置|发生错误|识别失败|处理出错/;
+
+async function sendProcessMessages(e, forwardMessages) {
+    if (!Array.isArray(forwardMessages) || forwardMessages.length === 0) return 0;
+    if (!e.isGroup) {
+        const forward = await Bot.makeForwardMsg(forwardMessages);
+        await e.reply(forward);
+        return forwardMessages.length;
+    }
+    const errors = forwardMessages
+        .map(m => String(m.message || ''))
+        .filter(text => ERROR_MESSAGE_RE.test(text));
+    if (errors.length > 0) {
+        await e.reply(errors.join('\n'));
+    }
+    return errors.length;
+}
+
 export class CharacterScore extends plugin {
     constructor() {
         super({
@@ -1037,7 +1151,7 @@ export class CharacterScore extends plugin {
             priority: 1008,
             rule: [
                 {
-                    reg: "^(?:～|\~)(.*)评分",
+                    reg: "^(?:～|∽|\~)(.*)评分",
                     fnc: "characterScore"
                 }
             ]
@@ -1216,12 +1330,8 @@ export class CharacterScore extends plugin {
         }
 
         if (ocrResults.length === 0) {
-            if (forwardMessages.length > 0) {
-                if (!e.isGroup) {
-                    const forward = await Bot.makeForwardMsg(forwardMessages);
-                    await e.reply(forward);
-                }
-            } else {
+            const sent = await sendProcessMessages(e, forwardMessages);
+            if (!sent) {
                 await e.reply('未成功识别到任何声骸信息，请检查图片清晰度');
             }
             return;
@@ -1241,10 +1351,7 @@ export class CharacterScore extends plugin {
         if (!fs.existsSync(dataFilePath)) {
             const errMsg = `暂未收录【${name}】的面板数据`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-            if (!e.isGroup) {
-                const forward = await Bot.makeForwardMsg(forwardMessages);
-                await e.reply(forward);
-            }
+            await sendProcessMessages(e, forwardMessages);
             return true;
         }
 
@@ -1263,10 +1370,7 @@ export class CharacterScore extends plugin {
             if (phantomList.length === 0) {
                 const errMsg = '角色面板数据中没有找到配置';
                 forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-                if (!e.isGroup) {
-                    const forward = await Bot.makeForwardMsg(forwardMessages);
-                    await e.reply(forward);
-                }
+                await sendProcessMessages(e, forwardMessages);
                 return true;
             }
 
@@ -1365,10 +1469,7 @@ export class CharacterScore extends plugin {
             forwardMessages.push({ message: summaryMsg, nickname: e.bot?.nickname || 'Bot' });
 
             // 发送合并转发消息
-            if (!e.isGroup) {
-                const forward = await Bot.makeForwardMsg(forwardMessages);
-                await e.reply(forward);
-            }
+            await sendProcessMessages(e, forwardMessages);
 
             // ====================== 渲染评分 ======================
             const displayPhantomList = phantomList.filter(p => p.hasBeenReplaced);
@@ -1411,10 +1512,7 @@ export class CharacterScore extends plugin {
             console.error('处理评分时出错:', error);
             const errMsg = `处理【${name}】评分时发生错误：${error.message}`;
             forwardMessages.push({ message: errMsg, nickname: e.bot?.nickname || 'Bot' });
-            if (!e.isGroup) {
-                const forward = await Bot.makeForwardMsg(forwardMessages);
-                await e.reply(forward);
-            }
+            await sendProcessMessages(e, forwardMessages);
         }
         
         return true;
