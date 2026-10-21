@@ -262,11 +262,36 @@ function normalizeNumber(line) {
     return line;
 }
 
+function toCanonicalStatNameFuzzy(name) {
+    const exact = toCanonicalStatName(name);
+    if (exact) return exact;
+    const n = cleanAttributeName(String(name || '')).replace(/[\s+＋\-—·.。,，:：]/g, '');
+    const hits = new Set();
+    for (const cand of [n, n.slice(1)]) {
+        for (const v of VALID_STAT_NAMES) {
+            if (v.length < 4 || cand.length !== v.length) continue;
+            let diff = 0;
+            for (let i = 0; i < v.length; i++) if (cand[i] !== v[i]) diff++;
+            if (diff === 1) hits.add(v);
+        }
+    }
+    return hits.size === 1 ? [...hits][0] : null;
+}
+
+function inferCostForTuning(mainStats) {
+    const n1 = mainStats[0].attributeName;
+    const n2 = mainStats[1] ? mainStats[1].attributeName : '';
+    if (['暴击伤害', '暴击', '治疗效果加成'].includes(n1)) return 4;
+    if (n1.includes('伤害加成') || n1 === '共鸣效率') return 3;
+    if (n2 === '生命') return 1;
+    return getCostByMainStat(n1, mainStats[0].attributeValue);
+}
+
 function parseTuningResultScreen(rawText) {
     const LEVEL_RE = /(?:Lv|L)\.?\s*(\d{1,2})/gi;
     const levelMatches = [...rawText.matchAll(LEVEL_RE)];
-    const hasTitle = /调谐成功|調諧成功/.test(rawText);
-    const hasHint = /点击任意位置|击任意位置/.test(rawText) && levelMatches.length >= 2;
+    const hasTitle = /调.成功|調.成功/.test(rawText);
+    const hasHint = /击任意|任意.{0,2}返回/.test(rawText);
     if (!hasTitle && !hasHint) return null;
 
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -274,7 +299,7 @@ function parseTuningResultScreen(rawText) {
     const names = [];
     let values = [];
     for (const line of lines) {
-        if (/调谐成功|調諧成功|任意位置|特征码|特徵碼/.test(line)) continue;
+        if (/调.成功|調.成功|任意|返回|特征码|特徵碼/.test(line)) continue;
         if (/^max$/i.test(line)) continue;
 
         // 等级行
@@ -289,7 +314,7 @@ function parseTuningResultScreen(rawText) {
         }
 
         const namePart = line.replace(/[\d.%％▸▶►>→\-+＋\s]/g, '');
-        const canon = namePart ? toCanonicalStatName(namePart) : null;
+        const canon = namePart ? toCanonicalStatNameFuzzy(namePart) : null;
         if (canon) names.push(canon);
 
         let valueText = line;
@@ -325,7 +350,7 @@ function parseTuningResultScreen(rawText) {
         if (cleaned.length === names.length + 2 || cleaned.length === names.length) values = cleaned;
     }
 
-    const isFlat = v => !v.includes('%') && parseFloat(v) >= 100;
+    const isFlat = v => !v.includes('%') && !v.includes('.');
     let afterValues;
     if (values.length === names.length + 2) {
         const columnMode = isFlat(values[1]);
@@ -349,7 +374,7 @@ function parseTuningResultScreen(rawText) {
         return p;
     });
 
-    const cost = getCostByMainStat(phantomData.mainStats[0].attributeName, phantomData.mainStats[0].attributeValue);
+    const cost = inferCostForTuning(phantomData.mainStats);
     phantomData.name = `未识别声骸-${cost}cost`;
     logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[调谐界面]'), '识别结果:', JSON.stringify(phantomData));
     return phantomData;
@@ -382,7 +407,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
-        [/果/g, '暴'],
+        [/果(?=击)/g, '暴'],
         [/綦/g, '暴'],
         [/黑/g, '暴'],
         [/侬/g, ''],
@@ -1258,7 +1283,6 @@ export class CharacterScore extends plugin {
                     logger.mark(logger.blue('[WAVES 评分]'), logger.green('[OCR调试]'), 'ParsedText前100字符:', json.ParsedResults[0].ParsedText?.substring(0, 100)?.replace(/\n/g, '\\n'));
                 }
 
-                // 把一段 OCR 文本解析成声骸并登记结果
                 const pushPhantom = (text, label) => {
                     const data = extractPhantomDataFromOCR(text);
                     let summary = `✅ ${label}识别完成\n`;
@@ -1281,7 +1305,6 @@ export class CharacterScore extends plugin {
                 if (json.ParsedResults?.[0]?.ParsedText) {
                     ocrText = json.ParsedResults[0].ParsedText.trim();
 
-                    // 检测一张图里是否并排放了两个声骸面板
                     let splitParts = null;
                     if (sharp && ocrResults.length < MAX_PHANTOMS - 1) {
                         try {
