@@ -60,9 +60,20 @@ const Render = {
                 }
                 let resPath = data.pluResPath
                 const layoutPath = process.cwd() + '/plugins/waves-plugin/resources/common/layout/'
+
+                let avatarUrl = ''
+                if (params.isSelf) {
+                    const avatarUserId = e.at || e.user_id
+                    if (e.isGroup && e.group?.pickMember) {
+                        avatarUrl = e.group.pickMember(avatarUserId)?.getAvatarUrl?.() || ''
+                    } else {
+                        avatarUrl = e.friend?.getAvatarUrl?.() || ''
+                    }
+                }
+
                 return {
                     ...data,
-                    avatarUrl: params.isSelf && e.friend?.getAvatarUrl?.() || "",
+                    avatarUrl,
                     pluginResources,
                     _res_path: resPath,
                     _layout_path: layoutPath,
