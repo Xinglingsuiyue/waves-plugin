@@ -382,6 +382,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/＆/g, ''],
         [/&/g, ''],
         [/[，:：@。、*,•+×]/g, ' '],
+        [/果/g, '暴'],
         [/綦/g, '暴'],
         [/黑/g, '暴'],
         [/侬/g, ''],

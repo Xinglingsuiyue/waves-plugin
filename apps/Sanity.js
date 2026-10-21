@@ -125,6 +125,7 @@ export class Sanity extends plugin {
     }
 
     async sanity(e) {
+        if (e.at) e.user_id = e.at;
         let accountList = JSON.parse(await redis.get(`Yunzai:waves:users:${e.user_id}`)) || await Config.getUserData(e.user_id);
         if (!accountList || !accountList.length) {
             return await e.reply('当前没有登录任何账号，请使用[~登录]进行登录');
