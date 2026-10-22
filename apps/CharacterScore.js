@@ -406,6 +406,9 @@ function extractPhantomDataFromOCR(rawText) {
         [/MAX/gi, 'max'],
         [/＆/g, ''],
         [/&/g, ''],
+        // 数字中间的逗号是小数点被读错（"9,2%" → 9.2%），必须在下面把逗号替换成空格之前处理
+        [/(\d)[,，](\d)/g, '$1.$2'],
+        [/([\u4e00-\u9fa5])[・•･∙](?=[\u4e00-\u9fa5])/g, '$1·'],
         [/[，:：@。、*,•+×]/g, ' '],
         [/果(?=击)/g, '暴'],
         [/綦/g, '暴'],
@@ -624,13 +627,13 @@ function extractPhantomDataFromOCR(rawText) {
         [/湮灭伤害(?![加成])/g, '湮灭伤害加成'],
         [/衍射伤害(?![加成])/g, '衍射伤害加成'],
         [/共鸣效(?![率])/g, '共鸣效率'],
-        [/热熔(?![\u4e00-\u9fa5])/g, '热熔伤害加成'],
+        [/(?<!·)热熔(?![\u4e00-\u9fa5])/g, '热熔伤害加成'],
         [/多热熔/g, '热熔伤害加成'],
-        [/冷凝(?![\u4e00-\u9fa5])/g, '冷凝伤害加成'],
-        [/导电(?![\u4e00-\u9fa5])/g, '导电伤害加成'],
-        [/气动(?![\u4e00-\u9fa5])/g, '气动伤害加成'],
-        [/湮灭(?![\u4e00-\u9fa5])/g, '湮灭伤害加成'],
-        [/衍射(?![\u4e00-\u9fa5])/g, '衍射伤害加成'],
+        [/(?<!·)冷凝(?![\u4e00-\u9fa5])/g, '冷凝伤害加成'],
+        [/(?<!·)导电(?![\u4e00-\u9fa5])/g, '导电伤害加成'],
+        [/(?<!·)气动(?![\u4e00-\u9fa5])/g, '气动伤害加成'],
+        [/(?<!·)湮灭(?![\u4e00-\u9fa5])/g, '湮灭伤害加成'],
+        [/(?<!·)衍射(?![\u4e00-\u9fa5])/g, '衍射伤害加成'],
         [/妨缷/g, '防御'],
         [/防御百分比/g, '防御百分比'],
         [/重击(?!伤害加成)(?:[\u4e00-\u9fa5]{1,3}加成)?/g, '重击伤害加成'],
@@ -823,7 +826,6 @@ function extractPhantomDataFromOCR(rawText) {
     // 过滤垃圾数据
     for (let i = otherPairs.length - 1; i >= 0; i--) {
         const pair = otherPairs[i];
-        // 白名单：属性名不是合法词条（如套装名）直接丢弃
         const canonName = toCanonicalStatName(pair.attributeName);
         if (!canonName) {
             logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[过滤]'), '非词条属性名:', pair.attributeName, pair.attributeValue);
@@ -939,7 +941,7 @@ function extractPhantomDataFromOCR(rawText) {
         let corrected = { ...stat };
         
         // 规则1
-        if (isPct && val >= 6.0 && val <= 12.0) {
+        if (isPct && val >= 6.0 && val <= 15.0) {
             if (stat.attributeName === '攻击') {
                 corrected.attributeName = '攻击百分比';
                 logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[修正]'), '攻击 → 攻击百分比:', stat.attributeValue);
@@ -1305,6 +1307,7 @@ export class CharacterScore extends plugin {
                 if (json.ParsedResults?.[0]?.ParsedText) {
                     ocrText = json.ParsedResults[0].ParsedText.trim();
 
+                    // 检测一张图里是否并排放了两个声骸面板
                     let splitParts = null;
                     if (sharp && ocrResults.length < MAX_PHANTOMS - 1) {
                         try {
