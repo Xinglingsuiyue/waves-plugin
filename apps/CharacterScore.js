@@ -350,6 +350,7 @@ function parseTuningResultScreen(rawText) {
         if (cleaned.length === names.length + 2 || cleaned.length === names.length) values = cleaned;
     }
 
+    // 主词条1一定是百分比
     const isFlat = v => !v.includes('%') && !v.includes('.');
     let afterValues;
     if (values.length === names.length + 2) {
@@ -925,6 +926,22 @@ function extractPhantomDataFromOCR(rawText) {
             if (main2Idx !== -1) break;
         }
 
+        if (main2Idx === -1 && main1Idx < afterMain1.length) {
+            const next = afterMain1[main1Idx];
+            const m1Name = otherPairs[main1Idx].attributeName;
+            let costGuess = null;
+            if (['暴击伤害', '暴击', '治疗效果加成'].includes(m1Name)) costGuess = 4;
+            else if (m1Name.includes('伤害加成') || m1Name === '共鸣效率') costGuess = 3;
+            const nextIsFlat = !next.attributeValue.includes('%');
+            const expectOk = costGuess === null
+                ? ['攻击', '生命'].includes(next.attributeName)
+                : next.attributeName === '攻击';
+            if (nextIsFlat && expectOk) {
+                main2Idx = main1Idx;
+                logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[主词条2]'), '未升满级，按位置判定主词条2:', next.attributeName, next.attributeValue);
+            }
+        }
+
         if (main2Idx !== -1) {
             phantomData.mainStats.push(afterMain1[main2Idx]);
             phantomData.subStats = afterMain1.filter((_, idx) => idx !== main2Idx);
@@ -1152,6 +1169,7 @@ function replacePhantomStats(targetPhantom, ocrData) {
     return true;
 }
 
+// 发送处理过程消息
 const ERROR_MESSAGE_RE = /^(❌|⚠️)|暂未收录|没有找到配置|发生错误|识别失败|处理出错/;
 
 async function sendProcessMessages(e, forwardMessages) {
@@ -1307,7 +1325,7 @@ export class CharacterScore extends plugin {
                 if (json.ParsedResults?.[0]?.ParsedText) {
                     ocrText = json.ParsedResults[0].ParsedText.trim();
 
-                    // 检测一张图里是否并排放了两个声骸面板
+ // 检测一张图里是否并排放了两个声骸面板
                     let splitParts = null;
                     if (sharp && ocrResults.length < MAX_PHANTOMS - 1) {
                         try {
@@ -1470,7 +1488,7 @@ export class CharacterScore extends plugin {
                 }
             } catch (err) {}
 
-            // ====================== 处理漂泊者显示 ======================
+ // 处理漂泊者显示
             const roleId = roleDetail.data.role?.roleId?.toString();
             let displayName = name;
             if (name === '漂泊者' && roleId && WAVERIDER_ATTRIBUTES[roleId]) {
@@ -1497,7 +1515,7 @@ export class CharacterScore extends plugin {
             // 发送合并转发消息
             await sendProcessMessages(e, forwardMessages);
 
-            // ====================== 渲染评分 ======================
+// == 渲染评分 ==
             const displayPhantomList = phantomList.filter(p => p.hasBeenReplaced);
             const displayRoleDetail = JSON.parse(JSON.stringify(roleDetail));
             displayRoleDetail.data.phantomData.equipPhantomList = displayPhantomList;
