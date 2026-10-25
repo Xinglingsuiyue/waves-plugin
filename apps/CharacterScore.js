@@ -382,6 +382,20 @@ function parseTuningResultScreen(rawText) {
 }
 
 //提取声骸词条信息
+const SUB_PERCENT_TABLES = {
+    '暴击': ['6.3', '6.9', '7.5', '8.1', '8.7', '9.3', '9.9', '10.5'],
+    '暴击伤害': ['12.6', '13.8', '15.0', '16.2', '17.4', '18.6', '19.8', '21.0'],
+    '共鸣效率': ['6.8', '7.6', '8.4', '9.2', '10.0', '10.8', '11.6', '12.4'],
+    '防御百分比': ['8.1', '9.0', '10.0', '10.9', '11.8', '12.8', '13.8', '14.7'],
+    '__shared__': ['6.4', '7.1', '7.9', '8.6', '9.4', '10.1', '10.9', '11.6']
+};
+
+function inferSubStatByPercent(valueStr) {
+    const num = String(valueStr).replace('%', '');
+    const hits = Object.entries(SUB_PERCENT_TABLES).filter(([, arr]) => arr.includes(num)).map(([k]) => k);
+    return hits.length === 1 && hits[0] !== '__shared__' ? hits[0] : null;
+}
+
 function extractPhantomDataFromOCR(rawText) {
     const phantomData = {
         name: '',
@@ -411,6 +425,7 @@ function extractPhantomDataFromOCR(rawText) {
         [/([\u4e00-\u9fa5])[・•･∙](?=[\u4e00-\u9fa5])/g, '$1·'],
         [/[，:：@。、*,•+×]/g, ' '],
         [/生市/g, '生命'],
+        [/[牛午]命/g, '生命'],
         [/果(?=击)/g, '暴'],
         [/綦/g, '暴'],
         [/黑/g, '暴'],
@@ -816,6 +831,19 @@ function extractPhantomDataFromOCR(rawText) {
                 otherPairs.push({ attributeName: attr, attributeValue: normalizedLine });
             }
             continue;
+        }
+
+        // 属性名乱码、没有待配对名称的孤立百分比数值：上一行是识别不出的文字时，按数值表反推
+        if (isValue && pendingAttrs.length === 0 && normalizedLine.endsWith('%')) {
+            const prev = li > 0 ? remainingLines[li - 1] : '';
+            if (/[\u4e00-\u9fa5]/.test(prev) && !/\d/.test(prev) && !toCanonicalStatName(prev)) {
+                const inferred = inferSubStatByPercent(normalizedLine);
+                if (inferred) {
+                    logger.mark(logger.blue('[WAVES 评分]'), logger.yellow('[反推]'), `属性名"${prev}"无法识别，按数值 ${normalizedLine} 反推为 ${inferred}`);
+                    otherPairs.push({ attributeName: inferred, attributeValue: normalizedLine });
+                    continue;
+                }
+            }
         }
 
         if (/[\u4e00-\u9fa5]/.test(line) && !/\d/.test(line)) {
