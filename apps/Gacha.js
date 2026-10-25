@@ -4,12 +4,36 @@ import Config from "../components/Config.js";
 import Waves from "../components/Code.js";
 import Wiki from "../components/Wiki.js";
 import Render from '../components/Render.js';
+import Heybox from '../components/Heybox.js';
 import fs from 'fs';
 import YAML from 'yaml';
 import { createHash } from 'crypto';
 
 const resident = ["鉴心", "卡卡罗", "安可", "维里奈", "凌阳"];
 const residentSet = new Set(resident);
+
+const isHeyboxExport = data => data?.info?.export_app === 'Waves-Plugin-Heybox';
+
+const sortGachaList = list => list.sort((a, b) =>
+    String(a.gacha_id).localeCompare(String(b.gacha_id)) || String(b.id).localeCompare(String(a.id))
+);
+
+const oldestTimeByPool = list => {
+    const result = new Map();
+    for (const item of list) {
+        const time = result.get(item.gacha_id);
+        if (!time || item.time < time) result.set(item.gacha_id, item.time);
+    }
+    return result;
+};
+
+const keepOlderThan = (oldList, newList) => {
+    const oldest = oldestTimeByPool(newList);
+    return oldList.filter(item => {
+        const time = oldest.get(item.gacha_id);
+        return !time || item.time < time;
+    });
+};
 
 export class Gacha extends plugin {
     constructor() {
@@ -25,6 +49,10 @@ export class Gacha extends plugin {
                 {
                     reg: "^(～|~|鸣潮)导入抽卡记录$",
                     fnc: "importGacha"
+                },
+                {
+                    reg: "^(～|~|鸣潮)导入小黑盒抽卡记录(?:\\s*(\\d+))?$",
+                    fnc: "importHeyboxGacha"
                 },
                 {
                     reg: "^(～|~|鸣潮)导出抽卡记录$",
@@ -468,13 +496,18 @@ export class Gacha extends plugin {
                 })
                 .flat();
 
+                // 小黑盒导入的数据只保留游戏记录未覆盖的更早历史
+                const retainedList = isHeyboxExport(oldData)
+                    ? keepOlderThan(filteredList, json.list)
+                    : filteredList;
+
                 // 合并新旧记录并去重
-                json.list = [...json.list, ...filteredList].filter(
+                json.list = [...json.list, ...retainedList].filter(
                     (item, index, self) => index === self.findIndex(t => t.id === item.id)
                 );
 
                 // 按卡池和ID排序
-                json.list.sort((a, b) => a.gacha_id - b.gacha_id || b.id - a.id);
+                sortGachaList(json.list);
             } catch (err) {
                 logger.error('合并旧记录失败:', err);
             }
@@ -488,12 +521,90 @@ export class Gacha extends plugin {
     }
 
     async importGacha(e) {
-        if (!Config.getConfig().allow_import) return await e.reply("当前不允许导入抽卡记录，请使用[~抽卡记录]进行更新");
+        if (e.isGroup) return e.reply("请私聊导入抽卡记录")
 
-        if (e.isGroup) return e.reply("请私聊导出抽卡记录")
+        if (!Config.getConfig().allow_import) return await e.reply("当前不允许导入抽卡记录，请在锅巴配置中开启 allow_import，或使用[~抽卡记录]进行更新");
 
         this.setContext('readFile');
-        await this.reply('请发送Json文件');
+        await this.reply('请发送Json文件，或发送[~导入小黑盒抽卡记录 小黑盒ID]从小黑盒导入');
+    }
+
+    async importHeyboxGacha(e) {
+        const match = e.msg.match(this.rule[2].reg);
+        const heyboxId = match && match[2];
+        if (!heyboxId) return e.reply("请携带小黑盒ID，例：[~导入小黑盒抽卡记录 72912086]");
+
+        // 小黑盒导入只追加更早的历史记录，不会覆盖现有数据，因此不受 allow_import 限制
+        await e.reply(`正在获取小黑盒ID ${heyboxId} 的抽卡记录，请稍候...`);
+
+        let data;
+        try {
+            data = await Heybox.queryGacha(heyboxId);
+        } catch (error) {
+            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`小黑盒抽卡记录获取失败`), logger.red(error.stack || error.message));
+            return await e.reply(`获取小黑盒抽卡记录失败：${error.message || '请检查网络或稍后重试'}`);
+        }
+
+        const summary = Heybox.summarize(data);
+        if (!summary.ok) return await e.reply(`获取小黑盒抽卡记录失败：${summary.message}`);
+
+        const json = Heybox.toWWGF(data, {
+            version: JSON.parse(fs.readFileSync(`${pluginRoot}/package.json`, 'utf-8')).version,
+        });
+
+        const uid = json.info.uid;
+        if (!uid) return await e.reply('导入抽卡记录失败：小黑盒数据中未找到游戏UID');
+        if (!json.list.length) return await e.reply('导入抽卡记录失败：小黑盒中没有可导入的抽卡记录');
+
+        const exportPath = `${_path}/data/wavesGacha/${uid}_Export.json`;
+        let added = json.list.length;
+        let mergedWithExisting = false;
+
+        if (fs.existsSync(exportPath)) {
+            mergedWithExisting = true;
+            try {
+                const oldData = JSON.parse(fs.readFileSync(exportPath, 'utf-8'));
+                const anchoredPools = new Set(
+                    json.list.filter(item => item.rank_type === '5').map(item => item.gacha_id)
+                );
+                const existingOldest = oldestTimeByPool(oldData.list || []);
+                const retainedList = keepOlderThan(json.list, oldData.list || []).filter(
+                    item => anchoredPools.has(item.gacha_id) || !existingOldest.has(item.gacha_id)
+                );
+                added = retainedList.length;
+
+                sortGachaList(oldData.list || []);
+                oldData.list = [...(oldData.list || []), ...retainedList].filter(
+                    (item, index, self) => index === self.findIndex(t => t.id === item.id)
+                );
+
+                fs.writeFileSync(exportPath, JSON.stringify(oldData, null, 2));
+            } catch (error) {
+                logger.error('合并小黑盒抽卡记录失败:', error);
+                return await e.reply(`导入抽卡记录失败：现有记录文件解析错误`);
+            }
+        } else {
+            fs.writeFileSync(exportPath, JSON.stringify(json, null, 2));
+        }
+
+        await redis.set(`Yunzai:waves:gachaHistory:${e.user_id}`, uid);
+        logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`已从小黑盒导入抽卡记录`), logger.green(`${uid}_Export.json`));
+
+        const lines = [
+            `ID：${heyboxId}${summary.nickname ? `（${summary.nickname}）` : ''}`,
+            `游戏UID：${uid}`,
+            `小黑盒记录：${json.list.length} 条`,
+        ];
+        if (mergedWithExisting) {
+            lines.push(added > 0
+                ? `已合并到现有记录：新增 ${added} 条更早的历史记录`
+                : '现有抽卡记录已覆盖小黑盒的，未新增记录');
+        } else {
+            lines.push(`已导入 ${added} 条记录（小黑盒不记录四星武器，四星统计可能偏低）`);
+        }
+        lines.push('发送[~抽卡统计]即可查看');
+
+        return await e.reply(lines.join('\n'));
     }
 
     async readFile() {
@@ -556,11 +667,15 @@ export class Gacha extends plugin {
                 return hasOverlap || isOldFileRecent;
             }).flat();
 
-            json.list = [...json.list, ...filteredList].filter((item, index, self) =>
+            const retainedList = isHeyboxExport(oldData)
+                ? keepOlderThan(filteredList, json.list)
+                : filteredList;
+
+            json.list = [...json.list, ...retainedList].filter((item, index, self) =>
                 index === self.findIndex(t => t.id === item.id)
             );
 
-            json.list.sort((a, b) => a.gacha_id - b.gacha_id || b.id - a.id);
+            sortGachaList(json.list);
         }
 
         fs.writeFileSync(exportPath, JSON.stringify(json, null, 2));

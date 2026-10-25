@@ -160,6 +160,11 @@ export class Help extends plugin {
                         "desc": "导入导出抽卡记录"
                     },
                     {
+                        "icon": 76,
+                        "title": "~导入小黑盒抽卡记录",
+                        "desc": "从小黑盒导入抽卡记录"
+                    },
+                    {
                         "icon": 77,
                         "title": "~抽卡帮助",
                         "desc": "获取抽卡记录教程"
