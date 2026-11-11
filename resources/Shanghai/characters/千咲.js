@@ -1,5 +1,5 @@
-import { calcSingleDamage, calcSingleHeal, calcSingleShield } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { calcSingleDamage, calcSingleHeal, calcSingleShield, calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -35,45 +35,48 @@ function getChainUnlockedCount(roleDetailData) {
 //   S5：即刻·归无 伤害加成 +100%
 //   S6：拥有终焉的目标受异常加深 +30%、受千咲伤害 +40%
 // =============================================================
-// wuthering.gg 1 级数据
-const T = 1.9882;  // 10/1 通用系数
-const lvl = (v) => {
-  // 生成 10 级线性近似 levelMap：levelMap[L] = v * (1 + (T-1) * (L-1)/9)
-  const map = {};
-  for (let L = 1; L <= 10; L++) {
-    map[L] = v * (1 + (T - 1) * (L - 1) / 9);
-  }
-  return map;
-};
+// 库街区 wiki 技能倍率数据
 
 const CHISA_SKILLS = {
-  // 即刻·归无：1级 480% → 10级 ≈ 954.34%
+  // 即刻·归无：480.00% → 954.29%（库街区 Lv1~Lv10）
   liberation: {
     name: '即刻·归无',
     type: 'liberation',
     levelFrom: '共鸣解放',
-    levelMap: lvl(4.80)
+    levelMap: {
+      1: 4.8000, 2: 5.1936, 3: 5.5872, 4: 6.1383, 5: 6.5319,
+      6: 6.9845, 7: 7.6143, 8: 8.2440, 9: 8.8738, 10: 9.5429
+    }
   },
-  // 锯环·疾攻第三段：1级 8.04%×8 = 64.32% → 10级 ≈ 127.87%
+  // 锯环·疾攻第三段：8.04%×8 → 15.98%×8
   sawThree: {
     name: '锯环·疾攻第三段',
     type: 'normal',
     levelFrom: '共鸣回路',
-    levelMap: lvl(0.0804 * 8)
+    levelMap: {
+      1: 0.6432, 2: 0.6960, 3: 0.7488, 4: 0.8224, 5: 0.8752,
+      6: 0.9360, 7: 1.0200, 8: 1.1048, 9: 1.1888, 10: 1.2784
+    }
   },
-  // 锯环·终结：1级 25.92% + 103.68% = 129.60% → 10级 ≈ 257.66%
+  // 锯环·终结：25.92%+103.68% → 51.54%+206.13%
   sawFinish: {
     name: '锯环·终结',
     type: 'normal',
     levelFrom: '共鸣回路',
-    levelMap: lvl(0.2592 + 1.0368)
+    levelMap: {
+      1: 1.2960, 2: 1.4024, 3: 1.5087, 4: 1.6574, 5: 1.7637,
+      6: 1.8859, 7: 2.0559, 8: 2.2260, 9: 2.3960, 10: 2.5767
+    }
   },
-  // 闪避反击·解弦之眼·收弦：1级 90% → 10级 ≈ 178.94%
+  // 闪避反击·解弦之眼·收弦：90.00% → 178.93%
   dodgeXian: {
     name: '闪避反击·解弦之眼·收弦',
     type: 'normal',
-    levelFrom: '普攻',
-    levelMap: lvl(0.90)
+    levelFrom: '常态攻击',
+    levelMap: {
+      1: 0.9000, 2: 0.9738, 3: 1.0476, 4: 1.1510, 5: 1.2248,
+      6: 1.3096, 7: 1.4277, 8: 1.5458, 9: 1.6639, 10: 1.7893
+    }
   }
 };
 
@@ -106,7 +109,7 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
-function getRoleSelfBuff({ skillName, chainCount }) {
+function getRoleSelfBuff({ skillName, chainCount, enemy }) {
   const buff = {
     damageBonus: 0,
     multiplierBonus: 0,
@@ -117,26 +120,33 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     source: '千咲·自身'
   };
 
+  // 固有「终点在此处」：施放变奏技能鸣响·再临或共鸣解放即刻·归无时，
+  // 湮灭伤害加成 +20%、治疗加成 +20%，持续 12 秒（默认已触发）。
+  buff.damageBonus += 0.20;
+
   // S1：附加虚无绞痕时攻击 +30%
   if (chainCount >= 1) buff.attackPercent += 0.30;
-  // S2：无视 10% 湮灭抗性，base=0.1 折算约 +11.1% damageBonus
-  if (chainCount >= 2) buff.damageBonus += 0.10 / 0.9;
-  // S3：锯环·疾攻/终结/闪反 倍率 +120%
-  if (chainCount >= 3 && ['锯环·疾攻第三段','锯环·终结','闪避反击·解弦之眼·收弦'].includes(skillName)) {
+  // S2：无视 10% 湮灭抗性，按抗性乘区实际比值折算（负抗性分支不能线性换算）
+  if (chainCount >= 2) {
+    const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
+    buff.damageBonus += calcResistanceMultiplier(baseRes - 0.10) / calcResistanceMultiplier(baseRes) - 1;
+  }
+  // S3：锯环·疾攻/电锯模式·闪避反击/锯环·终结 倍率 +120%
+  if (chainCount >= 3 && ['锯环·疾攻第三段','锯环·终结','电锯模式·闪避反击'].includes(skillName)) {
     buff.multiplierBonus += 1.20;
   }
   // S5：即刻·归无 伤害加成 +100%
   if (chainCount >= 5 && skillName === '即刻·归无') buff.damageBonus += 1.00;
-  // S6：受千咲伤害 +40%
-  if (chainCount >= 6) buff.damageBonus += 0.40;
+  // S6：拥有虚无绞痕·终焉的目标受到千咲伤害 +40%，属于受击目标承伤提升，走深化区
+  if (chainCount >= 6) buff.deepen += 0.40;
 
   return buff;
 }
 
-function getHealingBonus(panel, mergedBuff, ...buffs) {
+function getHealingBonus(panel, mergedBuff) {
+  // mergedBuff.healingBonus 已包含武器/声骸/套装的治疗加成，不能再重复相加。
   return getPercentAttr(panel.attrMap || {}, '治疗效果加成')
-    + Number(mergedBuff.healingBonus || 0)
-    + buffs.reduce((sum, buff) => sum + Number(buff?.healingBonus || 0), 0);
+    + Number(mergedBuff.healingBonus || 0);
 }
 
 function getShieldBonus(panel, mergedBuff, ...buffs) {
@@ -147,10 +157,18 @@ function getShieldBonus(panel, mergedBuff, ...buffs) {
 
 function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options, heal }) {
   const level = getSkillLevel(roleDetailData, heal.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
   const flat = heal.flatMap[level] ?? heal.flatMap[10];
   const percent = heal.percentMap[level] ?? heal.percentMap[10];
 
-  const roleBuff = { healingBonus: 0, multiplierBonus: 0, deepen: 0, source: '千咲·自身' };
+  // 固有「终点在此处」：治疗加成 +20%；S1 攻击 +30% 同样作用于按攻击结算的治疗（默认已触发）。
+  const roleBuff = {
+    healingBonus: 0.20,
+    attackPercent: chainCount >= 1 ? 0.30 : 0,
+    multiplierBonus: 0,
+    deepen: 0,
+    source: '千咲·自身'
+  };
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: heal.name, options })
     : {};
@@ -163,11 +181,11 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
   const result = calcSingleHeal({
-    base: panel.attack,
+    base: calcFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier: percent,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     flatHeal: flat,
-    healingBonus: getHealingBonus(panel, mergedBuff, roleBuff, weaponBuff, phantomBuff, groupBuff),
+    healingBonus: getHealingBonus(panel, mergedBuff),
     deepen: mergedBuff.deepen || 0,
     sourceDetail: mergedBuff.sources
   });
@@ -177,10 +195,18 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
 
 function calcOneShield({ roleDetailData, panel, equipment, enemy, modules, options, shield }) {
   const level = getSkillLevel(roleDetailData, shield.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
   const flat = shield.flatMap[level] ?? shield.flatMap[10];
   const percent = shield.percentMap[level] ?? shield.percentMap[10];
 
-  const roleBuff = { shieldBonus: 0, multiplierBonus: 0, deepen: 0, source: '千咲·自身' };
+  // 护盾按攻击结算，S1 攻击 +30% 同样生效。
+  const roleBuff = {
+    shieldBonus: 0,
+    attackPercent: chainCount >= 1 ? 0.30 : 0,
+    multiplierBonus: 0,
+    deepen: 0,
+    source: '千咲·自身'
+  };
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'shield', skillName: shield.name, options })
     : {};
@@ -193,7 +219,7 @@ function calcOneShield({ roleDetailData, panel, equipment, enemy, modules, optio
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
   const result = calcSingleShield({
-    base: panel.attack,
+    base: calcFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier: percent,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     flatShield: flat,
@@ -211,7 +237,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const multiplier = skill.levelMap[level] || skill.levelMap[10];
 
-  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount, enemy });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -229,7 +255,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

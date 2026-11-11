@@ -1,6 +1,12 @@
 import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -160,7 +166,7 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleHeal({
     base: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
@@ -172,26 +178,64 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
   return { name: skill.name, ...result };
 }
 
+// 釉瑚自身增益（固有 + 共鸣链）：
+//   共鸣回路·诗中物（合说形态，联珠效果）：诗中物伤害提升 175%；
+//   S2「侧堂酣睡」对偶/联珠/合说对诗中物的伤害提升效果额外生效一次（+175%）；
+//   S3「火中噩魇」攻击提升 20%；
+//   S5「万里浅眠」施放变奏技能遂心匣时暴击提升 15%，持续 14 秒；
+//   S6「千秋一枕」施放奇珍赏时获得 1 层霁青，最多 4 层，每层暴击伤害 +15%。
+function getRoleSelfBuff({ skillName, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '釉瑚·自身'
+  };
+
+  // 诗中物（合说·联珠）：伤害提升 175%。
+  if (skillName === '诗中物技能') buff.damageBonus += 1.75;
+
+  // S2：对偶/联珠/合说的伤害提升效果额外生效一次。
+  if (chainCount >= 2 && skillName === '诗中物技能') buff.damageBonus += 1.75;
+
+  // S3：攻击提升 20%。
+  if (chainCount >= 3) buff.attackPercent += 0.20;
+
+  // S5：施放变奏技能遂心匣后暴击提升 15%，持续 14 秒。
+  if (chainCount >= 5) buff.critRate += 0.15;
+
+  // S6：每层霁青使暴击伤害提升 15%，最多 4 层。
+  if (chainCount >= 6) buff.critDamage += 0.15 * 4;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

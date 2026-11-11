@@ -16,7 +16,8 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: null
+  // 对带有【光噪效应】的敌人造成伤害时，自身衍射伤害提升，每层 6%~10%，可叠 4 层，按满层计。
+  damage: { 1: 0.24, 2: 0.28, 3: 0.32, 4: 0.36, 5: 0.4 }
 };
 
 function pick(map, reson) {

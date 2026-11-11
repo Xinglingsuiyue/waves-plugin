@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -144,19 +150,22 @@ const SKILLS = {
   },
   skill20: {
     name: "普攻·虹彩飞溅",
-    type: "skill",
+    // Wiki：绮彩巡游状态下的普攻技能，造成衍射伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.53, 1.6555, 1.781, 1.9566, 2.0821, 2.2264, 2.4271, 2.6278, 2.8286, 3.0418)
   },
   skill21: {
     name: "普攻·视觉冲击",
-    type: "skill",
+    // Wiki：绮彩巡游状态下的普攻技能，造成衍射伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(6.12, 6.6219, 7.1237, 7.8263, 8.3281, 8.9053, 9.7082, 10.5111, 11.3141, 12.1672)
   },
   skill22: {
     name: "震谐响应·光谱解析",
-    type: "skill",
+    // Wiki：此次伤害为震谐伤害，不吃共鸣技能等技能类型加成。
+    type: "zhenxie",
     levelFrom: "共鸣回路",
     levelMap: levelMap(9.46, 10.2358, 11.0115, 12.0975, 12.8732, 13.7653, 15.0064, 16.2476, 17.4888, 18.8075)
   },
@@ -168,7 +177,8 @@ const SKILLS = {
   },
   skill24: {
     name: "普攻·向着多彩的明天！",
-    type: "liberation",
+    // Wiki：施放共鸣解放后短按普攻施放，属普攻伤害（倍率表位于共鸣解放页）。
+    type: "normal",
     levelFrom: "共鸣解放",
     levelMap: levelMap(1.0124, 1.0942, 1.1782, 1.2938, 1.3756, 1.4716, 1.6036, 1.7368, 1.8698, 2.0106)
   },
@@ -191,22 +201,77 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// S1：普攻·幻光折跃倍率 +120%；S3/S5 指定技能倍率提升；S6 心之彩作用于普攻·虹彩飞溅/视觉冲击。
+const CHAIN1_SKILLS = new Set(['普攻·幻光折跃']);
+const CHAIN3_SKILLS = new Set(['普攻·视觉冲击', '普攻·虹彩飞溅']);
+const CHAIN5_SKILLS = new Set(['爆炸喷涂']);
+const CHAIN6_SKILLS = new Set(['普攻·视觉冲击', '普攻·虹彩飞溅']);
+
+function getRoleSelfBuff({ skillName, chainCount, options }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    source: '琳奈·自身'
+  };
+
+  // 固有「《自适应光学在生活中的实际应用》」：施放变奏技能·来点儿颜色瞧瞧时，
+  // 9 秒内自身衍射伤害提升 25%（默认已触发）。
+  buff.damageBonus += 0.25;
+
+  // S1「应是肆意挥洒的年华」：普攻·幻光折跃伤害倍率 +120%。
+  if (chainCount >= 1 && CHAIN1_SKILLS.has(skillName)) buff.multiplierBonus += 1.20;
+
+  // S2「驶向光彩交绘的彼方」：全伤害加深 25%。
+  if (chainCount >= 2) buff.deepen += 0.25;
+
+  // S3「为一瞬的绚烂」：普攻·视觉冲击 / 普攻·虹彩飞溅 伤害倍率 +90%；
+  // 每层【预调色】使加色混合的衍射伤害加成 +55%，上限 25 层。
+  if (chainCount >= 3) {
+    if (CHAIN3_SKILLS.has(skillName)) buff.multiplierBonus += 0.90;
+    if (skillName === '加色混合') {
+      const stacks = Math.max(0, Math.min(25, Number(options?.preColorStacks ?? 25)));
+      buff.damageBonus += 0.55 * stacks;
+    }
+  }
+
+  // S4「灰影随风呼啸而去」：攻击提升 20%。
+  if (chainCount >= 4) buff.attackPercent += 0.20;
+
+  // S5「不羁未来的映想」：共鸣解放·爆炸喷涂伤害倍率 +70%。
+  if (chainCount >= 5 && CHAIN5_SKILLS.has(skillName)) buff.multiplierBonus += 0.70;
+
+  // S6「以「我」为名的真彩」：每层【心之彩】使目标受到虹彩飞溅/视觉冲击伤害提升 30%，
+  // 最多 3 层，按满层计（承伤提升走 deepen）。
+  if (chainCount >= 6 && CHAIN6_SKILLS.has(skillName)) {
+    const stacks = Math.max(0, Math.min(3, Number(options?.heartColorStacks ?? 3)));
+    buff.deepen += 0.30 * stacks;
+  }
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount, options });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

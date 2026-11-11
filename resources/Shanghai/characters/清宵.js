@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -148,7 +148,7 @@ const SKILLS = {
   }
 };
 
-const LOCK_DEEPEN_SKILLS = new Set(['liberation', 'tianjun', 'heavyCang']);
+const LOCK_DEEPEN_SKILLS = new Set(['liberation', 'tianjun', 'heavyCang', 'dodge']);
 const C6_DAMAGE_SKILLS = new Set(['liberation', 'tianjun', 'heavyCang', 'giant']);
 
 function getLockDeepen(stacks) {
@@ -194,7 +194,9 @@ function getRoleSelfBuff({ skill, chainCount, options }) {
   if (chainCount >= 1) {
     buff.critRate += 0.16;
     if (skill.key === 'giant') {
-      buff.deepen += state.swordStacks * 0.04;
+      // 每移除 1 层清邪剑诀使目标受到巨阙灭迹伤害 +4%，持续 2 秒；
+      // 巨阙灭迹每秒最多触发 1 次，故最多同时叠 2 层。
+      buff.deepen += Math.min(2, state.swordStacks) * 0.04;
     }
   }
 
@@ -220,7 +222,8 @@ function getRoleSelfBuff({ skill, chainCount, options }) {
   }
 
   if (chainCount >= 6 && options?.qingxiaoC6DamageActive !== false && C6_DAMAGE_SKILLS.has(skill.key)) {
-    buff.damageBonus += 0.40;
+    // S6：目标受到清宵上述 4 个技能伤害 +40%（承伤提升走深化区）
+    buff.deepen += 0.40;
   }
 
   if (chainCount >= 6 && skill.key === 'giant') {
@@ -270,8 +273,7 @@ function calcOneSkill({ roleDetailData, panel, enemy, modules, options, skill })
     + Number(weaponBuff.critDamage || 0)
     + Number(phantomBuff.critDamage || 0)
     + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0))
-    + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const skillMultiplier = skill.multiplier
     ?? skill.levelMap[level]
     ?? skill.levelMap[10];

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -106,7 +106,10 @@ const LOSERA_SKILLS = {
   forget: {
     key: 'forget',
     name: '遗忘伤害',
-    type: 'hack',
+    // Wiki：施放普攻·溯念留形第 3 段期间由【照片】触发的遗忘，
+    // 共鸣模态·霜渐时为普攻伤害，共鸣模态·声骸时为声骸技能伤害。
+    // 本模块默认按霜渐模态（普攻伤害）结算。
+    type: 'normal',
     levelFrom: '共鸣回路',
     levelMap: levelMap(
       '143.59%',
@@ -191,7 +194,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
     + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

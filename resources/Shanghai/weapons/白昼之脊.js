@@ -16,7 +16,11 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: { 1: 0.2, 2: 0.25, 3: 0.3, 4: 0.35, 5: 0.4 }
+  // 造成普攻伤害后，衍射伤害加成提升（触发态，作用于后续所有伤害）。
+  damage: { 1: 0.2, 2: 0.25, 3: 0.3, 4: 0.35, 5: 0.4 },
+  // 附加【集谐·偏移】后，普攻伤害加深 + 普攻伤害无视目标防御，仅作用于普攻。
+  normalDeepen: { 1: 0.2, 2: 0.25, 3: 0.3, 4: 0.35, 5: 0.4 },
+  normalIgnoreDefense: { 1: 0.1, 2: 0.125, 3: 0.15, 4: 0.175, 5: 0.2 }
 };
 
 function pick(map, reson) {
@@ -34,11 +38,18 @@ export default {
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
+      deepen: 0,
+      ignoreDefense: 0,
       source: "白昼之脊"
     };
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);
     if (skillType === 'skill') buff.damageBonus += pick(EFFECT.skill, reson);
-    if (skillType === 'normal') buff.damageBonus += pick(EFFECT.normal, reson);
+    if (skillType === 'normal') {
+      buff.damageBonus += pick(EFFECT.normal, reson);
+      // 附加【集谐·偏移】后普攻伤害加深、普攻伤害无视目标防御（仅普攻）。
+      buff.deepen += pick(EFFECT.normalDeepen, reson);
+      buff.ignoreDefense += pick(EFFECT.normalIgnoreDefense, reson);
+    }
     if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson);
     if (skillType === 'intro') buff.damageBonus += pick(EFFECT.intro, reson);
     return buff;

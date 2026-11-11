@@ -8,15 +8,17 @@ const wiki = {
 };
 
 const EFFECT = {
-  attack: { 1: 0.12, 2: 0.12, 3: 0.12, 4: 0.12, 5: 0.12 },
+  attack: { 1: 0.12, 2: 0.15, 3: 0.18, 4: 0.21, 5: 0.24 },
   critRate: null,
   critDamage: null,
   liberation: null,
   skill: null,
-  normal: { 1: 0.1, 2: 0.1, 3: 0.1, 4: 0.1, 5: 0.1 },
+  // 每层 10%/12.5%/15%/17.5%/20%，按满 3 层计；
+  // 协奏能量消耗触发的 40%/50%/60%/70%/80% 分支未建模。
+  normal: { 1: 0.3, 2: 0.375, 3: 0.45, 4: 0.525, 5: 0.6 },
   heavy: null,
   intro: null,
-  damage: { 1: 0.1, 2: 0.1, 3: 0.1, 4: 0.1, 5: 0.1 }
+  damage: null
 };
 
 function pick(map, reson) {

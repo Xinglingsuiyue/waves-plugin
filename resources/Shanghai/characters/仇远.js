@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -34,22 +34,22 @@ function getChainUnlockedCount(roleDetailData) {
 //   S6：施放共鸣技能荷蓑出林时暴伤 +100%（持续 6s）
 // =============================================================
 const QIUYUAN_SKILLS = {
-  // 普攻第二段：17.5%+17.5% → 34.80%+34.80% (10级)
+  // 普攻·质黑相青 第二段：17.5%+17.5% → 34.80%+34.80% (10级)
   normalTwo: {
-    name: '答剑·弦歌不辍(普攻第二段)',
+    name: '普攻·质黑相青第二段',
     type: 'normal',
-    levelFrom: '普攻',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.1750 * 2, 2: 0.1894 * 2, 3: 0.2037 * 2, 4: 0.2238 * 2,
       5: 0.2382 * 2, 6: 0.2547 * 2, 7: 0.2777 * 2, 8: 0.3006 * 2,
       9: 0.3236 * 2, 10: 0.3480 * 2
     }
   },
-  // 普攻第三段：12.39%×4 + 33.04% → 24.64%×4 + 65.69% (10级)
+  // 普攻·质黑相青 第三段：12.39%×4 + 33.04% → 24.64%×4 + 65.69% (10级)
   normalThree: {
-    name: '答剑·割股之心(普攻第三段)',
+    name: '普攻·质黑相青第三段',
     type: 'normal',
-    levelFrom: '普攻',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.1239 * 4 + 0.3304, 2: 0.1341 * 4 + 0.3575, 3: 0.1443 * 4 + 0.3846,
       4: 0.1585 * 4 + 0.4226, 5: 0.1687 * 4 + 0.4497, 6: 0.1803 * 4 + 0.4808,
@@ -60,8 +60,8 @@ const QIUYUAN_SKILLS = {
   // 重击伤害：83.3% → 165.61% (10级)
   heavy: {
     name: '重击伤害',
-    type: 'normal',
-    levelFrom: '普攻',
+    type: 'heavy',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.8330, 2: 0.9014, 3: 0.9697, 4: 1.0653, 5: 1.1336,
       6: 1.2121, 7: 1.3214, 8: 1.4307, 9: 1.5400, 10: 1.6561
@@ -70,8 +70,8 @@ const QIUYUAN_SKILLS = {
   // 闪避反击：98%+14%×3 → 194.84%+27.84%×3 (10级)
   dodge: {
     name: '闪避反击',
-    type: 'normal',
-    levelFrom: '普攻',
+    type: 'heavy',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.9800 + 0.1400 * 3, 2: 1.0604 + 0.1515 * 3, 3: 1.1408 + 0.1630 * 3,
       4: 1.2533 + 0.1791 * 3, 5: 1.3336 + 0.1906 * 3, 6: 1.4260 + 0.2038 * 3,
@@ -86,6 +86,8 @@ function getPanelDamageBonus(attrMap, skillType) {
   total += getPercentAttr(attrMap, '气动伤害加成');
   if (skillType === 'normal') {
     total += getPercentAttr(attrMap, '普攻伤害加成');
+  }
+  if (skillType === 'heavy') {
     total += getPercentAttr(attrMap, '重击伤害加成');
   }
   return total;
@@ -102,6 +104,12 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     ignoreDefense: 0,
     source: '仇远·自身'
   };
+
+  // 固有「与尔同销万古愁」：施放声骸技能后，下次获得【挑灯问剑】时消耗【金药玉馔】，
+  // 仇远攻击提升 10%，持续 20 秒（默认循环中已触发）。
+  buff.attackPercent += 0.10;
+  // 固有「且从容」：目标受到重击 答剑·弦歌不辍 / 答剑·割股之心 / 答剑·忠烈死节的伤害提升 50%。
+  // 本模块展示的 4 个技能属于普攻·质黑相青、重击、闪避反击，均非「答剑」系列，故不计入。
 
   // S1：暴击 +20%
   if (chainCount >= 1) buff.critRate += 0.20;
@@ -139,7 +147,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);

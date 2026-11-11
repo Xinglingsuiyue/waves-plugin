@@ -16,7 +16,11 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: null
+  damage: null,
+  // 施放变奏技能或声骸技能时，声骸技能伤害加深。
+  echoDeepen: { 1: 0.32, 2: 0.4, 3: 0.48, 4: 0.56, 5: 0.64 },
+  // 造成声骸技能伤害时，气动伤害无视目标防御。
+  echoIgnoreDefense: { 1: 0.1, 2: 0.125, 3: 0.15, 4: 0.175, 5: 0.2 }
 };
 
 function pick(map, reson) {
@@ -34,6 +38,8 @@ export default {
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
+      deepen: 0,
+      ignoreDefense: 0,
       source: "昭日译注"
     };
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);
@@ -41,6 +47,11 @@ export default {
     if (skillType === 'normal') buff.damageBonus += pick(EFFECT.normal, reson);
     if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson);
     if (skillType === 'intro') buff.damageBonus += pick(EFFECT.intro, reson);
+    if (skillType === 'echo') {
+      // 声骸技能伤害加深 + 气动伤害无视目标防御，均只作用于声骸技能。
+      buff.deepen += pick(EFFECT.echoDeepen, reson);
+      buff.ignoreDefense += pick(EFFECT.echoIgnoreDefense, reson);
+    }
     return buff;
   }
 };

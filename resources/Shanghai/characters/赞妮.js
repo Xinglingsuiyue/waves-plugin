@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -37,7 +37,8 @@ const ZANI_SKILLS = {
   // 重斩·破晓：100% → 198.81% (10级)
   poxiao: {
     name: '重斩·破晓',
-    type: 'normal',
+    // Wiki：造成衍射伤害，此次伤害为重击伤害，同时视为光噪效应伤害。
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 1.0000, 2: 1.0820, 3: 1.1640, 4: 1.2788, 5: 1.3608,
@@ -47,7 +48,7 @@ const ZANI_SKILLS = {
   // 重斩·将明：213.3% → 424.07% (10级)
   jiangming: {
     name: '重斩·将明',
-    type: 'normal',
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 2.1330, 2: 2.3080, 3: 2.4829, 4: 2.7277, 5: 2.9026,
@@ -55,10 +56,10 @@ const ZANI_SKILLS = {
     }
   },
   // 重斩·终夜：68% + 132% → 135.20% + 262.43% (10级)
-  // 每点【焰光】额外倍率（10级=9.95%）；默认 60 点焰光
+  // 每点【焰光】额外倍率（10级=9.95%）；至多消耗 40 点焰光
   zhongye: {
     name: '重斩·终夜',
-    type: 'normal',
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 0.6800 + 1.3200, 2: 0.7358 + 1.4283, 3: 0.7916 + 1.5365,
@@ -74,7 +75,7 @@ const ZANI_SKILLS = {
   // 重斩·闪裂：213.3% → 424.07% (10级)
   shanlie: {
     name: '重斩·闪裂',
-    type: 'normal',
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 2.1330, 2: 2.3080, 3: 2.4829, 4: 2.7277, 5: 2.9026,
@@ -85,7 +86,7 @@ const ZANI_SKILLS = {
 
 function getPanelDamageBonus(attrMap, skillType) {
   let total = getPercentAttr(attrMap, '衍射伤害加成');
-  if (skillType === 'normal') {
+  if (skillType === 'heavy') {
     total += getPercentAttr(attrMap, '重击伤害加成');
   }
   return total;
@@ -102,8 +103,14 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     source: '赞妮·自身'
   };
 
-  // S1：衍射伤害 +50%
+  // 固有「快速响应」：施放变奏技能即刻执行时，衍射伤害加成 +12%（默认已触发）。
+  buff.damageBonus += 0.12;
+
+  // S1：施放集中压制/破袭反击时，衍射伤害 +50%（默认已触发）。
   if (chainCount >= 1) buff.damageBonus += 0.50;
+
+  // S2：暴击 +20%。
+  if (chainCount >= 2) buff.critRate += 0.20;
 
   // S4：全队攻击 +20%
   if (chainCount >= 4) buff.attackPercent += 0.20;
@@ -124,9 +131,9 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   let multiplier = skill.levelMap[level] || skill.levelMap[10];
 
-  // 重斩·终夜：60 点【焰光】 × 每点倍率，S6 时该额外倍率再 +40%
+  // 重斩·终夜：至多消耗 40 点【焰光】 × 每点倍率，S6 时该额外倍率再 +40%
   if (skillKey === 'zhongye') {
-    const yan = Math.max(0, Math.min(60, Number(options?.yanguangPoints ?? 60)));
+    const yan = Math.max(0, Math.min(40, Number(options?.yanguangPoints ?? 40)));
     const per = skill.yanguangMap[level] || skill.yanguangMap[10];
     let perFinal = per;
     if (chainCount >= 6) perFinal *= 1.40;
@@ -151,7 +158,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -173,22 +179,85 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// S3「于朽腐中砺骨」：以下技能伤害倍率提升 25%。
+const CHAIN3_SKILLS = new Set([
+  '重击·烁雷·后撤', '重击·烁雷·旋切', '重击·烁雷·升拳',
+  '共鸣技能·不败恒阳·落袭',
+  '赫日威临·烈阳', '赫日威临·不朽者之肃'
+]);
+
+// S6「于耀光中刻名」：【怒霆】只在旋切/升拳施放过程中额外触发。
+const CHAIN6_RAGE_SKILLS = new Set(['重击·烁雷·旋切', '重击·烁雷·升拳']);
+
+function getRoleSelfBuff({ skillName, chainCount, panel }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '奥古斯塔·自身'
+  };
+
+  // 【以众愿为冕】：每层导电伤害加成 +15%。初始上限 1 层，
+  // S1 提升至 2 层，S6「于耀光中刻名」提升至 4 层，按满层计。
+  const stacks = chainCount >= 6 ? 4 : (chainCount >= 1 ? 2 : 1);
+  buff.damageBonus += 0.15 * stacks;
+
+  // S1：每层额外使暴击伤害 +15%。
+  if (chainCount >= 1) buff.critDamage += 0.15 * stacks;
+
+  // S2：每层额外使暴击 +20%；暴击高于 100% 时，每多 1% 暴击转 2% 暴伤，上限 100%。
+  if (chainCount >= 2) {
+    const critGain = 0.20 * stacks;
+    buff.critRate += critGain;
+    const critPercent = (Number(panel?.critRate || 0) + critGain) * 100;
+    buff.critDamage += Math.min(1.00, Math.max(0, critPercent - 100) * 0.02);
+  }
+
+  // S4：施放变奏技能·灼金的巡行时，队伍中角色攻击 +20%，持续 30 秒。
+  if (chainCount >= 4) buff.attackPercent += 0.20;
+
+  // S6：暴击高于 150% 时，每多 1% 暴击转 2% 暴伤，上限 50%。
+  if (chainCount >= 6) {
+    const critPercent = (Number(panel?.critRate || 0) + 0.20 * stacks) * 100;
+    buff.critDamage += Math.min(0.50, Math.max(0, critPercent - 150) * 0.02);
+  }
+
+  // S3：指定技能伤害倍率 +25%。
+  if (chainCount >= 3 && CHAIN3_SKILLS.has(skillName)) {
+    buff.multiplierBonus += 0.25;
+  }
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount, panel });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
+
+  // S6「于耀光中刻名」：【怒霆】额外造成两次 100% 攻击力的导电伤害（视为重击伤害），
+  // 折算为 200% 的固定倍率叠加到当前重击技能上。
+  const rageExtra = chainCount >= 6 && CHAIN6_RAGE_SKILLS.has(skill.name) ? 2.00 : 0;
+  const skillMultiplier = (skill.levelMap[level] || skill.levelMap[10]) + rageExtra;
+
   const result = calcSingleDamage({
     attack: finalAttack,
-    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+    skillMultiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

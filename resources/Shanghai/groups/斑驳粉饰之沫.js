@@ -16,12 +16,15 @@
       source: '斑驳粉饰之沫'
     };
 
+    // (2 件套) 热熔伤害 +10% 为固定属性，通常已计入面板，仅在缺失时补。
     if (count >= 2 && (!fire || fire === '0%' || fire === 0)) {
       buff.damageBonus += 0.10;
     }
     if (count >= 5) {
+      // 施放共鸣解放时：队伍热熔伤害 +15%（触发态，不判重）。
       buff.damageBonus += 0.15;
-      if (skillType === 'liberation' && (!liberation || liberation === '0%' || liberation === 0)) {
+      // 自身共鸣解放伤害 +20%（触发态，不因面板已有共鸣解放加成而跳过）。
+      if (skillType === 'liberation') {
         buff.damageBonus += 0.20;
       }
     }

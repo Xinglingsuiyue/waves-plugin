@@ -47,6 +47,7 @@ const levelMap = (...values) => values.reduce((map, value, index) => {
 //
 // 核心机制：
 //   [1] 倍率基底：技能均以「攻击力」为基底，面板加成核心为攻击 / 暴击（分支强化亦为攻击提升、暴击提升）。
+//       攻击力% 只作用于基础攻击（角色 90 级基础 462 + 武器基础攻击），不对面板总值重复相乘。
 //   [2] 双相态：应世相 / 照世相，分别获得【应世心】(上限100) / 【照世心】(上限300)。
 //       本次计算直接取各技能 10 级倍率，不还原能量获取过程。
 //   [3] 伤害类型：重击·应世相·步红尘/镇红尘、重击·照世相·临寰宇/镇寰宇、
@@ -387,8 +388,15 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
 
-  // 心为攻击倍率角色：攻击基底 = 面板攻击 ×(1+攻击%) + 固定攻击。
-  const finalAttack = Number(panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0))
+  // 心为攻击倍率角色：攻击力% 只作用于基础攻击（角色基础 462 + 武器基础攻击），
+  // 面板攻击已包含声骸等固定加成，不能再对面板总值乘一次攻击%。
+  const data = normalizeRoleDetailData(roleDetailData);
+  const weaponBaseAttack = Number(
+    (data?.weaponData?.mainPropList || []).find(p => p?.attributeName === '攻击')?.attributeValue
+  ) || 0;
+  const baseAttack = 462 + weaponBaseAttack;
+  const finalAttack = Number(panel.attack || 0)
+                    + baseAttack * (mergedBuff.attackPercent || 0)
                     + (mergedBuff.flatAttack || 0);
 
   const level = getSkillLevel(roleDetailData, skill.levelFrom);

@@ -1,5 +1,5 @@
 ﻿import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -77,20 +83,28 @@ function getPanelHealingBonus(attrMap) {
   return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
 }
 
-function getFinalAttack(panel, mergedBuff) {
-  return (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+function getFinalAttack(panel, mergedBuff, roleDetailData) {
+  return calcFinalAttack(panel, mergedBuff, roleDetailData);
 }
 
-function calcHeal({ roleDetailData, panel, skillKey }) {
+function calcHeal({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = CANTARELLA_HEALS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  // S4「就像凝视自己的灵魂」：蜃镜状态期间治疗效果加成 +25%。
+  const chainHealing = chainCount >= 4 ? 0.25 : 0;
   return {
     name: skill.name,
     ...calcSingleHeal({
-      base: panel.attack || 0,
+      base: getFinalAttack(panel, mergedBuff, roleDetailData),
       skillMultiplier: skill.percentMap[level] || skill.percentMap[10],
       flatHeal: skill.flatMap[level] || skill.flatMap[10],
-      healingBonus: getPanelHealingBonus(panel.attrMap || {}) + 0.2,
+      healingBonus: getPanelHealingBonus(panel.attrMap || {}) + 0.2
+        + Number(mergedBuff.healingBonus || 0) + chainHealing,
       sourceDetail: [{ source: '坎特蕾拉·固有技能「药」', desc: '治疗效果加成默认计入20%' }]
     })
   };
@@ -103,18 +117,23 @@ function calcDamageSkill({ roleDetailData, panel, equipment, enemy, modules, opt
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  // S1「在无尽展开的波涛里」：共鸣技能翩跹/斑驳幻梦、共鸣回路感知汲取伤害倍率 +50%。
+  const chainMultiplier = chainCount >= 1 && (skillKey === 'perceptionDrain' || skillKey === 'phantasm') ? 0.50 : 0;
+  // S6「下坠、下坠……坠入更深的幻梦」：施放共鸣解放陷溺后，伤害无视目标 30% 防御，持续 10 秒。
+  const chainIgnoreDefense = chainCount >= 6 ? 0.30 : 0;
   const result = calcSingleDamage({
-    attack: getFinalAttack(panel, mergedBuff),
+    attack: getFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
-    multiplierBonus: mergedBuff.multiplierBonus || 0,
+    multiplierBonus: (mergedBuff.multiplierBonus || 0) + chainMultiplier,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), chainIgnoreDefense) || enemy?.ignoreDefense || 0,
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };
@@ -128,8 +147,8 @@ export default {
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
     const items = [
-      calcHeal({ roleDetailData, panel, skillKey: 'perceptionDrain' }),
-      calcHeal({ roleDetailData, panel, skillKey: 'tranceConsume' }),
+      calcHeal({ ...args, skillKey: 'perceptionDrain' }),
+      calcHeal({ ...args, skillKey: 'tranceConsume' }),
       calcDamageSkill({ ...args, skillKey: 'perceptionDrain' })
     ];
     return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1342471419668557824', items };

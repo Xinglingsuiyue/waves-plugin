@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -125,26 +131,68 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// 莫特斐自身增益（固有 + 共鸣链）：
+//   固有「密接和应」施放激昂变奏后 8 秒内怒火赋格伤害 +25%；
+//   固有「节奏自由」浮翼狂想期间每发加强音命中使下次加强音伤害 +1.5%，上限 50 层（按满层计 +75%）；
+//   S1「孤独的练习曲」浮翼狂想期间队伍施放共鸣技能时协同攻击打出 2 发加强音；
+//   S3「预热的宣叙调」浮翼狂想期间加强音暴击伤害 +30%；
+//   S5「葬送的四重奏」激昂变奏/怒火赋格命中时打出 4 发加强音（伤害降低 50%）；
+//   S6「盛怒的无言歌」施放暴烈终曲时队伍攻击 +20%，持续 20 秒。
+function getRoleSelfBuff({ skillName, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '莫特斐·自身'
+  };
+
+  // 固有「密接和应」：怒火赋格伤害提升 25%。
+  if (skillName === '怒火赋格') buff.damageBonus += 0.25;
+
+  // 固有「节奏自由」：加强音每次命中使下次加强音伤害 +1.5%，上限 50 层。
+  if (skillName === '加强音') buff.damageBonus += 0.015 * 50;
+
+  // S1：协同攻击额外打出 2 发加强音（按等效倍率计入）。
+  if (chainCount >= 1 && skillName === '加强音') buff.multiplierBonus += 2.00;
+
+  // S3：浮翼狂想期间加强音暴击伤害提升 30%。
+  if (chainCount >= 3 && skillName === '加强音') buff.critDamage += 0.30;
+
+  // S5：激昂变奏/怒火赋格命中时打出 4 发加强音，每发伤害降低 50%。
+  if (chainCount >= 5 && skillName === '加强音') buff.multiplierBonus += 4 * 0.5;
+
+  // S6：施放暴烈终曲时队伍中角色攻击提升 20%，持续 20 秒。
+  if (chainCount >= 6 && skillName !== '暴烈终曲技能') buff.attackPercent += 0.20;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

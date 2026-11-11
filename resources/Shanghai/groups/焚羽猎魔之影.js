@@ -23,14 +23,12 @@ export default {
     };
 
     if (cnt >= 3) {
-      // 仅重击吃暴击 / 声骸技能吃暴击；本模块计算范围内 normal=重击主输出
-      if (skillType === 'normal' || skillType === 'echo') {
+      // 重击伤害暴击 +20%（技能类型 heavy）/ 声骸技能暴击 +20%
+      if (skillType === 'heavy' || skillType === 'echo') {
         buff.critRate += 0.20;
       }
-      // 双 buff 在线 → 热熔伤害 +16%；面板若已含热熔加成则避免重复加
-      if (!fire || fire === '0%' || fire === 0) {
-        buff.damageBonus += 0.16;
-      }
+      // 双 buff 同时在线 → 自身热熔伤害 +16%（触发态，不因面板已有热熔加成而跳过）
+      buff.damageBonus += 0.16;
     }
 
     return buff;

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack, calcFinalHp } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -381,15 +381,14 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
                + Number(phantomBuff.flatHp || 0)
                + Number(groupBuff.flatHp || 0);
 
-  const finalHp = panel.hp * (1 + hpPercent) + flatHp;
+  const finalHp = calcFinalHp(panel, { hpPercent, flatHp }, roleDetailData);
 
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const roleBuff = getRoleSelfBuff({ skill: { ...skill, __level: level }, chainCount, finalHp, opts });
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
 
-  // 景燃为攻击倍率角色：攻击基底 = 面板攻击 ×(1+攻击%) + 固定攻击（含生命上限转化）。
-  const finalAttack = Number(panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0))
-                    + (mergedBuff.flatAttack || 0);
+  // 景燃为攻击倍率角色：攻击基底 = 面板攻击 + 基础攻击×攻击% + 固定攻击（含生命上限转化）。
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   let skillMultiplier = skill.levelMap[level] || skill.levelMap[10];
   skillMultiplier += getFireMultiplierBonus({ skill: { ...skill, __level: level }, chainCount, finalHp, opts });

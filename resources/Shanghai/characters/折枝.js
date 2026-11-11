@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -52,27 +52,64 @@ function getPanelDamageBonus(attrMap, skillType) {
 function getRoleSelfBuff({ skill, chainCount }) {
   const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, attackPercent: 0, source: '折枝·自身' };
 
-  // 固有技能：挥毫，施放神来之笔/极意·神来之笔时攻击提升 6%，最多 3 层；默认满层。
-  if (skill.name === ZHEZHI_SKILLS.circuit.name) {
+  const isCircuit = skill.name === ZHEZHI_SKILLS.circuit.name;
+  const isSkill = skill.name === ZHEZHI_SKILLS.skill.name;
+  const isLiberation = skill.name === ZHEZHI_SKILLS.liberation.name;
+
+  // 固有「挥毫」：施放神来之笔/极意·神来之笔时攻击提升 6%，最多 3 层；默认满层。
+  if (isCircuit) {
     buff.attackPercent += 0.18;
     // 极意·神来之笔让折枝普攻伤害加成提升 18%。
     buff.damageBonus += 0.18;
   }
 
-  if (chainCount >= 2) {
-    buff.damageBonus += 0.20;
+  // S1「骨法用笔」：施放极意·神来之笔时回复 15 点共鸣能量，且自身暴击 +10%，持续 27 秒。
+  if (chainCount >= 1 && isCircuit) {
+    buff.critRate += 0.10;
   }
-  if (chainCount >= 6 && skill.type === 'normal') {
-    buff.damageBonus += 0.30;
+
+  // S2「气韵生动」：墨鹤最大召唤数 +6 只（21 → 27），在 getSkillMultiplier 中折算。
+
+  // S3「应物象形」：施放以形写神/神来之笔/极意·神来之笔 时攻击提升 15%，可叠 3 层（默认满层 +45%）。
+  if (chainCount >= 3 && (isCircuit || isSkill)) {
+    buff.attackPercent += 0.15 * 3;
+  }
+
+  // S4「随类赋彩」：施放虚实境趣时队伍攻击 +20%，持续 30 秒（墨鹤在施放后持续召唤，可享受）。
+  if (chainCount >= 4 && isLiberation) {
+    buff.attackPercent += 0.20;
+  }
+
+  // S5「经营位置」：每召唤 3 只墨鹤额外召唤 1 只，造成 140% 伤害，在 getSkillMultiplier 中折算。
+
+  // S6「传移摹写」：施放神来之笔/极意·神来之笔时额外召唤一只白鹤，
+  // 造成等同于神来之笔 120% 的伤害（此次伤害为普攻伤害）。
+  if (chainCount >= 6 && isCircuit) {
+    buff.multiplierBonus += 1.20;
   }
 
   return buff;
 }
 
+function getSkillMultiplier(skill, level, chainCount) {
+  const base = skill.levelMap[level] || skill.levelMap[10];
+
+  // 共鸣解放·墨鹤协同合计：倍率表按 21 只墨鹤合计。
+  // S2 最大召唤数 +6；S5 每 3 只额外召唤 1 只（140% 伤害）。
+  if (skill.name === ZHEZHI_SKILLS.liberation.name) {
+    const perMohe = base / 21;
+    const count = 21 + (chainCount >= 2 ? 6 : 0);
+    const extra = chainCount >= 5 ? Math.floor(count / 3) * 1.40 : 0;
+    return perMohe * (count + extra);
+  }
+
+  return base;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill }) {
   const chainCount = getChainUnlockedCount(roleDetailData);
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
-  const skillMultiplier = skill.levelMap[level] || skill.levelMap[10];
+  const skillMultiplier = getSkillMultiplier(skill, level, chainCount);
 
   const roleBuff = getRoleSelfBuff({ skill, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name }) : {};
@@ -82,7 +119,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

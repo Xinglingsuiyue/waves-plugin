@@ -1,5 +1,5 @@
 ﻿import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -139,17 +145,27 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const isHeal = skill.name.includes('治疗');
-  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const skillType = isHeal ? 'heal' : skill.type;
+  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType, skillName: skill.name, options }) : {};
+  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType, skillName: skill.name, options }) : {};
+  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType, skillName: skill.name, options }) : {};
   const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
+
+  // S1「百般法宝，借物打力」：共鸣解放·飞雷诀·归一造成伤害时暴击 +20%。
+  const critRateBonus = chainCount >= 1 && skill.name === '飞雷诀·归一' ? 0.20 : 0;
+  // S4「索拉云游，气运加身」：治疗效果加成 +20%。
+  const healingBonus = isHeal && chainCount >= 4 ? 0.20 : 0;
+  // 固有「吉时已至，厄运退散」：治疗生命值低于 50% 的角色时治疗效果加成 +25%（默认按低血量目标计入）。
+  const lowHpHealBonus = isHeal ? 0.25 : 0;
+
   const result = isHeal
     ? calcSingleHeal({
-        base: panel.attack,
+        base: finalAttack,
         skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
         multiplierBonus: mergedBuff.multiplierBonus || 0,
-        healingBonus: getPanelHealingBonus(panel.attrMap || {}) + (mergedBuff.healingBonus || 0),
+        healingBonus: getPanelHealingBonus(panel.attrMap || {}) + (mergedBuff.healingBonus || 0) + healingBonus + lowHpHealBonus,
         deepen: mergedBuff.deepen || 0,
         sourceDetail: mergedBuff.sources
       })
@@ -159,8 +175,8 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
         multiplierBonus: mergedBuff.multiplierBonus || 0,
         damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
         deepen: mergedBuff.deepen || 0,
-        critRate: panel.critRate,
-        critDamage: panel.critDamage,
+        critRate: panel.critRate + critRateBonus + Number(mergedBuff.critRate || 0),
+        critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
         attackerLevel: panel.level || 90,
         enemyLevel: enemy?.level || 90,
         resistance: enemy?.resistance ?? 0.1,

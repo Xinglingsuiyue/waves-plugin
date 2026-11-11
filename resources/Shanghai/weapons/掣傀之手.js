@@ -23,6 +23,15 @@ function pick(map, reson) {
   return map ? Number(map[reson] ?? map[1] ?? 0) : 0;
 }
 
+function hasPanelValue(attrMap, key) {
+  if (!key) return false;
+  const value = attrMap?.[key];
+  if (value == null || value === '') return false;
+  if (typeof value === 'number') return value !== 0;
+  const parsed = Number(String(value).replace(/,/g, '').replace('%', '').trim());
+  return Number.isFinite(parsed) && parsed !== 0;
+}
+
 export default {
   name: "掣傀之手",
   wiki,
@@ -31,7 +40,8 @@ export default {
     const reson = Math.max(1, Math.min(5, Number(panel?.weaponResonLevel || 1)));
     const buff = {
       attackPercent: pick(EFFECT.attack, reson),
-      damageBonus: pick(EFFECT.damage, reson),
+      // 全属性伤害加成：面板各属性伤害加成已计入时跳过。
+      damageBonus: hasPanelValue(panel?.attrMap, '导电伤害加成') ? 0 : pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
       source: "掣傀之手"

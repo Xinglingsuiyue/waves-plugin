@@ -1,3 +1,14 @@
+import { calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+
+function hasPanelValue(attrMap, key) {
+  if (!key) return false;
+  const value = attrMap?.[key];
+  if (value == null || value === '') return false;
+  if (typeof value === 'number') return value !== 0;
+  const parsed = Number(String(value).replace(/,/g, '').replace('%', '').trim());
+  return Number.isFinite(parsed) && parsed !== 0;
+}
+
 export default {
   name: '永远的启明星',
 
@@ -16,11 +27,9 @@ export default {
   // 实现选择：
   //   - "全属性伤害加成"按通用 damageBonus 计入（所有 skillType 都吃）。
   //   - "无视防御"只在 skillType==='liberation' 时生效。
-  //   - "无视热熔抗性"在引擎层用 enemy.resistance 单一字段表示，
-  //     这里通过把"无视热熔抗"等价折算为伤害加成乘区注入：
-  //         eq_bonus ≈ resIgnore × 1/(1-baseRes) - 1
-  //     当默认 baseRes=0.1（无妄者标准抗性）时，10% 无视抗 ≈ +11.11% 增伤。
-  //     这是一个保守近似，但热熔属性技能受益准确（仅在 liberation 时生效）。
+  //   - "无视热熔抗性"通过抗性乘区实际比值折算为伤害加成：
+  //         eq_bonus = 抗性乘区(baseRes - ignore) / 抗性乘区(baseRes) - 1
+  //     负抗性走 1 - res/2 分支，不能线性换算。
   apply({ panel, enemy, skillType }) {
     const reson = Number(panel.weaponResonLevel || 1);
 
@@ -34,8 +43,8 @@ export default {
     const ignoreFireRes = ignoreFireResMap[reson] || ignoreFireResMap[1];
 
     const buff = {
-      // 「全属性伤害加成」：所有技能都吃
-      damageBonus: allDmg,
+      // 「全属性伤害加成」：面板各属性伤害加成已计入时跳过
+      damageBonus: hasPanelValue(panel?.attrMap, '导电伤害加成') ? 0 : allDmg,
       ignoreDefense: 0,
       source: '永远的启明星'
     };
@@ -44,10 +53,11 @@ export default {
       // 共鸣解放伤害无视防御 — 严格按字段送入
       buff.ignoreDefense = ignoreDef;
 
-      // 共鸣解放伤害无视热熔抗性 — 折算为额外增伤
+      // 共鸣解放伤害无视热熔抗性 — 按抗性乘区实际比值折算，
+      // 负抗性走 1 - res/2 分支时不能线性换算。
       const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
-      const equivBonus = ignoreFireRes / Math.max(0.05, 1 - baseRes);
-      buff.damageBonus += equivBonus;
+      const afterRes = baseRes - ignoreFireRes;
+      buff.damageBonus += calcResistanceMultiplier(afterRes) / calcResistanceMultiplier(baseRes) - 1;
     }
 
     return buff;

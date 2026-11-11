@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -54,7 +54,8 @@ const SKILLS = {
   },
   skill5: {
     name: "普攻·明悟",
-    type: "normal",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "常态攻击",
     levelMap: levelMap(1.548, 1.675, 1.802, 1.9799, 2.1069, 2.2525, 2.4559, 2.6589, 2.862, 3.0779)
   },
@@ -84,7 +85,8 @@ const SKILLS = {
   },
   skill10: {
     name: "闪避反击·解读",
-    type: "normal",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "常态攻击",
     levelMap: levelMap(1.548, 1.675, 1.802, 1.9799, 2.1069, 2.2525, 2.4559, 2.6589, 2.862, 3.0779)
   },
@@ -96,49 +98,57 @@ const SKILLS = {
   },
   skill12: {
     name: "大嘭嘭！",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣技能",
     levelMap: levelMap(1.449, 1.5679, 1.6868, 1.853, 1.9719, 2.1087, 2.2988, 2.4888, 2.6789, 2.8809)
   },
   skill13: {
     name: "日灵帮帮忙",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣技能",
     levelMap: levelMap(1.3997, 1.5145, 1.6294, 1.7898, 1.9047, 2.0366, 2.2204, 2.4038, 2.5875, 2.7826)
   },
   skill14: {
     name: "重击·符语本源",
-    type: "heavy",
+    // Wiki：造成强力的声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.6665, 0.7212, 0.7759, 0.8524, 0.907, 0.9699, 1.0573, 1.1448, 1.2322, 1.3251)
   },
   skill15: {
     name: "符语爆破",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.9594, 3.202, 3.4448, 3.7845, 4.0271, 4.3063, 4.6944, 5.0827, 5.4709, 5.8834)
   },
   skill16: {
     name: "符语链刃",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.9999, 2.1638, 2.328, 2.5574, 2.7213, 2.9098, 3.1721, 3.4344, 3.6967, 3.9758)
   },
   skill17: {
     name: "符语日灵",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.9999, 2.1639, 2.3279, 2.5572, 2.7212, 2.9099, 3.172, 3.4346, 3.6967, 3.9754)
   },
   skill18: {
     name: "共鸣回路·我即语义",
-    type: "skill",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣回路",
     levelMap: levelMap(6.0938, 6.5934, 7.0931, 7.7926, 8.2923, 8.867, 9.6664, 10.4659, 11.2654, 12.1148)
   },
   skill19: {
     name: "如那期望般！",
-    type: "liberation",
+    // Wiki：本次伤害为声骸技能伤害。
+    type: "echo",
     levelFrom: "共鸣解放",
     levelMap: levelMap(4.3329, 4.6882, 5.0435, 5.541, 5.8963, 6.3049, 6.8733, 7.4418, 8.0103, 8.6143)
   },
@@ -158,29 +168,93 @@ function getPanelDamageBonus(attrMap, skillType) {
   if (skillType === 'intro') total += getPercentAttr(attrMap, '变奏技能伤害加成');
   if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
   if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
+  // 西格莉卡的主要输出技能均标注为声骸技能伤害。
+  if (skillType === 'echo') total += getPercentAttr(attrMap, '声骸技能伤害加成');
   return total;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
+
+// S1「那本该闪耀的光辉」：以下技能伤害倍率提升 70%。
+const CHAIN1_SKILLS = new Set(['普攻·明悟', '闪避反击·解读', '大嘭嘭！', '日灵帮帮忙']);
+// S6「语义点亮，光芒升起」：「天赋？」每层额外加成只作用于以下 4 个技能。
+const TALENT_SKILLS = new Set(['符语爆破', '符语链刃', '符语日灵', '共鸣回路·我即语义']);
+
+function getRoleSelfBuff({ skillName, skillType, chainCount, panel }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '西格莉卡·自身'
+  };
+
+  // 共鸣回路「天赋？」：每层使符语系技能伤害加深 30%（基础上限 2 层，S3 提升至 4 层）。
+  // 消耗【符文】时若【日灵能量】≥30，本次符语系技能倍率提升 50%，并叠加 1 层「天赋？」。
+  const talentStacks = chainCount >= 3 ? 4 : 2;
+  if (TALENT_SKILLS.has(skillName)) {
+    buff.deepen += 0.30 * talentStacks;
+    buff.multiplierBonus += 0.50;
+  }
+
+  // 固有「语义共鸣」：每层「语义的祝福」使气动伤害加成 +3%、声骸技能伤害加成 +3%，
+  // 满 6 层时额外 +30%/+30%（默认满层）。共鸣效率高于 125% 时，每超 1% 声骸技能伤害加成 +2%，上限 50%。
+  const blessingBonus = 0.03 * 6 + 0.30;
+  buff.damageBonus += blessingBonus;
+  if (skillType === 'echo') {
+    buff.damageBonus += blessingBonus;
+    const efficiencyPercent = Number(panel?.resonanceEfficiency || 0) * 100;
+    buff.damageBonus += Math.min(0.50, Math.max(0, (efficiencyPercent - 125) * 0.02));
+  }
+
+  // S1：普攻·明悟 / 闪避反击·解读 / 共鸣技能·大嘭嘭！ / 日灵帮帮忙 倍率提升 70%。
+  if (chainCount >= 1 && CHAIN1_SKILLS.has(skillName)) buff.multiplierBonus += 0.70;
+
+  // S2「那深含期待的苦涩」：共鸣回路·我即语义伤害倍率提升 120%。
+  if (chainCount >= 2 && skillName === '共鸣回路·我即语义') buff.multiplierBonus += 1.20;
+
+  // S4「失去着，收获着」：队伍中的角色施放声骸技能时，队伍角色攻击提升 20%。
+  if (chainCount >= 4) buff.attackPercent += 0.20;
+
+  // S5「直到沉于影下」：共鸣解放·如那期望般！伤害倍率提升 30%。
+  if (chainCount >= 5 && skillName === '如那期望般！') buff.multiplierBonus += 0.30;
+
+  // S6：目标受到西格莉卡的伤害提升 30%；
+  // 「天赋？」每层（上限 4 层）使符语系技能伤害加深 15%（至多 60%）、无视 7.5% 防御（至多 30%）。
+  if (chainCount >= 6) {
+    buff.deepen += 0.30;
+    if (TALENT_SKILLS.has(skillName)) {
+      buff.deepen += 0.15 * 4;
+      buff.ignoreDefense += 0.075 * 4;
+    }
+  }
+
+  return buff;
 }
 
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount, panel });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

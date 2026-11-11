@@ -1,5 +1,5 @@
 ﻿import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack, calcFinalDefense } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -70,24 +76,49 @@ function getPanelHealingBonus(attrMap) {
   return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
 }
 
-function getFinalAttack(panel, mergedBuff) {
-  return (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+function getFinalAttack(panel, mergedBuff, roleDetailData) {
+  return calcFinalAttack(panel, mergedBuff, roleDetailData);
 }
 
-function getFinalDefense(panel, mergedBuff) {
-  return (panel.defense || panel.def || 0) * (1 + (mergedBuff.defensePercent || 0)) + (mergedBuff.flatDefense || 0);
+function getFinalDefense(panel, mergedBuff, roleDetailData) {
+  return calcFinalDefense(panel, mergedBuff, roleDetailData);
 }
 
-function calcHeal({ roleDetailData, panel, skillKey }) {
+// 干涉标记：目标处于【震谐·干涉】/【集谐·干涉】时（S1 起不再需要该状态），
+// 附近队伍中所有角色对其造成的伤害提升。共鸣效率 > 100% 时，每超过 1% 提升 0.25%，上限 40%。
+function getInterferenceDeepen(panel) {
+  const efficiencyPercent = Number(panel?.resonanceEfficiency || 0) * 100;
+  return Math.min(0.40, Math.max(0, efficiencyPercent - 100) * 0.0025);
+}
+
+// S2：对拥有干涉标记的目标造成的暴击伤害提升，每超过 1% 共鸣效率提升 0.2%，上限 32%。
+function getInterferenceCritDamage(panel, chainCount) {
+  if (chainCount < 2) return 0;
+  const efficiencyPercent = Number(panel?.resonanceEfficiency || 0) * 100;
+  return Math.min(0.32, Math.max(0, efficiencyPercent - 100) * 0.002);
+}
+
+function calcHeal({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = MONING_HEALS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
+  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  // S4「宇宙的隐变量」：强谐振场治疗量提升 30%。
+  const chainHealing = chainCount >= 4 && skillKey === 'strongFieldHeal' ? 0.30 : 0;
   return {
     name: skill.name,
     ...calcSingleHeal({
-      base: getFinalDefense(panel, {}),
+      // 莫宁治疗按防御力结算：专武「宙算仪轨」的防御提升必须计入。
+      base: getFinalDefense(panel, mergedBuff, roleDetailData),
       skillMultiplier: skill.percentMap[level] || skill.percentMap[10],
       flatHeal: skill.flatMap[level] || skill.flatMap[10],
-      healingBonus: getPanelHealingBonus(panel.attrMap || {}),
+      // mergeBuff 已汇总 weapon/phantom/group 的 healingBonus，此处不再重复相加。
+      healingBonus: getPanelHealingBonus(panel.attrMap || {})
+        + Number(mergedBuff.healingBonus || 0)
+        + chainHealing,
       sourceDetail: [{ source: '莫宁', desc: '治疗按防御力结算' }]
     })
   };
@@ -96,22 +127,33 @@ function calcHeal({ roleDetailData, panel, skillKey }) {
 function calcDamageSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = MONING_SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
+  // S5「钟慢效应」：共鸣解放·临界协议伤害倍率提升 40%。
+  const chainMultiplier = chainCount >= 5 ? 0.40 : 0;
+  // S1 起干涉标记无条件生效；S6「直到群星的尽头」：临界协议造成的伤害提升 400%（增伤区）。
+  const chainDeepen = getInterferenceDeepen(panel);
+  const chainDamageBonus = chainCount >= 6 ? 4.00 : 0;
+  // 临界协议：共鸣效率 > 100% 时，每超过 1% 使该技能暴击 +0.5%（上限 80%）、
+  // 暴击伤害 +1%（上限 160%）。
+  const efficiencyPercent = Number(panel?.resonanceEfficiency || 0) * 100;
+  const liberationCritRate = Math.min(0.80, Math.max(0, efficiencyPercent - 100) * 0.005);
+  const liberationCritDamage = Math.min(1.60, Math.max(0, efficiencyPercent - 100) * 0.01);
   const result = calcSingleDamage({
-    attack: getFinalAttack(panel, mergedBuff),
+    attack: getFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
-    multiplierBonus: mergedBuff.multiplierBonus || 0,
-    damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
-    deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    multiplierBonus: (mergedBuff.multiplierBonus || 0) + chainMultiplier,
+    damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0) + chainDamageBonus,
+    deepen: (mergedBuff.deepen || 0) + chainDeepen,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0) + liberationCritRate,
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0) + getInterferenceCritDamage(panel, chainCount) + liberationCritDamage,
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };
@@ -125,9 +167,9 @@ export default {
   async calc({ roleDetailData, panel, equipment, enemy, modules, options }) {
     const args = { roleDetailData, panel, equipment, enemy, modules, options };
     const items = [
-      calcHeal({ roleDetailData, panel, skillKey: 'arrayHeal' }),
-      calcHeal({ roleDetailData, panel, skillKey: 'strongFieldHeal' }),
-      calcHeal({ roleDetailData, panel, skillKey: 'errorHeal' }),
+      calcHeal({ ...args, skillKey: 'arrayHeal' }),
+      calcHeal({ ...args, skillKey: 'strongFieldHeal' }),
+      calcHeal({ ...args, skillKey: 'errorHeal' }),
       calcDamageSkill({ ...args, skillKey: 'liberation' })
     ];
     return { enemyName: enemy?.name || '无妄者', source: '库街区 Wiki entryId=1429461088674648064', items };

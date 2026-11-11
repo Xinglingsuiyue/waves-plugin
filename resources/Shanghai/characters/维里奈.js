@@ -1,5 +1,5 @@
 import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -58,28 +58,54 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleDamageBuff({ chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '维里奈·自身'
+  };
+  // 固有「自然的献礼」：队伍中的角色攻击提升 20%，持续 20 秒。
+  buff.attackPercent += 0.20;
+  // S4「盛放的拥抱」：队伍中的角色衍射伤害加成提升 15%，持续 24 秒。
+  if (chainCount >= 4) buff.damageBonus += 0.15;
+  return buff;
+}
+
 function calcOneDamage({ roleDetailData, panel, equipment, enemy, modules, damage }) {
   const level = getSkillLevel(roleDetailData, damage.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleDamageBuff({ chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: damage.type, skillName: damage.name }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: damage.levelMap[level] || damage.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, damage.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: damage.name, ...result };
+}
+
+function getRoleHealBuff({ healKey, chainCount }) {
+  const buff = {
+    attackPercent: 0.20, healingBonus: 0, multiplierBonus: 0, deepen: 0, source: '维里奈·自身'
+  };
+  // 固有「自然的献礼」：施放星星花绽放/草木生长/盛放时队伍攻击提升 20%，治疗量按攻击力结算。
+  // S3「生长的选择」：共鸣解放·光合标记的治疗效果加成提升 12%。
+  if (chainCount >= 3 && (healKey === 'liberation' || healKey === 'coordinated')) buff.healingBonus += 0.12;
+  // S5「结果的奇迹」：治疗生命值低于 50% 的角色时治疗效果加成提升 20%，默认按低血量目标计入。
+  if (chainCount >= 5) buff.healingBonus += 0.20;
+  return buff;
 }
 
 function getHealingBonus(panel, mergedBuff) {
@@ -87,12 +113,12 @@ function getHealingBonus(panel, mergedBuff) {
   return getPercentAttr(attrMap, '治疗效果加成') + Number(mergedBuff.healingBonus || 0);
 }
 
-function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal }) {
+function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal, healKey }) {
   const level = getSkillLevel(roleDetailData, heal.levelFrom);
   const flat = heal.flatMap[level] ?? heal.flatMap[10];
   const percent = heal.percentMap[level] ?? heal.percentMap[10];
 
-  const roleBuff = { healingBonus: 0, multiplierBonus: 0, deepen: 0, source: '维里奈·自身' };
+  const roleBuff = getRoleHealBuff({ healKey, chainCount: getChainUnlockedCount(roleDetailData) });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: heal.name })
     : {};
@@ -104,13 +130,11 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal })
     : {};
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
-  const healingBonus = getHealingBonus(panel, mergedBuff)
-    + Number(weaponBuff.healingBonus || 0)
-    + Number(phantomBuff.healingBonus || 0)
-    + Number(groupBuff.healingBonus || 0);
+  // mergeBuff 已汇总 role/weapon/phantom/group 的 healingBonus，此处不再重复相加。
+  const healingBonus = getHealingBonus(panel, mergedBuff);
 
   const result = calcSingleHeal({
-    base: panel.attack,
+    base: calcFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier: percent,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     flatHeal: flat,
@@ -129,12 +153,10 @@ export default {
   name: '维里奈',
 
   async calc({ roleDetailData, panel, equipment, enemy, modules }) {
-    getChainUnlockedCount(roleDetailData);
-
     const items = [
-      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.circuit }),
-      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.liberation }),
-      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.coordinated }),
+      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.circuit, healKey: 'circuit' }),
+      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.liberation, healKey: 'liberation' }),
+      calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal: VERINA_HEALS.coordinated, healKey: 'coordinated' }),
       calcOneDamage({ roleDetailData, panel, equipment, enemy, modules, damage: VERINA_DAMAGES.liberation })
     ];
 

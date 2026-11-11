@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -181,10 +181,10 @@ function calcOneSkill({
                       + Number(phantomBuff.critRate || 0)
                       + Number(groupBuff.critRate || 0);
 
-  // 攻击力 = 面板攻击 × (1 + attackPercent) + flatAttack
+  // 攻击力 = 面板攻击 + 基础攻击 × attackPercent + flatAttack
   const attackPercent = mergedBuff.attackPercent || 0;
   const flatAttack = mergedBuff.flatAttack || 0;
-  const finalAttack = panel.attack * (1 + attackPercent) + flatAttack;
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skillType);

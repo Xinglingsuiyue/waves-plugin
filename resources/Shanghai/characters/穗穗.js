@@ -1,5 +1,5 @@
 import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack, calcFinalHp } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -140,17 +140,15 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply(applyArgs) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply(applyArgs) : {};
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
-  const finalHp = (panel.hp || 0) * (1 + (mergedBuff.hpPercent || 0)) + (mergedBuff.flatHp || 0);
-  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalHp = calcFinalHp(panel, mergedBuff, roleDetailData);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const base = skill.base === 'hp' ? finalHp : finalAttack;
   const skillMultiplier = skill.levelMap[level] ?? skill.levelMap[10];
 
   if (skill.kind === 'heal') {
+    // mergeBuff 已汇总 role/weapon/phantom/group 的 healingBonus，此处不再重复相加。
     const healingBonus = getPanelHealingBonus(panel.attrMap || {})
-      + Number(roleBuff.healingBonus || 0)
-      + Number(weaponBuff.healingBonus || 0)
-      + Number(phantomBuff.healingBonus || 0)
-      + Number(groupBuff.healingBonus || 0);
+      + Number(mergedBuff.healingBonus || 0);
     return {
       name: skill.name,
       ...calcSingleHeal({

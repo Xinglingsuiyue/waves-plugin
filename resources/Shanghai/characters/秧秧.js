@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -119,26 +125,67 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// 秧秧自身增益（共鸣链）：
+//   S1「底色湛蓝如洗」施放变奏技能·湛蓝礼赞后气动伤害加成 +15%，持续 8 秒；
+//   S3「流息声声不绝」共鸣技能伤害加成 +40%；
+//   S4「若可侧耳倾听」空中攻击·释羽伤害 +95%；
+//   S5「绪风于此响彻」共鸣解放·朔风旋涌伤害 +85%；
+//   S6「致美好以颂歌」施放释羽后队伍攻击 +20%，持续 20 秒。
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '秧秧·自身'
+  };
+
+  // 固有「怀悯」：施放变奏技能湛蓝礼赞后，气动伤害加成 +8%，持续 8 秒（默认已触发）。
+  buff.damageBonus += 0.08;
+
+  // S1：湛蓝礼赞后的气动伤害加成提升 15%。
+  if (chainCount >= 1) buff.damageBonus += 0.15;
+
+  // S3：共鸣技能伤害加成提升 40%。
+  if (chainCount >= 3 && skillType === 'skill') buff.damageBonus += 0.40;
+
+  // S4：空中攻击·释羽伤害提升 95%。
+  if (chainCount >= 4 && skillName === '释羽') buff.damageBonus += 0.95;
+
+  // S5：共鸣解放·朔风旋涌伤害提升 85%。
+  if (chainCount >= 5 && skillName === '朔风旋涌') buff.damageBonus += 0.85;
+
+  // S6：施放释羽后队伍攻击提升 20%，持续 20 秒。
+  if (chainCount >= 6 && skillName !== '释羽') buff.attackPercent += 0.20;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

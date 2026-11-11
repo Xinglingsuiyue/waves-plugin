@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -144,7 +144,8 @@ const LUCY_SKILLS = {
   },
   motionFailure: {
     name: '欺骗程式·运动失能伤害',
-    type: 'liberation',
+    // Wiki：对所有标记目标造成骇破伤害。
+    type: 'hack',
     levelFrom: '共鸣解放',
     levelMap: levelMap(
       '458.64%偏谐系数',
@@ -183,6 +184,15 @@ function getRoleSelfBuff({ skill, chainCount }) {
     source: '露西·自身'
   };
 
+  // S1「月球、船票与梦想」：施放变奏技能·过时幻觉时攻击 +20%，持续 14 秒（默认已触发）。
+  buff.attackPercent += 0.20;
+
+  // S4「夜之城没有活着的传奇」：队伍中角色附加【骇破·偏移】后，
+  // 队伍中角色全属性伤害加成 +20%，持续 20 秒（默认已触发）。
+  if (chainCount >= 4) {
+    buff.damageBonus += 0.20;
+  }
+
   if (chainCount >= 3) {
     if (
       skill.name === '共鸣解放·网络行者·覆写篡改伤害' ||
@@ -198,6 +208,13 @@ function getRoleSelfBuff({ skill, chainCount }) {
     ) {
       buff.multiplierBonus += 0.65;
     }
+  }
+
+  // S6「I Really Want to Stay At Your House」：
+  // 目标受到露西的重击伤害 +40%、受到的骇破伤害 +60%（承伤提升走深化区）。
+  if (chainCount >= 6) {
+    if (skill.type === 'heavy') buff.deepen += 0.40;
+    if (skill.type === 'hack') buff.deepen += 0.60;
   }
 
   return buff;
@@ -235,7 +252,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
     + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

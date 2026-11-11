@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -104,7 +104,7 @@ function getPanelDamageBonus(attrMap) {
        + getPercentAttr(attrMap, '共鸣技能伤害加成');
 }
 
-function getRoleSelfBuff({ skillName, chainCount }) {
+function getRoleSelfBuff({ skillName, chainCount, options }) {
   const buff = {
     damageBonus: 0,
     multiplierBonus: 0,
@@ -113,6 +113,11 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     critDamage: 0,
     source: '弗洛洛·自身'
   };
+
+  // 固有「八重奏」：每层【余响】使暴击伤害 +2.5%（进入战斗即获得 10 层，上限 24 层），
+  // 层数与谱曲终末的倍率折算保持一致。
+  const echoStacks = Math.max(0, Math.min(24, Number(options?.echoStacks ?? 14)));
+  buff.critDamage += 0.025 * echoStacks;
 
   // S1：亡与死的乐章/永不消逝的梦呓 倍率 +80%
   if (chainCount >= 1 && (skillName === '亡与死的乐章' || skillName === '永不消逝的梦呓')) {
@@ -124,13 +129,17 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     buff.multiplierBonus += 0.75;
   }
 
-  // S4：施放声骸技能时全队全属性 +20%，默认弗洛洛输出主轴中已触发
+  // S3「匕首」：声骸技能伤害加深 80%（本模块 3 个技能均为共鸣技能伤害，不适用）。
+
+  // S4「火炬」：施放声骸技能时队伍全属性伤害加成 +20% 持续 30 秒（默认循环中已施放声骸技能）。
   if (chainCount >= 4) {
     buff.damageBonus += 0.20;
   }
 
-  // S6：指挥状态弗洛洛为登场角色，湮灭伤害加成 +60%
-  if (chainCount >= 6) {
+  // S6「深夜」：指挥状态且弗洛洛为登场角色时，湮灭伤害加成 +60%。
+  // 亡与死的乐章、永不消逝的梦呓 为指挥状态下的强化攻击，可稳定吃到该加成；
+  // 谱曲终末是进入指挥状态的起手技能，不计入。
+  if (chainCount >= 6 && (skillName === '亡与死的乐章' || skillName === '永不消逝的梦呓')) {
     buff.damageBonus += 0.60;
   }
 
@@ -157,7 +166,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
     multiplier += perStackBonus * echoStacks;
   }
 
-  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount, options });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -176,7 +185,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const attackPercent = mergedBuff.attackPercent || 0;
   const flatAttack = mergedBuff.flatAttack || 0;
-  const finalAttack = panel.attack * (1 + attackPercent) + flatAttack;
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap);

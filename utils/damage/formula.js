@@ -12,17 +12,21 @@ export function roundFixed(num, digits = 4) {
 
 /**
  * 防御乘区
- * 采用简化公式：
- * (100 + 角色等级) / (199 + 角色等级 + 怪物等级)
+ * 官方公式：
+ *   (100 + 角色等级) / ((100 + 角色等级) + (99 + 怪物等级) × (1 - 无视防御))
+ * 无视防御只削减敌方防御项，不能把整个防御乘区按 (1 - 无视防御) 放大。
+ * 无视防御为 0 时等价于 (100 + 角色等级) / (199 + 角色等级 + 怪物等级)。
  */
 export function calcDefenseMultiplier({
   attackerLevel = 90,
   enemyLevel = 90,
   ignoreDefense = 0
 } = {}) {
-  const base = (100 + attackerLevel) / (199 + attackerLevel + enemyLevel);
+  const atkLevel = Number(attackerLevel) || 0;
+  const defLevel = Number(enemyLevel) || 0;
   const ignore = clamp(ignoreDefense, 0, 0.95);
-  return base / Math.max(0.05, 1 - ignore);
+  const enemyDefense = (99 + defLevel) * (1 - ignore);
+  return (100 + atkLevel) / ((100 + atkLevel) + enemyDefense);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -144,9 +144,12 @@ const REBECCA_SKILLS = {
   }
 };
 
-function getPanelDamageBonus(attrMap, skillType) {
+function getPanelDamageBonus(attrMap, skillType, normalBonusScale = 0) {
   let total = getPercentAttr(attrMap, '导电伤害加成');
-  if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
+  if (skillType === 'normal') {
+    // S6：从所有来源获得的普攻伤害加成数值提升 40%（面板部分在此折算）。
+    total += getPercentAttr(attrMap, '普攻伤害加成') * (1 + normalBonusScale);
+  }
   if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
   if (skillType === 'skill') total += getPercentAttr(attrMap, '共鸣技能伤害加成');
   if (skillType === 'liberation') total += getPercentAttr(attrMap, '共鸣解放伤害加成');
@@ -166,45 +169,58 @@ function getRoleSelfBuff({ skill, skillType, chainCount }) {
     source: '丽贝卡·自身'
   };
 
-  const isModeAttack =
-    skill.name.includes('来发大的！') ||
-    skill.name.includes('有本事来抓我！') ||
-    skill.name.includes('哒哒哒！·猎手') ||
-    skill.name.includes('砰砰砰！·铁胆') ||
-    skill.name.includes('呜呼，来发大的！') ||
-    skill.name.includes('蠢货，有本事来抓我！');
+  // 模式属性：初始【猎手】暴击伤害 +30%；【铁胆】造成伤害无视 15% 防御。
+  // 按「小孩子才做选择！」生效处理（12 秒内同时获得两种模式的属性加成）；
+  // S4「我会保护你的！」使该属性加成效果额外提升 60%。
+  const modeScale = chainCount >= 4 ? 1.6 : 1;
+  buff.critDamage += 0.30 * modeScale;
+  buff.ignoreDefense += 0.15 * modeScale;
 
-  if (chainCount >= 1 && isModeAttack) {
-    buff.multiplierBonus += 0.50;
+  // S2：施放变奏技能/共鸣解放后，队伍全属性伤害加成 +20%、全伤害加深 +15%，持续 30 秒。
+  if (chainCount >= 2) {
+    buff.damageBonus += 0.20;
+    buff.deepen += 0.15;
   }
+
+  // 固有「该你了！」：获得小孩子才做选择！或施放重击·哒哒哒/砰砰砰时攻击 +10%，可叠 2 层。
+  // 固有「有破绽！」：施放共鸣解放·狂欢时间！时，附近队伍中角色攻击 +20%。
+  buff.attackPercent += 0.40;
 
   if (chainCount >= 3 && skill.name === '大烟花！伤害') {
     buff.multiplierBonus += 0.60;
   }
 
-  if (chainCount >= 4) {
-    buff.damageBonus += 0.60;
-  }
-
+  // S5：附加【骇破·偏移】时，自身普攻伤害加成 +20%。
   if (chainCount >= 5 && skillType === 'normal') {
     buff.damageBonus += 0.20;
   }
 
+  // S6：普攻伤害加成数值提升 40%，S5 的 20% 部分在此折算（面板部分见 getPanelDamageBonus）。
   if (chainCount >= 6 && skillType === 'normal') {
-    buff.damageBonus += 0.40;
+    buff.damageBonus += 0.20 * 0.40;
   }
 
   return buff;
 }
 
 function getSkillMultiplier(skill, level, chainCount) {
-  const base = skill.levelMap[level] || skill.levelMap[10];
+  let base = skill.levelMap[level] || skill.levelMap[10];
 
+  // S1「请多指教咯~」：普攻·猎手、重击·猎手、战术闪避·猎手、闪避反击·猎手、
+  // 普攻·铁胆、战术闪避·铁胆、闪避反击·铁胆 伤害倍率 +50%。
+  // 【狂热】达到 120 点时「重击·猎手」会替换为「重击·哒哒哒！·猎手」，本模块展示的是替换形态，
+  // 按重击·猎手 +50% 处理；「重击·砰砰砰！·铁胆」对应的「重击·铁胆」不在 S1 列表中，不享受该加成。
+  if (chainCount >= 1 && skill.name === '重击·哒哒哒！·猎手伤害') {
+    base += 0.50;
+  }
+
+  // S6「也许……」：施放重击·哒哒哒！·猎手 / 重击·砰砰砰！·铁胆期间，额外造成一次 900% 导电伤害
+  //（此次伤害为普攻伤害，直接并入本次普攻倍率）。
   if (
     chainCount >= 6 &&
     (skill.name === '重击·哒哒哒！·猎手伤害' || skill.name === '重击·砰砰砰！·铁胆伤害')
   ) {
-    return base + 9.00;
+    base += 9.00;
   }
 
   return base;
@@ -232,7 +248,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
     + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,
@@ -240,7 +256,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
       attack: finalAttack,
       skillMultiplier,
       multiplierBonus: mergedBuff.multiplierBonus || 0,
-      damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
+      damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type, chainCount >= 6 ? 0.40 : 0) + (mergedBuff.damageBonus || 0),
       deepen: mergedBuff.deepen || 0,
       critRate: panel.critRate + extraCritRate,
       critDamage: panel.critDamage + extraCritDamage,

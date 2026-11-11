@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -50,24 +50,39 @@ function getPanelDamageBonus(attrMap, skillType) {
 }
 
 function getRoleSelfBuff({ skill, chainCount }) {
-  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, attackPercent: 0, source: '吟霖·自身' };
+  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, critDamage: 0, attackPercent: 0, source: '吟霖·自身' };
 
-  // 固有技能：浸渍痛楚，默认爆发链路中磁殛咆哮后暴击 +15%。
+  // 固有「浸渍痛楚」：使用共鸣技能磁殛咆哮后暴击 +15%（默认已触发）。
   buff.critRate += 0.15;
 
-  // 固有技能：目标专注，召雷磁爆命中缚罪标记目标时伤害 +10%、攻击 +10%。
+  // 固有「目标专注」：召雷磁爆命中带缚罪标记的目标时伤害 +10%、攻击 +10%（默认已触发）。
   if (skill.name === YINLIN_SKILLS.skill.name) {
     buff.damageBonus += 0.10;
     buff.attackPercent += 0.10;
   }
 
-  // 共鸣链只保留通用保守入口，后续如需精确链效果再按库街区链文本细化。
-  if (chainCount >= 2 && skill.type === 'skill') {
-    buff.damageBonus += 0.20;
+  // S1「矛盾的抉择」：共鸣技能磁殛咆哮和召雷磁爆伤害 +70%。
+  if (chainCount >= 1 && skill.name === YINLIN_SKILLS.skill.name) {
+    buff.damageBonus += 0.70;
   }
-  if (chainCount >= 6) {
-    buff.damageBonus += 0.20;
+
+  // S2「牵绊的俘虏」：磁殛爆发命中额外恢复审判值与共鸣能量（不参与伤害）。
+
+  // S3「无情的断罪」：共鸣回路审判之雷伤害倍率 +55%（本模块不展示审判之雷）。
+
+  // S4「前行的鼓舞」：使用审判之雷后队伍攻击 +20% 持续 12 秒（默认已触发）。
+  if (chainCount >= 4) {
+    buff.attackPercent += 0.20;
   }
+
+  // S5「决意的回响」：破天雷灭击命中带缚罪标记/惩罚印记目标时伤害 +100%（默认已触发）。
+  if (chainCount >= 5 && skill.name === YINLIN_SKILLS.liberation.name) {
+    buff.damageBonus += 1.00;
+  }
+
+  // S6「正义的践行」：施放破天雷灭击后 30 秒内普攻额外触发疾霆昭彰
+  //（攻击力 419.59% 导电伤害，最多 4 次，此次伤害为共鸣技能伤害）。
+  // 该伤害由普攻触发，不属于本模块展示的 3 个技能，故不在此处折算。
 
   return buff;
 }
@@ -85,7 +100,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

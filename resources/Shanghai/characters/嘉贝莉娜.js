@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -36,7 +36,8 @@ const GALBRENA_SKILLS = {
   // 普攻·炽天猎杀第三段：12.24%*3 + 85.61% → 24.32%*3 + 170.21% (10级)
   blazingHuntThree: {
     name: '普攻·炽天猎杀第三段',
-    type: 'normal',
+    // Wiki：普攻·炽天猎杀第 1、2、3 段伤害为重击伤害。
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 0.1224 * 3 + 0.8561, 2: 0.1324 * 3 + 0.9263, 3: 0.1425 * 3 + 0.9965,
@@ -48,7 +49,8 @@ const GALBRENA_SKILLS = {
   // 普攻·炽天猎杀第四段：9.13%*3 + 63.89% → 18.15%*3 + 127.02% (10级)
   blazingHuntFour: {
     name: '普攻·炽天猎杀第四段',
-    type: 'normal',
+    // Wiki：普攻·炽天猎杀第 4、5 段伤害为声骸技能伤害。
+    type: 'echo',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 0.0913 * 3 + 0.6389, 2: 0.0988 * 3 + 0.6913, 3: 0.1063 * 3 + 0.7437,
@@ -60,7 +62,8 @@ const GALBRENA_SKILLS = {
   // 重击·炼羽裁决第三段：8.90%*3 + 62.27% → 17.69%*3 + 123.77% (10级)
   featherJudgementThree: {
     name: '重击·炼羽裁决第三段',
-    type: 'normal',
+    // Wiki：重击·炼羽裁决第 3 段伤害为声骸技能伤害。
+    type: 'echo',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 0.0890 * 3 + 0.6227, 2: 0.0963 * 3 + 0.6738, 3: 0.1036 * 3 + 0.7248,
@@ -74,10 +77,9 @@ const GALBRENA_SKILLS = {
 function getPanelDamageBonus(attrMap, skillType) {
   let total = 0;
   total += getPercentAttr(attrMap, '热熔伤害加成');
-  if (skillType === 'normal') {
-    total += getPercentAttr(attrMap, '普攻伤害加成');
-    total += getPercentAttr(attrMap, '重击伤害加成');
-  }
+  if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
+  if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
+  if (skillType === 'echo') total += getPercentAttr(attrMap, '声骸技能伤害加成');
   return total;
 }
 
@@ -92,15 +94,23 @@ function getRoleSelfBuff({ skillName, chainCount, opts }) {
     source: '嘉贝莉娜·自身'
   };
 
-  // S1：恶翼扬升时，每点【余火】+2% 暴伤，至多 80%（默认满层）
+  const yhuoMax = Math.max(0, Math.min(40, Number(opts?.yhuoStacks ?? 40)));
+
+  // 共鸣回路「超阈限」：恶魔位格期间，每点【余火】使目标受到上述 5 个技能伤害提升 1.5%，
+  // 至多 60%（40 点）。属于承伤提升，走 deepen（默认满余火）。
+  buff.deepen += Math.min(0.60, 0.015 * yhuoMax);
+
+  // S1：恶翼扬升时，每点【余火】额外 +2% 暴伤，至多 80%。
   if (chainCount >= 1) {
-    const yhuoMax = Math.max(0, Math.min(40, Number(opts?.yhuoStacks ?? 40)));
     buff.critDamage += 0.02 * yhuoMax;
   }
 
-  // S2：内燃烧攻击 +350%（默认开启）
+  // 固有「内燃烧」：施放变奏技能/地狱穿行/普攻·炽天猎杀第4段/共鸣技能时攻击 +20%。
+  // S2「行过烈狱与幽暗冥途」：内燃烧提供的攻击加成提升 350%，即 20% × (1 + 350%) = 90%。
   if (chainCount >= 2) {
-    buff.attackPercent += 3.50;
+    buff.attackPercent += 0.20 * (1 + 3.50);
+  } else {
+    buff.attackPercent += 0.20;
   }
 
   // S4：声骸技能触发后，全队全属性 +20%（默认开启）
@@ -108,11 +118,11 @@ function getRoleSelfBuff({ skillName, chainCount, opts }) {
     buff.damageBonus += 0.20;
   }
 
-  // S6：永恒位格期间，普攻/重击/空中/闪反 倍率 +60%
+  // S6：永恒位格期间，普攻/重击/空中/闪反 倍率 +60%；
+  // 每点余火额外 +0.875% 热熔伤害加深，至多 +35%（默认满）。
   if (chainCount >= 6) {
     buff.multiplierBonus += 0.60;
-    // 每点余火 +0.875% 热熔加深，至多 +35%（默认满）
-    buff.deepen += 0.35;
+    buff.deepen += Math.min(0.35, 0.00875 * yhuoMax);
   }
 
   return buff;
@@ -142,7 +152,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

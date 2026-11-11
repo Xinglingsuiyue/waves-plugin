@@ -1,5 +1,5 @@
 import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -48,25 +54,26 @@ const SKILLS = {
   },
   skill4: {
     name: "月弓·普攻第一段",
-    type: "normal",
+    // Wiki：月弓攻击本次伤害为共鸣解放伤害。
+    type: "liberation",
     levelFrom: "常态攻击",
     levelMap: levelMap(0.636, 0.6882, 0.7404, 0.8134, 0.8655, 0.9255, 1.0089, 1.0924, 1.1758, 1.2645)
   },
   skill5: {
     name: "月弓·普攻第二段",
-    type: "normal",
+    type: "liberation",
     levelFrom: "常态攻击",
     levelMap: levelMap(0.84, 0.909, 0.978, 1.0743, 1.1433, 1.2225, 1.3326, 1.4427, 1.5531, 1.6701)
   },
   skill6: {
     name: "月弓·普攻第三段",
-    type: "normal",
+    type: "liberation",
     levelFrom: "常态攻击",
     levelMap: levelMap(1.68, 1.8178, 1.9556, 2.1484, 2.2862, 2.4446, 2.665, 2.8854, 3.106, 3.3402)
   },
   skill7: {
     name: "月弓·闪避反击",
-    type: "normal",
+    type: "liberation",
     levelFrom: "常态攻击",
     levelMap: levelMap(1.56, 1.6881, 1.8159, 1.995, 2.1231, 2.2701, 2.4747, 2.6793, 2.8842, 3.1017)
   },
@@ -90,49 +97,52 @@ const SKILLS = {
   },
   skill11: {
     name: "越限的弦引",
-    type: "skill",
+    // Wiki：本次伤害为共鸣解放伤害。
+    type: "liberation",
     levelFrom: "共鸣技能",
     levelMap: levelMap(2.211, 2.3924, 2.5738, 2.8276, 3.0088, 3.2174, 3.5074, 3.7974, 4.0876, 4.3958)
   },
   skill12: {
     name: "流变·月弓",
-    type: "skill",
+    // Wiki：重击·流变·月弓本次伤害为共鸣解放伤害。
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.26, 1.3634, 1.4667, 1.6113, 1.7147, 1.8335, 1.9988, 2.1641, 2.3294, 2.5051)
   },
   skill13: {
     name: "流变·月环",
-    type: "skill",
+    // Wiki：重击·流变·月环本次伤害为共鸣解放伤害。
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.5932, 1.724, 1.8544, 2.0372, 2.168, 2.318, 2.5272, 2.736, 2.9452, 3.1672)
   },
   skill14: {
     name: "月弓·普攻第一段强化",
-    type: "skill",
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.036, 1.121, 1.206, 1.3249, 1.4098, 1.5075, 1.6435, 1.7794, 1.9153, 2.0597)
   },
   skill15: {
     name: "月弓·普攻第二段强化",
-    type: "skill",
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.44, 1.5582, 1.6764, 1.8417, 1.9596, 2.0955, 2.2845, 2.4732, 2.6622, 2.8629)
   },
   skill16: {
     name: "月弓·普攻第三段强化",
-    type: "skill",
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.68, 2.8998, 3.1196, 3.4272, 3.647, 3.8998, 4.2514, 4.603, 4.9546, 5.3282)
   },
   skill17: {
     name: "月弓·闪避反击强化",
-    type: "skill",
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.3601, 2.5536, 2.7471, 3.018, 3.2115, 3.4341, 3.7437, 4.0533, 4.3632, 4.692)
   },
   skill18: {
     name: "越限的弦引强化",
-    type: "skill",
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(3.211, 3.4744, 3.7378, 4.1064, 4.3696, 4.6724, 5.0938, 5.515, 5.9362, 6.3838)
   },
@@ -168,7 +178,8 @@ const SKILLS = {
   },
   skill24: {
     name: "至臻的完满",
-    type: "skill",
+    // Wiki：重击·至臻的完满，此次伤害为共鸣解放伤害。
+    type: "liberation",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.8, 0.8656, 0.9312, 1.0231, 1.0887, 1.1641, 1.2691, 1.374, 1.479, 1.5905)
   },
@@ -191,7 +202,7 @@ const SKILLS = {
     levelMap: levelMap(5.5, 5.951, 6.402, 7.0334, 7.4844, 8.0031, 8.7247, 9.4463, 10.1679, 10.9346)
   },
   skill28: {
-    name: "技能",
+    name: "照我以显",
     type: "intro",
     levelFrom: "变奏技能",
     levelMap: levelMap(0.8, 0.8659, 0.9318, 1.0238, 1.0889, 1.1648, 1.2698, 1.374, 1.479, 1.5909)
@@ -209,6 +220,50 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// S3「我痛饮他者的遗忘」：月相流转状态下，以下技能造成的伤害加深 65%。
+const CHAIN3_SKILLS = new Set([
+  '月弓·普攻第一段', '月弓·普攻第二段', '月弓·普攻第三段',
+  '月弓·闪避反击', '越限的弦引',
+  '月弓·普攻第一段强化', '月弓·普攻第二段强化', '月弓·普攻第三段强化',
+  '月弓·闪避反击强化', '越限的弦引强化'
+]);
+
+function getRoleSelfBuff({ chainCount, skillName, skillType }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    source: '尤诺·自身'
+  };
+
+  // 【苍白死光的祝颂】：每层全伤害加深 4%，最多 10 层（默认满层 +40%），仅作用于伤害。
+  // 固有「新衍」施放变奏技能/共鸣解放时直接获得 5 层，可稳定覆盖输出窗口。
+  if (skillType !== 'heal') buff.deepen += 0.40;
+
+  // S1「圆与缺，皆替金枝镀色」：处于月相流转状态时攻击提升 40%（治疗同样按攻击结算）。
+  if (chainCount >= 1) buff.attackPercent += 0.40;
+
+  // S2「昼或夜，且以它为永恒」：苍白死光的祝颂叠至 10 层时，额外获得 40% 全伤害加深。
+  // 伤害加深只作用于伤害，不作用于治疗。
+  if (chainCount >= 2 && skillType !== 'heal') buff.deepen += 0.40;
+
+  // S3：月弓·普攻 / 越限的弦引 / 月弓·闪避反击 伤害加深 65%。
+  if (chainCount >= 3 && skillType !== 'heal' && CHAIN3_SKILLS.has(skillName)) {
+    buff.deepen += 0.65;
+  }
+
+  // S5「万千次虚掷的注视」：共鸣解放伤害加成提升 20%。
+  if (chainCount >= 5 && skillType === 'liberation') buff.damageBonus += 0.20;
+
+  // S6「我所在，即为不变的独一」：重击·至臻的完满伤害倍率增加 1600%。
+  if (chainCount >= 6 && skillName === '至臻的完满') buff.multiplierBonus += 16.00;
+
+  return buff;
+}
+
 function getPanelHealingBonus(attrMap) {
   return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
 }
@@ -216,11 +271,13 @@ function getPanelHealingBonus(attrMap) {
 function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ chainCount, skillName: skill.name, skillType: 'heal' });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleHeal({
     base: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
@@ -235,19 +292,21 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ chainCount, skillName: skill.name, skillType: skill.type });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

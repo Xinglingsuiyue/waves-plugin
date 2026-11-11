@@ -16,7 +16,7 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: { 1: 0.24, 2: 0.3, 3: 0.36, 4: 0.42, 5: 0.48 }
+  damage: null
 };
 
 function pick(map, reson) {

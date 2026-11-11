@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -113,26 +113,63 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
+
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '秋水·自身'
+  };
+
+  // S2「织雾首秀」：攻击被【雾化分身】嘲讽的目标时，攻击提升 15%。
+  if (chainCount >= 2) buff.attackPercent += 0.15;
+
+  // S3「雾化转场」：普攻或空中攻击穿过【雾气】时额外生成 2 颗子弹，
+  // 共造成普攻或空中攻击的 50% 伤害。
+  if (chainCount >= 3 && skillType === 'normal') buff.multiplierBonus += 0.50;
+
+  // S4「终幕的黑花」：共鸣技能·雾化子弹伤害提升 30%。
+  if (chainCount >= 4 && skillName === '雾化子弹') buff.multiplierBonus += 0.30;
+
+  // S5「迷途者喝彩」：处于共鸣回路·迷雾潜行时，气动伤害加成提升 25%。
+  if (chainCount >= 5) buff.damageBonus += 0.25;
+
+  // S6「幕后卖家」：共鸣解放·雾里观花持续时额外增加暴击 8%；
+  // 重击穿过虚实之门时伤害额外提升 50%（重击伤害加深）。
+  if (chainCount >= 6) {
+    buff.critRate += 0.08;
+    if (skillType === 'heavy') buff.deepen += 0.50;
+  }
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

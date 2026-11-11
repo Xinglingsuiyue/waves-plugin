@@ -8,7 +8,9 @@ const wiki = {
 };
 
 const EFFECT = {
-  attack: null,
+  // 施放共鸣解放时获得 3 层【铁甲】，每层攻击/防御提升 3%~5%，按满层计。
+  attack: { 1: 0.09, 2: 0.105, 3: 0.12, 4: 0.135, 5: 0.15 },
+  defense: { 1: 0.09, 2: 0.105, 3: 0.12, 4: 0.135, 5: 0.15 },
   critRate: null,
   critDamage: null,
   liberation: null,
@@ -31,6 +33,7 @@ export default {
     const reson = Math.max(1, Math.min(5, Number(panel?.weaponResonLevel || 1)));
     const buff = {
       attackPercent: pick(EFFECT.attack, reson),
+      defensePercent: pick(EFFECT.defense, reson),
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),

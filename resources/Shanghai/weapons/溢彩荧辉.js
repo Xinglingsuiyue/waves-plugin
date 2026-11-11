@@ -13,10 +13,12 @@ const EFFECT = {
   critDamage: null,
   liberation: null,
   skill: null,
-  normal: null,
+  // 施放变奏技能或普攻命中时，自身普攻伤害提高 36%~72%。
+  normal: { 1: 0.36, 2: 0.45, 3: 0.54, 4: 0.63, 5: 0.72 },
   heavy: null,
   intro: null,
-  damage: null
+  // 普攻期间附加偏移时，全队全伤害提高 8%~16%，最多 3 层。
+  damage: { 1: 0.08, 2: 0.10, 3: 0.12, 4: 0.14, 5: 0.16 }
 };
 
 function pick(map, reson) {
@@ -31,7 +33,8 @@ export default {
     const reson = Math.max(1, Math.min(5, Number(panel?.weaponResonLevel || 1)));
     const buff = {
       attackPercent: pick(EFFECT.attack, reson),
-      damageBonus: pick(EFFECT.damage, reson),
+      // 全队全伤害提高 8%~16%，最多 3 层，按满层计。
+      damageBonus: pick(EFFECT.damage, reson) * 3,
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
       source: "溢彩荧辉"

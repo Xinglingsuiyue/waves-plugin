@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -78,25 +84,26 @@ const SKILLS = {
   },
   skill9: {
     name: "强光",
-    type: "skill",
+    // Wiki：黄灯聚光模式下由「飞星」替换而来，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.41, 0.4437, 0.4773, 0.5244, 0.558, 0.5966, 0.6504, 0.7042, 0.758, 0.8152)
   },
   skill10: {
     name: "红灯聚光·普攻一段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.6048, 0.6544, 0.704, 0.7735, 0.8231, 0.8801, 0.9594, 1.0388, 1.1181, 1.2025)
   },
   skill11: {
     name: "红灯聚光·普攻二段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.3917, 1.5058, 1.6198, 1.7797, 1.8938, 2.0249, 2.2076, 2.3899, 2.5727, 2.7667)
   },
   skill12: {
     name: "红灯聚光·普攻三段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.5715, 1.7003, 1.8292, 2.0096, 2.1385, 2.2866, 2.4928, 2.699, 2.9052, 3.1242)
   },
@@ -108,19 +115,22 @@ const SKILLS = {
   },
   skill14: {
     name: "强化前扑",
-    type: "skill",
+    // Wiki：强化·前扑，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.844, 1.9954, 2.1466, 2.3582, 2.5094, 2.6834, 2.9252, 3.1672, 3.4092, 3.6662)
   },
   skill15: {
     name: "强化后撤",
-    type: "skill",
+    // Wiki：强化·后撤，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.266, 1.3699, 1.4737, 1.619, 1.7228, 1.8422, 2.0083, 2.1744, 2.3405, 2.517)
   },
   skill16: {
     name: "强光穿射每段",
-    type: "skill",
+    // Wiki：强光穿射，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.375, 0.4058, 0.4365, 0.4796, 0.5103, 0.5457, 0.5949, 0.6441, 0.6933, 0.7456)
   },
@@ -149,26 +159,74 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// 灯灯自身增益（固有技能 + 共鸣链）：
+//   固有「寻路」红灯模式期间导电伤害加成 +10%；
+//   固有「奔赴」施放强化·前扑/强化·后撤后 5 秒内攻击力 +10%；
+//   S2「呜呜物流已收件」强化·前扑/强化·后撤攻击时无视 20% 防御；
+//   S3「特快专递运输中」啾啾专送伤害 +30%；
+//   S4「灯灯正为您派送」普攻伤害加成 +30%；
+//   S5「快件已顺利签收」光能充满时强光穿射倍率 +100%；
+//   S6「给个五星好评哦」施放啾啾专送时队伍攻击 +20%，持续 20 秒。
+const STRONG_SKILL_NAMES = new Set(['强化前扑', '强化后撤']);
+
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '灯灯·自身'
+  };
+
+  // 固有「寻路」：红灯模式期间导电伤害加成提升 10%。
+  buff.damageBonus += 0.10;
+
+  // 固有「奔赴」：施放强化·前扑或强化·后撤后 5 秒内攻击力提升 10%。
+  if (STRONG_SKILL_NAMES.has(skillName)) buff.attackPercent += 0.10;
+
+  // S2：强化·前扑和强化·后撤攻击敌人时，无视对方 20% 的防御。
+  if (chainCount >= 2 && STRONG_SKILL_NAMES.has(skillName)) buff.ignoreDefense += 0.20;
+
+  // S3：啾啾专送造成的伤害提升 30%。
+  if (chainCount >= 3 && skillName === '啾啾专送') buff.damageBonus += 0.30;
+
+  // S4：普攻伤害加成提升 30%。
+  if (chainCount >= 4 && skillType === 'normal') buff.damageBonus += 0.30;
+
+  // S5：光能充满时，强光穿射造成的伤害倍率提升 100%。
+  if (chainCount >= 5 && skillName === '强光穿射每段') buff.multiplierBonus += 1.00;
+
+  // S6：施放啾啾专送时，队伍中角色攻击提升 20%，持续 20 秒。
+  if (chainCount >= 6 && skillName !== '啾啾专送') buff.attackPercent += 0.20;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

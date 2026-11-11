@@ -16,7 +16,9 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: null
+  damage: null,
+  // 施放共鸣解放时，自身治疗效果加成提升 16%~32%。
+  healing: { 1: 0.16, 2: 0.2, 3: 0.24, 4: 0.28, 5: 0.32 }
 };
 
 function pick(map, reson) {
@@ -34,6 +36,8 @@ export default {
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
+      // 共鸣解放后持续 15 秒，治疗技能按该效果已生效处理。
+      healingBonus: pick(EFFECT.healing, reson),
       source: "渊海回声"
     };
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);

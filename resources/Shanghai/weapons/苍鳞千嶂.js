@@ -39,7 +39,8 @@ export default {
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);
     if (skillType === 'skill') buff.damageBonus += pick(EFFECT.skill, reson);
     if (skillType === 'normal') buff.damageBonus += pick(EFFECT.normal, reson);
-    if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson);
+    // 每次施放变奏技能或共鸣解放时重击伤害提升，可叠加 2 层，按满层计。
+    if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson) * 2;
     if (skillType === 'intro') buff.damageBonus += pick(EFFECT.intro, reson);
     return buff;
   }

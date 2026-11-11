@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -66,7 +66,8 @@ const SKILLS = {
   },
   skill7: {
     name: "绞息",
-    type: "normal",
+    // Wiki：重击·绞息
+    type: "heavy",
     levelFrom: "常态攻击",
     levelMap: levelMap(0.4066, 0.44, 0.4733, 0.52, 0.5533, 0.5916, 0.6449, 0.6982, 0.7516, 0.8083)
   },
@@ -162,11 +163,15 @@ function getPanelHealingBonus(attrMap) {
 function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const roleBuff = { attackPercent: 0.20, healingBonus: 0, multiplierBonus: 0, deepen: 0, source: '漂泊者·气动·自身' };
+  // 固有「空渡浮尘」：施放变奏技能·狂岚未尽时攻击提升 20%，持续 10 秒（治疗按攻击力结算）。
+  // 固有「无垠之风」：共鸣解放·万象归墟治疗量提升 20%。
+  if (skillKey === 'skill18') roleBuff.healingBonus += 0.20;
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: 'heal', skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleHeal({
     base: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
@@ -178,26 +183,52 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, options
   return { name: skill.name, ...result };
 }
 
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
+
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '漂泊者·气动·自身'
+  };
+  // 固有「空渡浮尘」：施放变奏技能·狂岚未尽时攻击提升 20%，持续 10 秒。
+  buff.attackPercent += 0.20;
+  // S3「虚相陷落于掌中」：气动伤害加成提升 15%。
+  if (chainCount >= 3) buff.damageBonus += 0.15;
+  // S4「界限崩折于刹那」：施放空中攻击·抃风儛润时共鸣技能伤害加成提升 15%，持续 5 秒。
+  if (chainCount >= 4 && skillType === 'skill') buff.damageBonus += 0.15;
+  // S5「生灭交错于来路」：共鸣解放·万象归墟伤害倍率提升 20%。
+  if (chainCount >= 5 && skillName === '万象归墟') buff.multiplierBonus += 0.20;
+  // S6「万象崩落于风间」：共鸣技能·缥缈无相伤害倍率提升 30%。
+  if (chainCount >= 6 && skillName.startsWith('缥缈无相')) buff.multiplierBonus += 0.30;
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

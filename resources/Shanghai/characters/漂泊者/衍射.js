@@ -1,5 +1,5 @@
-import { calcSingleDamage } from '../../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../../utils/damage/parser.js';
+import { calcSingleDamage, calcResistanceMultiplier } from '../../../../utils/damage/formula.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -66,13 +72,15 @@ const SKILLS = {
   },
   skill7: {
     name: "鸣奏",
-    type: "normal",
+    // Wiki：重击·鸣奏
+    type: "heavy",
     levelFrom: "常态攻击",
     levelMap: levelMap(0.3825, 0.4139, 0.4453, 0.4892, 0.5206, 0.5566, 0.6068, 0.657, 0.7072, 0.7605)
   },
   skill8: {
     name: "余音",
-    type: "normal",
+    // Wiki：重击·余音
+    type: "heavy",
     levelFrom: "常态攻击",
     levelMap: levelMap(0.6375, 0.6898, 0.7421, 0.8153, 0.8676, 0.9277, 1.0113, 1.095, 1.1786, 1.2675)
   },
@@ -137,26 +145,51 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, enemy, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '漂泊者·衍射·自身'
+  };
+  // 固有「屏息」：共鸣技能 浮声千斩·回声 的伤害提升 60%。
+  if (skillName.includes('浮声千斩·回声')) buff.damageBonus += 0.60;
+  // 固有「静聆」：施放重击·鸣奏后攻击提升 15%，持续 5 秒。
+  buff.attackPercent += 0.15;
+  // S1「始源纪行」：施放浮声千斩/浮声千斩·旋音时暴击提升 15%，持续 7 秒。
+  if (chainCount >= 1) buff.critRate += 0.15;
+  // S2「微物细语」：衍射伤害加成提升 20%。
+  if (chainCount >= 2) buff.damageBonus += 0.20;
+  // S5「回声流转」：共鸣解放伤害加成提升 40%。
+  if (chainCount >= 5 && skillType === 'liberation') buff.damageBonus += 0.40;
+  // S6「长路归鸣」：浮声千斩/旋音命中时目标衍射抗性降低 10%，按抗性乘区实际比值折算。
+  if (chainCount >= 6) {
+    const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
+    buff.damageBonus += calcResistanceMultiplier(baseRes - 0.10) / calcResistanceMultiplier(baseRes) - 1;
+  }
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, enemy, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

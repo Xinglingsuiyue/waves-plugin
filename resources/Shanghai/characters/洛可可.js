@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -291,9 +291,8 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
 
-  // 洛可可为攻击倍率角色：攻击基底 = 面板攻击 ×(1+攻击%) + 固定攻击。
-  const finalAttack = Number(panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0))
-                    + (mergedBuff.flatAttack || 0);
+  // 洛可可为攻击倍率角色：攻击基底 = 面板攻击 + 基础攻击×攻击% + 固定攻击。
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const skillMultiplier = skill.levelMap[level] || skill.levelMap[10];

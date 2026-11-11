@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -122,15 +122,27 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
-function getRoleSelfBuff(roleDetailData, skillType, chainCount) {
+function getRoleSelfBuff(roleDetailData, skillType, chainCount, skillName = '') {
   const buff = {
     damageBonus: 0,
     deepen: 0,
     multiplierBonus: 0,
-    ignoreDefense: 0
+    ignoreDefense: 0,
+    attackPercent: 0
   };
 
   // 固有技能：沐光（常驻）不在这里重复计算
+
+  // 1链：施放普攻凌霄·普攻/共鸣技能逐天取月获得惊蛰，最多 4 层；
+  // 施放惊龙破空时每消耗 1 层使该次伤害 +20%（默认满层 +80%）。
+  if (chainCount >= 1 && skillName === JINHSI_SKILLS.dragon.name) {
+    buff.damageBonus += 0.20 * 4;
+  }
+
+  // 3链：施放变奏技能蟠龙清辉后，每层谪仙使攻击 +25%，可叠 2 层（默认满层 +50%）。
+  if (chainCount >= 3) {
+    buff.attackPercent += 0.25 * 2;
+  }
 
   // 4链：施放共鸣解放或惊龙破空时，全属性伤害+20%
   if (chainCount >= 4 && (skillType === 'skill' || skillType === 'liberation')) {
@@ -152,7 +164,7 @@ function calcOneSkill({
 }) {
   const chainCount = getChainUnlockedCount(roleDetailData);
 
-  const roleBuff = getRoleSelfBuff(roleDetailData, skillType, chainCount);
+  const roleBuff = getRoleSelfBuff(roleDetailData, skillType, chainCount, skillName);
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType })
     : {};
@@ -169,13 +181,13 @@ function calcOneSkill({
   const panelBonus = getPanelDamageBonus(attrMap, skillType);
 
   const result = calcSingleDamage({
-    attack: panel.attack,
+    attack: calcFinalAttack(panel, mergedBuff, roleDetailData),
     skillMultiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: panelBonus + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

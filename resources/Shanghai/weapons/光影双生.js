@@ -12,7 +12,7 @@ export default {
   //   同时拥有两种效果时，造成伤害时无视目标 8/10/12/14/16% 防御
   //
   // 默认假设：嘉贝莉娜爆发链中重击与声骸技能交替触发，两种 buff 同时在线。
-  //   - 实现选择：deepen 加成只对 normal（包含重击）生效；
+  //   - 实现选择：deepen 加成只对 heavy（重击伤害）/ echo（声骸技能伤害）生效；
   //   - 单次攻击伤害加深上限通过 Math.min 强制；
   //   - 双 buff 在线 → 提供无视防御。
   apply({ panel, skillType }) {
@@ -31,8 +31,8 @@ export default {
       source: '光影双生'
     };
 
-    // 重击与声骸技能都吃加深，按 cap 上限；本模块计算范围内默认 normal 享受
-    if (skillType === 'normal' || skillType === 'echo') {
+    // 重击与声骸技能都吃加深，按 cap 上限。
+    if (skillType === 'heavy' || skillType === 'echo') {
       buff.deepen = cap;
     }
 

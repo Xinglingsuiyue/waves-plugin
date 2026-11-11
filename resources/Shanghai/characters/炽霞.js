@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -119,26 +125,68 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// 炽霞自身增益（固有 + 共鸣链）：
+//   固有「灼热弹匣」轰轰伤害提升 50%；
+//   固有「加麻加辣」咔咔压制期间每发热压弹命中攻击 +1%，可叠 30 层（按满层计）；
+//   S1「剧院的英雄戏」施放轰轰时必定暴击；
+//   S3「不灭的火把」炽烈焰火对生命低于 50% 的目标伤害提升 40%；
+//   S5「胜利的枪弹焰火」加麻加辣满层时攻击额外提升 30%；
+//   S6「剧终的回归彩蛋」触发轰轰后队伍普攻伤害提升 25%，持续 15 秒。
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '炽霞·自身'
+  };
+
+  // 固有「灼热弹匣」：共鸣技能 轰轰 伤害提升 50%。
+  if (skillName === '轰轰') buff.damageBonus += 0.50;
+
+  // 固有「加麻加辣」：每发热压弹命中攻击 +1%，持续 10 秒，最多 30 层。
+  buff.attackPercent += 0.01 * 30;
+
+  // S1：施放共鸣技能 轰轰 时必定暴击。
+  if (chainCount >= 1 && skillName === '轰轰') buff.critRate += 1.00;
+
+  // S3：炽烈焰火对生命值低于 50% 的目标伤害提升 40%。
+  if (chainCount >= 3 && skillName === '炽烈焰火') buff.damageBonus += 0.40;
+
+  // S5：加麻加辣叠加至满层时，攻击额外提升 30%。
+  if (chainCount >= 5) buff.attackPercent += 0.30;
+
+  // S6：触发轰轰后，队伍中角色普攻伤害提升 25%，持续 15 秒。
+  if (chainCount >= 6 && skillType === 'normal') buff.damageBonus += 0.25;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: Math.min(1, panel.critRate + Number(mergedBuff.critRate || 0)),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -46,7 +46,7 @@ const SKILLS = {
   skill1: {
     key: "liberation",
     name: "裁羽寂万音伤害",
-    type: "heavy",
+    type: "liberation",
     levelFrom: "共鸣解放",
     levelMap: levelMap(
       "1000.00%",
@@ -152,6 +152,10 @@ const EXTRA_SKILLS = {
 function getPanelDamageBonus(attrMap, skillType) {
   let total = getPercentAttr(attrMap, '湮灭伤害加成');
   if (skillType === 'heavy') total += getPercentAttr(attrMap, '重击伤害加成');
+  if (skillType === 'liberation') total += getPercentAttr(attrMap, '共鸣解放伤害加成');
+  if (skillType === 'skill') total += getPercentAttr(attrMap, '共鸣技能伤害加成');
+  if (skillType === 'intro') total += getPercentAttr(attrMap, '变奏技能伤害加成');
+  if (skillType === 'normal') total += getPercentAttr(attrMap, '普攻伤害加成');
   return total;
 }
 
@@ -169,6 +173,11 @@ function getRoleSelfBuff({ skill, chainCount, options }) {
 
   const skillCritActive = options?.xuanlingSkillCritBuffActive ?? true;
   const featherOathStacks = clamp(options?.xuanlingFeatherOathStacks ?? 6, 0, 6);
+  // 固有「恒守之誓」：目标拥有 1~3 层【虚湮效应】时每层使其受到秧秧·玄翎的伤害加深 10%（最多 30%）；
+  // 4~6 层时每层加深 12%（最多 36%）。S3 可使【虚湮效应】层数上限 +3，故默认按 6 层计入。
+  const voidStacks = clamp(options?.xuanlingVoidStacks ?? (chainCount >= 3 ? 6 : 3), 0, 6);
+  buff.deepen += Math.min(voidStacks <= 3 ? voidStacks * 0.10 : voidStacks * 0.12, 0.36);
+
   const skillCritKeys = ['heavyCang', 'normalFenghua', 'dodgeFenghua'];
   if (skillCritActive && skillCritKeys.includes(skill.key)) {
     buff.critDamage += 1.60;
@@ -222,7 +231,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
     + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
     + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const multiplier = getSkillMultiplier(skill, level, options);
   const echoCount = skill.key === 'c6Echo'
     ? clamp(options?.xuanlingC6EchoCount ?? 5, 0, 5)

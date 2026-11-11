@@ -6,13 +6,19 @@ const wiki = {
   "effectText": "星构寻辉之环\n\n(2件套)\n\n治疗效果提升10%\n\n星构寻辉之环\n\n(5件套)\n\n为队伍中角色提供治疗时，自身每1%的偏谐值累积效率使队伍中角色攻击提升0.2%，上限25%，持续4秒，同名效果之间不可叠加。"
 };
 
-function parsePercent(value) {
-  if (value == null) return 0;
-  if (typeof value === 'number') return value;
-  const str = String(value).trim();
-  if (str.endsWith('%')) return Number(str.replace('%', '')) / 100;
-  return Number(str) || 0;
-}
+const EFFECT = {
+  "two": 0.1,
+  "five": 0.01,
+  "element": "",
+  "liberation": 0,
+  "skill": 0,
+  "normal": 0,
+  "heavy": 0,
+  "attack": 0.002,
+  "critRate": 0,
+  "critDamage": 0,
+  "damage": 0
+};
 
 export default {
   name: "星构寻辉之环",
@@ -25,18 +31,15 @@ export default {
       damageBonus: 0,
       critRate: 0,
       critDamage: 0,
-      source: "星构寻辉之环"
-    };
-
-    // (2件套) 治疗效果提升 10%：固定加成，已计入角色总面板，且非伤害属性，不计算。
-
+      source: "星构寻辉之环" };
+    // (2 件套) 固定属性加成已计入角色总面板，不再重复叠加，仅计算下方战斗触发的动态效果。
     if (count >= 5) {
-      // (5件套) 为队伍中角色提供治疗时，自身每 1% 偏谐值累积效率使队伍中角色攻击 +0.2%，上限 +25%。
-      const attrMap = panel?.attrMap || {};
-      const eff = parsePercent(attrMap['偏斜效率'] ?? attrMap['偏谐值累积效率'] ?? 0);
-      buff.attackPercent += Math.min(0.25, eff * 0.2);
+      // 治疗时，每 1% 偏谐值累积效率提供 0.2% 攻击，上限 25%。
+      const efficiency = Number(panel?.attrMap?.['偏谐值累积效率']
+        ? String(panel.attrMap['偏谐值累积效率']).replace('%', '')
+        : 0) || 0;
+      buff.attackPercent += Math.min(0.25, efficiency * Number(EFFECT.attack || 0));
     }
-
     return buff;
   }
 };

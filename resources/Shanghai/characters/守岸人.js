@@ -1,5 +1,5 @@
 import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalHp } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -70,8 +70,16 @@ function getRoleDamageBuff({ skill, chainCount }) {
     deepen: 0,
     critRate: 0,
     critDamage: 0,
+    attackPercent: 0,
     source: '守岸人·自身'
   };
+
+  // S2「夜幕的赠予与拒绝」：浅析星域新增队伍攻击 +40%。
+  // 浅析星域由共鸣解放·终末回环展开，其自身伤害不享受；
+  // 变奏技能·洞悉在星域生效期间施放，可享受该攻击加成。
+  if (chainCount >= 2 && skill.name === '变奏技能·洞悉伤害') {
+    buff.attackPercent += 0.40;
+  }
 
   if (chainCount >= 6 && skill.name === '变奏技能·洞悉伤害') {
     buff.multiplierBonus += 0.42;
@@ -105,7 +113,7 @@ function calcOneDamage({ roleDetailData, panel, equipment, enemy, modules, skill
   const critRate = skill.forceCrit ? 1 : panel.critRate + extraCritRate;
 
   const result = calcSingleDamage({
-    attack: panel.hp,
+    attack: calcFinalHp(panel, mergedBuff, roleDetailData),
     skillMultiplier: multiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
@@ -144,14 +152,12 @@ function calcOneHeal({ roleDetailData, panel, equipment, enemy, modules, heal })
     : {};
 
   const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  // mergeBuff 已汇总 role/weapon/phantom/group 的 healingBonus，此处不再重复相加。
   const healingBonus = getPercentAttr(panel.attrMap || {}, '治疗效果加成')
-    + Number(roleBuff.healingBonus || 0)
-    + Number(weaponBuff.healingBonus || 0)
-    + Number(phantomBuff.healingBonus || 0)
-    + Number(groupBuff.healingBonus || 0);
+    + Number(mergedBuff.healingBonus || 0);
 
   const result = calcSingleHeal({
-    base: panel.hp,
+    base: calcFinalHp(panel, mergedBuff, roleDetailData),
     skillMultiplier: percent,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     flatHeal: flat,

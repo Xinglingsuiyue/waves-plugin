@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalDefense  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -27,6 +33,7 @@ const WIKI_DETAIL = {
   "currentVersion": "38.0"
 };
 
+// Wiki：渊武全部伤害技能倍率均标注为「%防御」，统一按最终防御力结算。
 const SKILLS = {
   skill1: {
     name: "第一段",
@@ -108,31 +115,32 @@ const SKILLS = {
   },
   skill14: {
     name: "雷厉风行普攻第一段",
-    type: "skill",
+    // Wiki：雷厉风行状态下普攻范围扩大，属普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.1235, 0.1337, 0.1438, 0.158, 0.1681, 0.1798, 0.196, 0.2122, 0.2284, 0.2456)
   },
   skill15: {
     name: "雷厉风行普攻第二段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.2606, 0.282, 0.3034, 0.3334, 0.3546, 0.3792, 0.4134, 0.4476, 0.4818, 0.5182)
   },
   skill16: {
     name: "雷厉风行普攻第三段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.2748, 0.2974, 0.3198, 0.3514, 0.3738, 0.3998, 0.4358, 0.4718, 0.5078, 0.546)
   },
   skill17: {
     name: "雷厉风行普攻第四段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.2885, 0.312, 0.3355, 0.369, 0.3925, 0.4195, 0.4575, 0.495, 0.533, 0.573)
   },
   skill18: {
     name: "雷厉风行普攻第五段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.4119, 0.4455, 0.4794, 0.5265, 0.5604, 0.5994, 0.6534, 0.7074, 0.7614, 0.8185)
   },
@@ -144,13 +152,15 @@ const SKILLS = {
   },
   skill20: {
     name: "蹑风追雷",
-    type: "skill",
+    // Wiki：蹑风追雷攻击目标，造成导电伤害，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.364, 0.394, 0.4238, 0.4655, 0.4955, 0.5298, 0.5775, 0.6254, 0.673, 0.7238)
   },
   skill21: {
     name: "雷厉风行闪避反击",
-    type: "skill",
+    // Wiki：雷厉风行状态下闪避反击，属普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.544, 0.5887, 0.6333, 0.6959, 0.7404, 0.7917, 0.863, 0.9344, 1.0059, 1.0817)
   },
@@ -179,26 +189,66 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+// 渊武自身增益（共鸣链）：
+//   S3「正周身之气」雷之楔协同攻击命中时，基于渊武 20% 防御额外提升本次伤害；
+//   S5「顾一方天地」雷之楔在场时，共鸣解放伤害加成提升 50%；
+//   S6「保八方平安」雷之楔范围内队伍中所有角色防御提升 32%。
+function getRoleSelfBuff({ skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    defensePercent: 0,
+    flatDefense: 0,
+    source: '渊武·自身'
+  };
+
+  // S5：共鸣解放伤害加成提升 50%。
+  if (chainCount >= 5 && skillType === 'liberation') buff.damageBonus += 0.50;
+
+  // S6：范围内队伍角色防御提升 32%。
+  if (chainCount >= 6) buff.defensePercent += 0.32;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  // Wiki：全部伤害技能倍率均为「%防御」。
+  const finalDefense = calcFinalDefense(panel, mergedBuff, roleDetailData);
+  const baseMultiplier = skill.levelMap[level] || skill.levelMap[10];
+
+  // 固有「决电」：共鸣技能·掀雷伤害倍率提升 40%。
+  let multiplierBonus = Number(mergedBuff.multiplierBonus || 0);
+  if (skill.name === '掀雷') multiplierBonus += 0.40;
+
+  // S3「正周身之气」：雷之楔协同攻击命中时，基于 20% 防御额外提升本次伤害。
+  let skillMultiplier = baseMultiplier;
+  if (chainCount >= 3 && skill.name === '雷之楔协同攻击') skillMultiplier += 0.20;
+
   const result = calcSingleDamage({
-    attack: finalAttack,
-    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
-    multiplierBonus: mergedBuff.multiplierBonus || 0,
+    attack: finalDefense,
+    skillMultiplier,
+    multiplierBonus,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

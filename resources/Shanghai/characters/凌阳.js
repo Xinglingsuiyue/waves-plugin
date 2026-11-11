@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -102,13 +108,14 @@ const SKILLS = {
   },
   skill13: {
     name: "狂态·摇光金狮舞第一段",
-    type: "skill",
+    // Wiki：行狮状态下普攻替换，造成冷凝伤害（普攻伤害）。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.46, 1.5799, 1.6996, 1.8673, 1.987, 2.1246, 2.316, 2.5077, 2.6993, 2.9027)
   },
   skill14: {
     name: "狂态·摇光金狮舞第二段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.9588, 1.0374, 1.116, 1.2264, 1.305, 1.3956, 1.521, 1.647, 1.773, 1.9062)
   },
@@ -120,13 +127,15 @@ const SKILLS = {
   },
   skill16: {
     name: "凌云式·腿打连环",
-    type: "skill",
+    // Wiki：行狮状态下以普攻施放，造成冷凝伤害（普攻伤害）。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.4169, 2.6146, 2.8131, 3.0904, 3.2889, 3.516, 3.8332, 4.1504, 4.4676, 4.8039)
   },
   skill17: {
     name: "登楼·尾坠千斤",
-    type: "skill",
+    // Wiki：施放凌云式·腿打连环后可施放的空中攻击，造成冷凝伤害（普攻伤害）。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.76, 1.9044, 2.0488, 2.2508, 2.3952, 2.561, 2.792, 3.0228, 3.2538, 3.4992)
   },
@@ -137,7 +146,7 @@ const SKILLS = {
     levelMap: levelMap(2, 2.164, 2.328, 2.5576, 2.7216, 2.9102, 3.1726, 3.435, 3.6974, 3.9762)
   },
   skill19: {
-    name: "技能",
+    name: "出洞·睡狮蛰醒",
     type: "intro",
     levelFrom: "变奏技能",
     levelMap: levelMap(1, 1.082, 1.164, 1.2788, 1.3608, 1.4552, 1.5864, 1.7176, 1.8488, 1.9882)
@@ -155,22 +164,63 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ chainCount, skillType, skillName }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    source: '凌阳·自身'
+  };
+
+  // 固有「狮班免掠，逢场避让」：变奏技能·出洞·睡狮蛰醒伤害提升 50%。
+  if (skillType === 'intro') buff.damageBonus += 0.50;
+
+  // S3「瞠目顾盼，其声昂昂」：共鸣解放·狮子奋迅持续期间，普攻伤害加成 +20%、共鸣技能伤害加成 +10%。
+  if (chainCount >= 3) {
+    if (skillType === 'normal') buff.damageBonus += 0.20;
+    if (skillType === 'skill') buff.damageBonus += 0.10;
+  }
+
+  // S4「一跳三叫，众仙折腰」：施放延奏技能时队伍中角色冷凝伤害加成 +20%。
+  if (chainCount >= 4) buff.damageBonus += 0.20;
+
+  // S6「神功盖世，百鬼震惶」：行狮状态下施放飞身式·翻山越涧后，下 1 次普攻伤害加成 +100%。
+  if (chainCount >= 6 && skillType === 'normal') buff.damageBonus += 1.00;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ chainCount, skillType: skill.type, skillName: skill.name });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
+
+  // S5「蹑罡踏斗，七星悬朗」：施放奋进·狮子奋迅，俱足万行时额外造成 200% 攻击力的冷凝伤害，
+  // 折算为 200% 固定倍率叠加到该技能。
+  const extraMultiplier = chainCount >= 5 && skill.type === 'liberation' ? 2.00 : 0;
+  // 固有「勤修苦练，锯牙磨砺」：行狮状态下施放普攻后，下次飞身式·翻山越涧额外造成
+  // 相当于该技能 150% 的冷凝伤害（共鸣技能伤害），故倍率按 250% 结算。
+  const inherentMultiplier = skillKey === 'skill15'
+    ? (skill.levelMap[level] || skill.levelMap[10]) * 1.50
+    : 0;
+
   const result = calcSingleDamage({
     attack: finalAttack,
-    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+    skillMultiplier: (skill.levelMap[level] || skill.levelMap[10]) + extraMultiplier + inherentMultiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

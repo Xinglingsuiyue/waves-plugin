@@ -15,6 +15,8 @@ const EFFECT = {
   skill: null,
   normal: null,
   heavy: { 1: 0.2, 2: 0.25, 3: 0.3, 4: 0.35, 5: 0.4 },
+  // 获得护盾时，重击伤害无视目标防御，可叠 5 层。
+  heavyIgnoreDefense: { 1: 0.072, 2: 0.084, 3: 0.096, 4: 0.108, 5: 0.12 },
   intro: null,
   damage: null
 };
@@ -34,12 +36,17 @@ export default {
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
+      ignoreDefense: 0,
       source: "驭冕铸雷之权"
     };
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);
     if (skillType === 'skill') buff.damageBonus += pick(EFFECT.skill, reson);
     if (skillType === 'normal') buff.damageBonus += pick(EFFECT.normal, reson);
-    if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson);
+    if (skillType === 'heavy') {
+      buff.damageBonus += pick(EFFECT.heavy, reson);
+      // 获得护盾时重击伤害无视目标防御，可叠 5 层，按满层计（仅重击）。
+      buff.ignoreDefense += pick(EFFECT.heavyIgnoreDefense, reson) * 5;
+    }
     if (skillType === 'intro') buff.damageBonus += pick(EFFECT.intro, reson);
     return buff;
   }

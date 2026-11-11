@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -56,26 +56,47 @@ function getRoleSelfBuff({ skill, chainCount }) {
     ignoreDefense: 0,
     critRate: 0,
     critDamage: 0,
+    attackPercent: 0,
     source: '椿·自身'
   };
 
-  // 固有技能：温床 湮灭伤害 +15%；侵占 普攻伤害 +15%。
+  // 固有「温床」：湮灭伤害加成 +15%（重击修枝视为普攻伤害）。
   buff.damageBonus += 0.15;
+  // 固有「侵占」：普攻伤害加成 +15%。
   if (skill.type === 'normal') {
     buff.damageBonus += 0.15;
   }
 
-  // 含苞状态：指定普攻系倍率提升最高 100%，默认按满红椿·蕾。
+  // 含苞状态：指定普攻系倍率提升最高 100%，默认按满红椿·蕊。
+  // S6「为你的千千万万次盛放」：酣梦的倍率提升效果额外 +150%（100% → 250%）。
   if (skill.type === 'normal' && skill.name !== CAMELLYA_SKILLS.circuit.name) {
-    buff.multiplierBonus += 1.00;
+    buff.multiplierBonus += chainCount >= 6 ? 2.50 : 1.00;
   }
 
-  // 一日花本体已作为共鸣回路倍率展示，不叠加含苞后的普攻增幅。
-  // 共鸣链文本当前未完全从库街区稳定提取，只保留保守通用暴击/暴伤入口。
-  if (chainCount >= 6 && skill.name === CAMELLYA_SKILLS.circuit.name) {
-    // 6链通常强化核心爆发；这里先按保守暴伤收益处理，后续拿到库街区链文本再精修。
-    buff.critDamage += 0.50;
+  // S1「在无人知晓的秘密小径」：施放变奏技能八千春秋时暴伤 +28% 持续 18 秒（默认已触发）。
+  if (chainCount >= 1) {
+    buff.critDamage += 0.28;
   }
+
+  // S2「呼唤那沉默之花的芬芳」：共鸣回路一日花伤害倍率 +120%。
+  if (chainCount >= 2 && skill.name === CAMELLYA_SKILLS.circuit.name) {
+    buff.multiplierBonus += 1.20;
+  }
+
+  // S3「一根荆棘胜过千颗花种」：共鸣解放芳华绽烬倍率 +50%；含苞状态期间攻击 +58%。
+  // 含苞状态为全技能生效的角色状态（本模块默认按含苞循环结算），故攻击加成本身不区分技能类型。
+  if (chainCount >= 3) {
+    if (skill.name === CAMELLYA_SKILLS.liberation.name) buff.multiplierBonus += 0.50;
+    buff.attackPercent += 0.58;
+  }
+
+  // S4「它的根茎持续到永恒中」：施放变奏技能八千春秋后队伍普攻伤害加成 +25% 持续 30 秒（默认已触发）。
+  if (chainCount >= 4 && skill.type === 'normal') {
+    buff.damageBonus += 0.25;
+  }
+
+  // S5「将那无限置于你的手掌」：变奏技能八千春秋 +303%、延奏技能缠绕 +68%（本模块不展示）。
+  // S6 的永生花为一日花 100% 的独立普攻伤害（每 25 秒 1 次），本模块不单独计入。
 
   return buff;
 }
@@ -93,7 +114,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

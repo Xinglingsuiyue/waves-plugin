@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -138,13 +144,15 @@ const SKILLS = {
   },
   skill19: {
     name: "下落攻击",
-    type: "skill",
+    // Wiki：空中下落攻击，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣技能",
     levelMap: levelMap(0.527, 0.5703, 0.6135, 0.674, 0.7172, 0.7669, 0.836, 0.9052, 0.9743, 1.0478)
   },
   skill20: {
     name: "火焰归亡曲",
-    type: "skill",
+    // Wiki：施放火焰归亡曲造成热熔伤害，此次伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(9.5, 10.2791, 11.0581, 12.149, 12.9278, 13.8237, 15.07, 16.3167, 17.5629, 18.8871)
   },
@@ -173,26 +181,62 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '布兰特·自身'
+  };
+
+  // 固有「迎海投火的决意」：布兰特热熔伤害加成提升 15%。
+  buff.damageBonus += 0.15;
+
+  // S1「跟随洋流和信风」：施放变奏技能·为我！后或每次空中攻击空翻时，
+  // 布兰特造成伤害提升 20%，持续 5 秒，可叠加 3 层（按满层计）。
+  if (chainCount >= 1) buff.deepen += 0.20 * 3;
+
+  // S2「掠夺欢声与笑颜」：施放空中攻击和火焰归亡曲时暴击提升 30%。
+  if (chainCount >= 2 && (skillName.startsWith('空中攻击') || skillName === '火焰归亡曲')) {
+    buff.critRate += 0.30;
+  }
+
+  // S3「无惧惊涛骇浪」：火焰归亡曲伤害倍率提升 42%。
+  if (chainCount >= 3 && skillName === '火焰归亡曲') buff.multiplierBonus += 0.42;
+
+  // S5「演员说：生活皆舞台」：造成普攻伤害时，普攻伤害加成提升 15%。
+  if (chainCount >= 5 && skillType === 'normal') buff.damageBonus += 0.15;
+
+  // S6「船长答：狂欢即世界！」：空中攻击倍率提升 30%；
+  // 施放火焰归亡曲后原地产生再燃，造成等同于火焰归亡曲 30% 的热熔伤害。
+  if (chainCount >= 6) {
+    if (skillName.startsWith('空中攻击')) buff.multiplierBonus += 0.30;
+    if (skillName === '火焰归亡曲') buff.multiplierBonus += 0.30;
+  }
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

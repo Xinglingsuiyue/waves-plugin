@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -33,7 +33,8 @@ const XIANGLEYAO_SKILLS = {
   },
   circuitBlade: {
     name: '共鸣回路·应刃',
-    type: 'skill',
+    // Wiki：应刃造成导电伤害，此次伤害为共鸣解放伤害。
+    type: 'liberation',
     levelFrom: '共鸣回路',
     levelMap: { 1: 2.0010, 2: 2.1651, 3: 2.3292, 4: 2.5589, 5: 2.7230, 6: 2.9117, 7: 3.1742, 8: 3.4368, 9: 3.6993, 10: 3.9782 }
   }
@@ -50,17 +51,29 @@ function getPanelDamageBonus(attrMap, skillType) {
 }
 
 function getRoleSelfBuff({ skill, chainCount }) {
-  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critDamage: 0, source: '相里要·自身' };
+  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, critDamage: 0, source: '相里要·自身' };
 
-  // 固有技能：睿知，施放共鸣技能时导电伤害 +5%，最多 4 层；默认满层。
+  // 固有「睿知」：施放共鸣技能时导电伤害 +5%，可叠加 4 层（默认满层）。
   buff.damageBonus += 0.20;
 
-  if (chainCount >= 2 && skill.type === 'liberation') {
-    buff.damageBonus += 0.30;
+  // S1：施放万方法则时额外生成 6 个衍构模体，每个造成万方法则 8% 的伤害。
+  if (chainCount >= 1 && skill.name === XIANGLEYAO_SKILLS.circuit.name) {
+    buff.multiplierBonus += 0.08 * 6;
   }
-  if (chainCount >= 6 && skill.name === XIANGLEYAO_SKILLS.circuit.name) {
-    buff.multiplierBonus += 0.40;
+  // S2：施放共鸣技能或共鸣解放时，暴击伤害 +30%。
+  if (chainCount >= 2) buff.critDamage += 0.30;
+  // S3：应刃/基本推衍/一相万殊/万方法则 伤害 +63%，最多叠加 5 层。
+  if (chainCount >= 3 && (
+    skill.name === XIANGLEYAO_SKILLS.circuit.name || skill.name === XIANGLEYAO_SKILLS.circuitBlade.name
+  )) {
+    buff.damageBonus += 0.63 * 5;
   }
+  // S4：施放思维矩阵时，队伍共鸣解放伤害加成 +25%。
+  if (chainCount >= 4 && skill.type === 'liberation') buff.damageBonus += 0.25;
+  // S5：思维矩阵伤害倍率 +100%。
+  if (chainCount >= 5 && skill.name === XIANGLEYAO_SKILLS.liberation.name) buff.multiplierBonus += 1.00;
+  // S6：强化幻方，万方法则伤害倍率 +76%。
+  if (chainCount >= 6 && skill.name === XIANGLEYAO_SKILLS.circuit.name) buff.multiplierBonus += 0.76;
 
   return buff;
 }
@@ -78,7 +91,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

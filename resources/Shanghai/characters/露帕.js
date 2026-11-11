@@ -1,6 +1,12 @@
-import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { calcSingleDamage, calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -179,26 +185,59 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, enemy, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '露帕·自身'
+  };
+  // 共鸣解放·荣光欢酣于火 赋予「追猎」：攻击提升 6%；对怒涛级/海啸级目标热熔伤害加成提升 10%。
+  // 伤害计算默认以 Boss 为目标，按追猎基础层数计入。
+  buff.attackPercent += 0.06;
+  buff.damageBonus += 0.10;
+  // 固有「胜利为我呼嚎」荣光：队伍角色攻击时无视 3% 热熔抗性；S3 将荣光替换为无视 15% 热熔抗性。
+  // 负抗性分支走 1 - res/2，必须按抗性乘区实际比值折算。
+  const ignoreRes = chainCount >= 3 ? 0.15 : 0.03;
+  const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
+  buff.damageBonus += calcResistanceMultiplier(baseRes - ignoreRes) / calcResistanceMultiplier(baseRes) - 1;
+  // S1「看那无名之人」：施放荣光欢酣于火时暴击提升 20%，持续 10 秒。
+  if (chainCount >= 1) buff.critRate += 0.20;
+  // S2「所处皆为猎场」：荣光欢酣于火/重击·狼咬/重击·锐爪/空中攻击·焰袭 使队伍热熔伤害加成 +20%，可叠 2 层。
+  if (chainCount >= 2) buff.damageBonus += 0.20 * 2;
+  // S3「狼影随焰咆哮」：变奏技能·你无法逃离！伤害倍率提升 100%。
+  if (chainCount >= 3 && skillName === '你无法逃离！') buff.multiplierBonus += 1.00;
+  // S4「旗帜于火飞扬」：狼舞的决意·极伤害倍率提升 125%。
+  if (chainCount >= 4 && skillName === '狼舞的决意·极') buff.multiplierBonus += 1.25;
+  // S5「胜利让掌声喝彩」：施放你在看哪里？/你无法逃离！时共鸣解放伤害加成提升 15%，持续 10 秒。
+  if (chainCount >= 5 && skillType === 'liberation') buff.damageBonus += 0.15;
+  // S6「致那最闪耀的焰星」：狼舞的决意·极/荣光欢酣于火/你无法逃离！攻击时忽视目标 30% 防御。
+  if (chainCount >= 6 && ['狼舞的决意·极', '荣光欢酣于火', '你无法逃离！'].includes(skillName)) {
+    buff.ignoreDefense += 0.30;
+  }
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, enemy, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

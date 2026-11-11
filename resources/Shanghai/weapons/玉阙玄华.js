@@ -1,3 +1,14 @@
+import { calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+
+function hasPanelValue(attrMap, key) {
+  if (!key) return false;
+  const value = attrMap?.[key];
+  if (value == null || value === '') return false;
+  if (typeof value === 'number') return value !== 0;
+  const parsed = Number(String(value).replace(/,/g, '').replace('%', '').trim());
+  return Number.isFinite(parsed) && parsed !== 0;
+}
+
 export default {
   name: '玉阙玄华',
 
@@ -15,10 +26,13 @@ export default {
   //   （可用 options.weaponEffectActive === false 关闭触发态）。
   //
   // 实现选择：
+  //   - "全属性伤害加成"为无条件加成，游戏面板（各属性伤害加成）通常已包含，
+  //     按千般渡的做法判重，避免重复计入。
   //   - "共鸣技能伤害加深 / 无视导电抗性" 只在 skillType==='skill' 时生效；
   //     飞阙为导电伤害（conductive）而非共鸣技能，不吃这两条。
-  //   - 引擎抗性为单一字段，"无视导电抗性"按 永远的启明星 的做法折算为等效增伤：
-  //       eq_bonus ≈ resIgnore / (1 - baseRes)，baseRes 默认 0.1。
+  //   - 引擎抗性为单一字段，"无视导电抗性"按抗性乘区的实际比值折算为等效增伤：
+  //       eq = resMult(baseRes - ignore) / resMult(baseRes) - 1
+  //     （抗性降到负数后走 1 - res/2 分支，不能直接用 ignore/(1-baseRes) 线性近似）
   //   - "电磁效应伤害加深" 属异常伤害区间，不并入本模块的 deepen，
   //     另存 electromagneticDeepen，供异常伤害口径使用。
   apply({ panel, enemy, skillType, options }) {
@@ -30,11 +44,16 @@ export default {
     const ELECTRO_DEEPEN = [0.30, 0.375, 0.45, 0.525, 0.60];
 
     const buff = {
-      damageBonus: ALL_DMG[reson - 1],
+      damageBonus: 0,
       deepen: 0,
       electromagneticDeepen: ELECTRO_DEEPEN[reson - 1],
       source: '玉阙玄华'
     };
+
+    // 全属性伤害加成：面板「导电伤害加成」等已计入时跳过。
+    if (!hasPanelValue(panel?.attrMap, '导电伤害加成')) {
+      buff.damageBonus += ALL_DMG[reson - 1];
+    }
 
     // 触发态（附加电磁效应 / 响应同奏）可关闭
     if (options?.weaponEffectActive === false) {
@@ -45,7 +64,8 @@ export default {
     if (skillType === 'skill') {
       buff.deepen += SKILL_DEEPEN[reson - 1];
       const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
-      buff.damageBonus += SKILL_RES_IGNORE[reson - 1] / Math.max(0.05, 1 - baseRes);
+      const afterRes = baseRes - SKILL_RES_IGNORE[reson - 1];
+      buff.damageBonus += calcResistanceMultiplier(afterRes) / calcResistanceMultiplier(baseRes) - 1;
     }
 
     return buff;

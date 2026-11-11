@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -50,21 +50,43 @@ function getPanelDamageBonus(attrMap, skillType) {
 }
 
 function getRoleSelfBuff({ skill, chainCount }) {
-  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, source: '安可·自身' };
+  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, attackPercent: 0, source: '安可·自身' };
 
-  // 固有技能：生气的黑咩，黑咩大暴走期间生命高于 70% 时伤害 +10%。
+  // 固有「生气的黑咩」：黑咩大暴走期间生命高于 70% 时伤害 +10%。
   if (skill.name.includes('黑咩')) {
     buff.damageBonus += 0.10;
   }
 
-  // 固有技能：咩咩加油歌，施放热力羊咩/黑咩·狂热后热熔 +10%，默认输出链路在线。
+  // 固有「咩咩加油歌」：施放热力羊咩/黑咩·狂热后热熔伤害加成 +10%（默认已触发）。
   buff.damageBonus += 0.10;
 
-  if (chainCount >= 2 && skill.type === 'normal') {
+  // S1「羊咩的童话书」：普攻命中时热熔伤害 +3%，可叠 4 层（默认满层 +12%）。
+  if (chainCount >= 1 && skill.type === 'normal') {
+    buff.damageBonus += 0.12;
+  }
+
+  // S2「数羊安眠曲」：回复共鸣能量（不参与伤害）。
+
+  // S3「迷雾？黑海岸！」：白咩·失控之炎 / 黑咩·暴走之炎 伤害倍率 +40%。
+  if (chainCount >= 3 && skill.name === ENCORE_SKILLS.circuit.name) {
+    buff.multiplierBonus += 0.40;
+  }
+
+  // S4「冒险？好有趣！」：施放黑咩·暴走之炎时队伍热熔伤害加成 +20%，持续 30 秒（默认已触发）。
+  // 暴走之炎本身是触发源，不计入；其余技能享受。
+  if (chainCount >= 4 && skill.name !== ENCORE_SKILLS.circuit.name) {
+    buff.damageBonus += 0.20;
+  }
+
+  // S5「聚光灯，勇士登场！」：共鸣技能伤害加成 +35%。
+  if (chainCount >= 5 && skill.type === 'skill') {
     buff.damageBonus += 0.35;
   }
-  if (chainCount >= 6) {
-    buff.damageBonus += 0.20;
+
+  // S6「羊咩，拯救世界！」：黑咩大暴走期间每次造成伤害叠 1 层迷失羔羊，
+  // 每层攻击 +5%，最多 5 层（默认满层 +25%）。
+  if (chainCount >= 6 && skill.name.includes('黑咩')) {
+    buff.attackPercent += 0.05 * 5;
   }
 
   return buff;
@@ -83,7 +105,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

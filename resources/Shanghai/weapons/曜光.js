@@ -8,15 +8,16 @@ const wiki = {
 };
 
 const EFFECT = {
-  attack: null,
+  // 施放共鸣技能时，攻击与普攻伤害加成同步提升。
+  attack: { 1: 0.09, 2: 0.139, 3: 0.189, 4: 0.238, 5: 0.288 },
   critRate: null,
   critDamage: null,
   liberation: null,
   skill: null,
-  normal: { 1: 0.09, 2: 0.139, 3: 0.18899999999999997, 4: 0.23800000000000002, 5: 0.28800000000000003 },
+  normal: { 1: 0.09, 2: 0.139, 3: 0.189, 4: 0.238, 5: 0.288 },
   heavy: null,
   intro: null,
-  damage: { 1: 0.09, 2: 0.139, 3: 0.18899999999999997, 4: 0.23800000000000002, 5: 0.28800000000000003 }
+  damage: null
 };
 
 function pick(map, reson) {

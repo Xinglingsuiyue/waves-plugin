@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -35,7 +35,8 @@ const WIKI_DETAIL = {"id": "1524702668029300736", "name": "漂泊者-导电", "o
 const SKILLS = {
   skill1: {
     name: "超负荷伤害",
-    type: "hack",
+    // Wiki：超负荷/千声翻涌均为共鸣技能伤害
+    type: "skill",
     levelFrom: "共鸣回路",
     levelMap: levelMap(
       "40.60%*7+213.15%+213.15%",
@@ -69,7 +70,8 @@ const SKILLS = {
   },
   skill3: {
     name: "千声翻涌·剑止万律伤害",
-    type: "hack",
+    // Wiki：超负荷/千声翻涌均为共鸣技能伤害
+    type: "skill",
     levelFrom: "共鸣回路",
     levelMap: levelMap(
       "23.68%*5+118.37%",
@@ -86,7 +88,8 @@ const SKILLS = {
   },
   skill4: {
     name: "千声翻涌·气动下落攻击伤害",
-    type: "hack",
+    // Wiki：超负荷/千声翻涌均为共鸣技能伤害
+    type: "skill",
     levelFrom: "共鸣回路",
     levelMap: levelMap(
       "142.09%",
@@ -114,9 +117,35 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
+
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '漂泊者·导电·自身'
+  };
+  // 固有「归枢」：长按施放共鸣技能·超负荷后，自身共鸣技能伤害加成提升 20%，持续 20 秒。
+  if (skillType === 'skill') buff.damageBonus += 0.20;
+  // S3「化朽为奇」：共鸣技能·超负荷伤害倍率提升 20%。
+  if (chainCount >= 3 && skillName === '超负荷伤害') buff.multiplierBonus += 0.20;
+  // S4「声动霄壤」：共鸣解放·最终战略伤害倍率提升 20%。
+  if (chainCount >= 4 && skillType === 'liberation') buff.multiplierBonus += 0.20;
+  // S5「变转之理」：临界共鸣状态期间暴击伤害提升 20%。
+  if (chainCount >= 5) buff.critDamage += 0.20;
+  // S6「匣中心渊」：共鸣技能·千声翻涌 与 雷陨 伤害倍率提升 20%。
+  if (chainCount >= 6 && skillName.startsWith('千声翻涌')) buff.multiplierBonus += 0.20;
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -127,10 +156,10 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
     ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
 
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const extraCritRate = Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
-  const extraCritDamage = Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const extraCritRate = Number(mergedBuff.critRate || 0);
+  const extraCritDamage = Number(mergedBuff.critDamage || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

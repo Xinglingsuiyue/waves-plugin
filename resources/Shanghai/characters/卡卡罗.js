@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -52,16 +52,26 @@ function getPanelDamageBonus(attrMap, skillType) {
 function getRoleSelfBuff({ skill, chainCount }) {
   const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critDamage: 0, source: '卡卡罗·自身' };
 
-  // 固有技能：喋血觉悟，重击「仁慈」后共鸣解放伤害 +10%，默认爆发链路在线。
+  // 固有「喋血觉悟」：重击「仁慈」时，共鸣解放伤害加成 +10%，持续 15 秒（默认已触发）。
   if (skill.type === 'liberation') {
     buff.damageBonus += 0.10;
   }
 
-  if (chainCount >= 2 && skill.type === 'liberation') {
-    buff.damageBonus += 0.20;
+  // S1「隐秘谈判」：灭杀指令额外回复共鸣能量（不参与伤害）。
+  // S2「零和博弈」：施放变奏技能后共鸣技能伤害加成 +30%（本模块不展示共鸣技能）。
+
+  // S3「铁腕外交」：共鸣解放·杀戮武装状态持续期间，导电伤害加成 +25%。
+  // 死告与狂噬影狱均在杀戮武装状态下施放，可享受；幻影蚀刻是进入该状态的起手技能，不计入。
+  if (chainCount >= 3 && (skill.name === '共鸣回路·重击「死告」' || skill.name === '普攻·猎犬剑技·狂噬影狱第五段')) {
+    buff.damageBonus += 0.25;
   }
-  if (chainCount >= 6) {
-    buff.critDamage += 0.50;
+
+  // S4「集群威胁」：施放延奏技能掠影奇袭时队伍导电伤害 +20%（本模块不展示延奏技能）。
+  // S5「替代协议」：变奏技能伤害 +50%（本模块不展示变奏技能）。
+
+  // S6「最后通牒」：施放重击「死告」时召唤 2 个猎杀影，各造成 100% 攻击的共鸣解放伤害。
+  if (chainCount >= 6 && skill.name === '共鸣回路·重击「死告」') {
+    buff.multiplierBonus += 2 * 1.00;
   }
 
   return buff;
@@ -80,7 +90,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

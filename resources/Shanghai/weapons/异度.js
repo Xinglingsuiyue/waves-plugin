@@ -16,7 +16,9 @@ const EFFECT = {
   normal: null,
   heavy: null,
   intro: null,
-  damage: null
+  damage: null,
+  // 造成普攻或重击伤害时，治疗效果加成提升，每层 3%~5%，可叠 3 层，按满层计。
+  healing: { 1: 0.09, 2: 0.105, 3: 0.12, 4: 0.135, 5: 0.15 }
 };
 
 function pick(map, reson) {
@@ -34,6 +36,8 @@ export default {
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),
+      // 触发后持续 8 秒，治疗技能按该效果已生效处理。
+      healingBonus: pick(EFFECT.healing, reson),
       source: "异度"
     };
     if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);

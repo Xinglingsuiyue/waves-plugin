@@ -1,5 +1,5 @@
-﻿import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, getNumberAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+﻿import { calcSingleDamage, calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+import {  getPercentAttr, getNumberAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -217,9 +217,10 @@ function getHarmonyInterferenceBonus(panel, chainCount) {
 
 function getFireResistanceIgnoreBonus(enemy, chainCount) {
   if (chainCount < 2) return 0;
-  // S2：简并虚质上限 10 层，每层无视 1% 热熔抗性。按默认满层折算为增伤。
+  // S2：简并虚质上限 10 层，每层无视 1% 热熔抗性。按默认满层折算为增伤，
+  // 负抗性分支走 1 - res/2，需按抗性乘区实际比值折算。
   const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
-  return 0.10 / Math.max(0.05, 1 - baseRes);
+  return calcResistanceMultiplier(baseRes - 0.10) / calcResistanceMultiplier(baseRes) - 1;
 }
 
 function getRoleSelfBuff({ skillName, panel, enemy, chainCount }) {
@@ -317,7 +318,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
                        + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const result = calcSingleDamage({
     attack: finalAttack,

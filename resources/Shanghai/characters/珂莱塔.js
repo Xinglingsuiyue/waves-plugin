@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -36,8 +36,8 @@ const CARLOTTA_SKILLS = {
   // 必要性手段第三段：70.38% + 11.73%×4 → 139.93% + 23.33%×4 (10级)
   necessityThree: {
     name: '必要性手段第三段',
-    type: 'skill',
-    levelFrom: '普攻',
+    type: 'normal',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.7038 + 0.1173 * 4, 2: 0.7616 + 0.1270 * 4, 3: 0.8193 + 0.1366 * 4,
       4: 0.9001 + 0.1501 * 4, 5: 0.9578 + 0.1597 * 4, 6: 1.0241 + 0.1707 * 4,
@@ -76,8 +76,8 @@ const CARLOTTA_SKILLS = {
   // 重击伤害：11.48%*2 + 11.48%*2 + 30.60% → 22.82%*2 + 22.82%*2 + 60.84% (10级)
   heavy: {
     name: '重击伤害',
-    type: 'skill',
-    levelFrom: '普攻',
+    type: 'heavy',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.1148 * 4 + 0.3060, 2: 0.1242 * 4 + 0.3311, 3: 0.1336 * 4 + 0.3562,
       4: 0.1468 * 4 + 0.3914, 5: 0.1562 * 4 + 0.4165, 6: 0.1670 * 4 + 0.4453,
@@ -88,7 +88,7 @@ const CARLOTTA_SKILLS = {
   // 限制性策略：17.22%*2 + 17.22%*2 + 45.90% → 34.23%*2 + 34.23%*2 + 91.26% (10级)
   restriction: {
     name: '重击限制性策略',
-    type: 'skill',
+    type: 'heavy',
     levelFrom: '共鸣技能',
     levelMap: {
       1: 0.1722 * 4 + 0.4590, 2: 0.1863 * 4 + 0.4967, 3: 0.2004 * 4 + 0.5343,
@@ -100,8 +100,8 @@ const CARLOTTA_SKILLS = {
   // 礼节性问候：54.32% + 66.39% → 107.99% + 131.99% (10级)
   greeting: {
     name: '礼节性问候',
-    type: 'skill',
-    levelFrom: '普攻',
+    type: 'normal',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.5432 + 0.6639, 2: 0.5877 + 0.7183, 3: 0.6323 + 0.7728,
       4: 0.6946 + 0.8490, 5: 0.7392 + 0.9034, 6: 0.7904 + 0.9660,
@@ -122,7 +122,7 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
-function getRoleSelfBuff({ skillName, chainCount }) {
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
   const buff = {
     damageBonus: 0,
     multiplierBonus: 0,
@@ -141,11 +141,14 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     buff.multiplierBonus += 1.26;
   }
   // S3：共鸣技能暴力美学/示我璀璨 倍率 +93%
-  if (chainCount >= 3 && skillName === '示我璀璨') {
+  if (chainCount >= 3 && (skillName === '示我璀璨' || skillName === '暴力美学')) {
     buff.multiplierBonus += 0.93;
   }
-  // S4：施放重击/重击限制性策略时，全队共鸣技能伤害 +25%
-  if (chainCount >= 4) buff.damageBonus += 0.25;
+  // S4：施放重击/重击限制性策略时，队伍共鸣技能伤害 +25%（只作用于共鸣技能伤害）
+  if (chainCount >= 4 && skillType === 'skill') buff.damageBonus += 0.25;
+
+  // S5：重击·末路见行倍率 +47%（本模块不展示末路见行）。
+  // S6：共鸣解放·死兆倍率 +186.6%（本模块展示的是致死以终，不受该加成）。
 
   return buff;
 }
@@ -156,7 +159,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const multiplier = skill.levelMap[level] || skill.levelMap[10];
 
-  const roleBuff = getRoleSelfBuff({ skillName: skill.name, chainCount });
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -174,7 +177,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

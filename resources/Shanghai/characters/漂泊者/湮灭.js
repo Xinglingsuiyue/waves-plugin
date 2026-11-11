@@ -1,5 +1,5 @@
-import { calcSingleDamage } from '../../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../../utils/damage/parser.js';
+import { calcSingleDamage, calcResistanceMultiplier } from '../../../../utils/damage/formula.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -84,37 +90,43 @@ const SKILLS = {
   },
   skill10: {
     name: "灭音",
-    type: "skill",
+    // Wiki：此次伤害为重击伤害
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.1475, 1.2416, 1.3357, 1.4675, 1.5616, 1.6698, 1.8203, 1.9709, 2.1214, 2.2814)
   },
   skill11: {
     name: "暗流·普攻第一段",
-    type: "skill",
+    // Wiki：暗涌状态下普攻替换为强化普攻
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.2835, 0.3068, 0.33, 0.3626, 0.3858, 0.4126, 0.4498, 0.487, 0.5242, 0.5637)
   },
   skill12: {
     name: "暗流·普攻第二段",
-    type: "skill",
+    // Wiki：暗涌状态下普攻替换为强化普攻
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.4725, 0.5113, 0.55, 0.6043, 0.643, 0.6876, 0.7496, 0.8116, 0.8736, 0.9394)
   },
   skill13: {
     name: "暗流·普攻第三段",
-    type: "skill",
+    // Wiki：暗涌状态下普攻替换为强化普攻
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.783, 0.8473, 0.9115, 1.0014, 1.0656, 1.1394, 1.2421, 1.3449, 1.4476, 1.5567)
   },
   skill14: {
     name: "暗流·普攻第四段",
-    type: "skill",
+    // Wiki：暗涌状态下普攻替换为强化普攻
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.1207, 1.2125, 1.3044, 1.4332, 1.525, 1.6307, 1.7777, 1.9247, 2.0717, 2.2278)
   },
   skill15: {
     name: "暗流·普攻第五段",
-    type: "skill",
+    // Wiki：暗涌状态下普攻替换为强化普攻
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.1478, 1.2416, 1.3359, 1.4678, 1.5616, 1.6701, 1.8206, 1.9711, 2.1215, 2.2815)
   },
@@ -126,19 +138,22 @@ const SKILLS = {
   },
   skill17: {
     name: "暗流·鸣刃",
-    type: "skill",
+    // Wiki：此次伤害为重击伤害
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.837, 0.9057, 0.9743, 1.0706, 1.1393, 1.2181, 1.3281, 1.4377, 1.5477, 1.6645)
   },
   skill18: {
     name: "暗流·下落攻击",
-    type: "skill",
+    // 空中攻击·下落，Wiki 未标注特殊归类
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.62, 0.6709, 0.7217, 0.7929, 0.8437, 0.9022, 0.9836, 1.0649, 1.1462, 1.2327)
   },
   skill19: {
     name: "暗流·闪避反击",
-    type: "skill",
+    // 闪避反击属于普攻类
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.593, 1.7237, 1.8543, 2.0372, 2.1678, 2.318, 2.527, 2.736, 2.945, 3.1671)
   },
@@ -173,26 +188,49 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, enemy, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '漂泊者·湮灭·自身'
+  };
+  // 固有「变格」：处于暗涌状态时湮灭伤害加成提升 20%，按暗流输出轴常驻计入。
+  buff.damageBonus += 0.20;
+  // S1「弦外知机」：共鸣技能伤害加成提升 30%。
+  if (chainCount >= 1 && skillType === 'skill') buff.damageBonus += 0.30;
+  // S4「尘声湮灭」：重击·灭音、共鸣解放·临渊死寂命中时目标湮灭抗性降低 10%，按抗性乘区实际比值折算。
+  if (chainCount >= 4) {
+    const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
+    buff.damageBonus += calcResistanceMultiplier(baseRes - 0.10) / calcResistanceMultiplier(baseRes) - 1;
+  }
+  // S5「万物寂听」：暗涌状态下第5段普攻额外造成一次等同该段 50% 的湮灭伤害。
+  if (chainCount >= 5 && skillName === '暗流·普攻第五段') buff.multiplierBonus += 0.50;
+  // S6「暗涌潮升」：处于暗涌状态时暴击提升 25%。
+  if (chainCount >= 6) buff.critRate += 0.25;
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, enemy, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

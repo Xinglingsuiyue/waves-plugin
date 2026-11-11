@@ -1,5 +1,5 @@
 ﻿import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 const wiki = {
@@ -82,11 +82,16 @@ function getRoleSelfBuff({ skillName, chainCount }) {
     source: '散华·自身'
   };
 
+  // 固有「凝冰」：施放变奏技能后，共鸣技能伤害 +20%（默认已触发）。
+  if (skillName === SANHUA_SKILLS.skill.name) buff.damageBonus += 0.20;
+  // 固有「瀑雪」：施放第 5 段普攻后，冰绽伤害 +20%（默认已触发）。
   if (skillName === SANHUA_SKILLS.iceBurstTotal.name) buff.damageBonus += 0.20;
-  if (skillName === SANHUA_SKILLS.skill.name || skillName === SANHUA_SKILLS.iceBurstTotal.name) buff.damageBonus += 0.20;
-  if (chainCount >= 1 && skillName === SANHUA_SKILLS.skill.name) buff.critRate += 0.15;
-  if (chainCount >= 2 && skillName === SANHUA_SKILLS.iceBurstTotal.name) buff.multiplierBonus += 1.20;
+  // S3：攻击生命低于 70% 的目标时，造成的伤害 +35%（按触发处理）。
+  if (chainCount >= 3) buff.damageBonus += 0.35;
+  // S5：冰绽暴击伤害 +100%。
   if (chainCount >= 5 && skillName === SANHUA_SKILLS.iceBurstTotal.name) buff.critDamage += 1.00;
+  // S6：引爆冰棱/冰川后，队伍中的角色攻击 +10%，可叠加 2 层。
+  if (chainCount >= 6) buff.attackPercent += 0.20;
 
   return buff;
 }
@@ -111,7 +116,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
                     + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0)
                        + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const result = calcSingleDamage({
     attack: finalAttack,

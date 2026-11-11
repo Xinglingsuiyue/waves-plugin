@@ -27,10 +27,9 @@ export default {
     }
 
     if (cnt >= 5) {
-      // 冷凝伤害 +22.5%（默认面板未含 → 此 buff 是触发态）
-      if (!cold || cold === '0%' || cold === 0) {
-        buff.damageBonus += 0.225;
-      }
+      // 施放共鸣技能时冷凝伤害 +22.5%：这是触发态 buff，不进入面板，
+      // 不能因为面板已有冷凝加成就跳过。
+      buff.damageBonus += 0.225;
       // 共鸣技能伤害 +18% × 2 层
       if (skillType === 'skill') {
         buff.damageBonus += 0.18 * 2;

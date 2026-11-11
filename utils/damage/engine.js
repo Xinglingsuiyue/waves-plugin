@@ -117,6 +117,8 @@ export async function calcDamage(roleDetailData, options = {}) {
     ? await loadPhantomModule(equipment.phantomName)
     : null
 
+  // 合鸣套装：所有已装备的套装都生效（含 1 件套），逐个套用后合并成一个模块。
+  // 注意：套装模块只应计算「战斗触发的动态效果」，固定件数效果已包含在角色总面板中。
   const groupRefs = Array.isArray(equipment.groups) && equipment.groups.length
     ? equipment.groups
     : (equipment.groupName ? [{ name: equipment.groupName, count: equipment.groupCount }] : [])
@@ -142,6 +144,8 @@ export async function calcDamage(roleDetailData, options = {}) {
             flatAttack: 0,
             hpPercent: 0,
             flatHp: 0,
+            defensePercent: 0,
+            flatDefense: 0,
             damageBonus: 0,
             elementDamageBonus: 0,
             skillDamageBonus: 0,
@@ -157,7 +161,7 @@ export async function calcDamage(roleDetailData, options = {}) {
               ...ctx,
               equipment: { ...(ctx.equipment || {}), groupName: mod.name, groupCount: count }
             }) || {}
-            for (const key of ['attackPercent', 'flatAttack', 'hpPercent', 'flatHp', 'damageBonus', 'elementDamageBonus', 'skillDamageBonus', 'deepen', 'multiplierBonus', 'ignoreDefense', 'critRate', 'critDamage']) {
+            for (const key of ['attackPercent', 'flatAttack', 'hpPercent', 'flatHp', 'defensePercent', 'flatDefense', 'damageBonus', 'elementDamageBonus', 'skillDamageBonus', 'deepen', 'multiplierBonus', 'ignoreDefense', 'critRate', 'critDamage']) {
               merged[key] += Number(buff[key] || 0)
             }
             if (buff.source) {

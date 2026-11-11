@@ -1,5 +1,5 @@
-import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { calcSingleDamage, calcResistanceMultiplier } from '../../../utils/damage/formula.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -38,7 +38,7 @@ const PHOEBE_SKILLS = {
   normalThree: {
     name: '普攻第三段',
     type: 'normal',
-    levelFrom: '普攻',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.0717 * 8, 2: 0.0775 * 8, 3: 0.0834 * 8, 4: 0.0916 * 8,
       5: 0.0975 * 8, 6: 0.1043 * 8, 7: 0.1137 * 8, 8: 0.1231 * 8,
@@ -48,7 +48,8 @@ const PHOEBE_SKILLS = {
   // 重击伤害：20.80%*4 → 41.35%*4 (10级)
   heavy: {
     name: '重击伤害',
-    type: 'normal',
+    // Wiki：常态攻击页「重击伤害」段，属重击伤害。
+    type: 'heavy',
     levelFrom: '共鸣回路',
     levelMap: {
       1: 0.2080 * 4, 2: 0.2250 * 4, 3: 0.2421 * 4, 4: 0.2660 * 4,
@@ -71,7 +72,7 @@ const PHOEBE_SKILLS = {
   starDodge: {
     name: '夏弥尔之星·闪避反击',
     type: 'normal',
-    levelFrom: '普攻',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.2205 * 6, 2: 0.2386 * 6, 3: 0.2567 * 6, 4: 0.2820 * 6,
       5: 0.3001 * 6, 6: 0.3209 * 6, 7: 0.3498 * 6, 8: 0.3788 * 6,
@@ -102,7 +103,7 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
-function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+function getRoleSelfBuff({ skillName, skillType, chainCount, enemy }) {
   const buff = {
     damageBonus: 0,
     multiplierBonus: 0,
@@ -113,13 +114,17 @@ function getRoleSelfBuff({ skillName, skillType, chainCount }) {
     source: '菲比·自身'
   };
 
+  // 固有「启示」：处于赦罪状态、告解状态时，衍射伤害加成 +12%（默认按赦罪状态计算）。
+  buff.damageBonus += 0.12;
+
   // S1：赦罪状态下共鸣解放启明之誓愿伤害倍率提升 480%
   if (chainCount >= 1 && skillName === '共鸣解放·圣祷赦罪伤害') {
     buff.multiplierBonus += 4.80;
   }
-  // S4：目标衍射抗性 -10%，按 baseRes=0.1 近似折算为 +11.1% damageBonus
+  // S4：目标衍射抗性 -10%，按抗性乘区实际比值折算（负抗性分支不能线性换算）
   if (chainCount >= 4) {
-    buff.damageBonus += 0.10 / 0.9;
+    const baseRes = Math.min(0.95, Math.max(0, Number(enemy?.resistance ?? 0.1)));
+    buff.damageBonus += calcResistanceMultiplier(baseRes - 0.10) / calcResistanceMultiplier(baseRes) - 1;
   }
   // S5：变奏技能后，菲比衍射伤害加成 +12%
   if (chainCount >= 5) {
@@ -139,7 +144,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
   const multiplier = skill.levelMap[level] || skill.levelMap[10];
 
-  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount, enemy });
   const weaponBuff = modules.weapon?.apply
     ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options })
     : {};
@@ -157,7 +162,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0)
                       + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
 
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

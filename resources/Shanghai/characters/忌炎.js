@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -49,19 +49,40 @@ function getPanelDamageBonus(attrMap, skillType) {
 }
 
 function getRoleSelfBuff({ skill, chainCount }) {
-  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critDamage: 0, attackPercent: 0, source: '忌炎·自身' };
+  const buff = { damageBonus: 0, deepen: 0, multiplierBonus: 0, ignoreDefense: 0, critRate: 0, critDamage: 0, attackPercent: 0, source: '忌炎·自身' };
 
-  // 固有技能：变奏后攻击 +10%；命中后暴伤 +12%。默认爆发链路在线。
+  // 固有「垂天平澜」：施放变奏技能攻其不备后攻击 +10% 持续 15 秒（默认已触发）。
   buff.attackPercent += 0.10;
+  // 固有「蕴风集流」：攻击命中目标时暴击伤害 +12% 持续 8 秒（默认已触发）。
   buff.critDamage += 0.12;
 
-  // 共鸣回路：破阵值强化共鸣技能伤害 +20%，后动为重击伤害，不在此套用。
-  // 共鸣链未稳定提取，先保守处理常见爆发收益入口。
-  if (chainCount >= 3 && skill.name.includes('破阵之枪')) {
-    buff.critDamage += 0.30;
+  // S1「济世」：枪扫风定使用次数 +1、消耗破阵值 -15（不参与伤害）。
+
+  // S2「通变」：施放变奏技能攻其不备后攻击 +28% 持续 15 秒（默认已触发）。
+  if (chainCount >= 2) {
+    buff.attackPercent += 0.28;
   }
-  if (chainCount >= 6) {
-    buff.damageBonus += 0.20;
+
+  // S3「观势」：施放枪扫风定/苍躣八荒·谋定/后动/攻其不备时暴击 +16%、暴伤 +32% 持续 8 秒（默认已触发）。
+  if (chainCount >= 3) {
+    buff.critRate += 0.16;
+    buff.critDamage += 0.32;
+  }
+
+  // S4「奇正」：施放苍躣八荒·谋定/后动时队伍重击伤害 +25% 持续 30 秒（默认已触发）。
+  if (chainCount >= 4 && skill.type === 'heavy') {
+    buff.damageBonus += 0.25;
+  }
+
+  // S5「明断」：延奏技能克己倍率 +120%（本模块不展示）；
+  // 攻击命中时攻击 +3% 可叠 15 层，施放攻其不备后叠满（+45%，默认已触发）。
+  if (chainCount >= 5) {
+    buff.attackPercent += 0.03 * 15;
+  }
+
+  // S6「移山」：施放苍躣八荒·后动时消耗全部锐意之势，每层使后动倍率 +120%，最多 2 层。
+  if (chainCount >= 6 && skill.name === JIYAN_SKILLS.circuit.name) {
+    buff.multiplierBonus += 1.20 * 2;
   }
 
   return buff;
@@ -80,7 +101,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, skill 
 
   const extraCritRate = Number(roleBuff.critRate || 0) + Number(weaponBuff.critRate || 0) + Number(phantomBuff.critRate || 0) + Number(groupBuff.critRate || 0);
   const extraCritDamage = Number(roleBuff.critDamage || 0) + Number(weaponBuff.critDamage || 0) + Number(phantomBuff.critDamage || 0) + Number(groupBuff.critDamage || 0);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   return {
     name: skill.name,

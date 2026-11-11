@@ -9,6 +9,7 @@ const wiki = {
 
 const EFFECT = {
   attack: null,
+  defensePercent: { 1: 0.16, 2: 0.2, 3: 0.24, 4: 0.28, 5: 0.32 },
   critRate: null,
   critDamage: { 1: 0.2, 2: 0.25, 3: 0.3, 4: 0.35, 5: 0.4 },
   liberation: null,
@@ -31,6 +32,8 @@ export default {
     const reson = Math.max(1, Math.min(5, Number(panel?.weaponResonLevel || 1)));
     const buff = {
       attackPercent: pick(EFFECT.attack, reson),
+      // 防御提升 16%~32%（莫宁治疗按防御结算，必须计入）。
+      defensePercent: pick(EFFECT.defensePercent, reson),
       damageBonus: pick(EFFECT.damage, reson),
       critRate: pick(EFFECT.critRate, reson),
       critDamage: pick(EFFECT.critDamage, reson),

@@ -18,7 +18,8 @@ export default {
     };
 
     if (cnt >= 3) {
-      if (skillType === 'normal') buff.damageBonus += 0.30;
+      // 施放声骸技能时，自身「重击伤害加成」提升 30%（只作用于重击）。
+      if (skillType === 'heavy') buff.damageBonus += 0.30;
       if (skillType === 'echo')   buff.damageBonus += 0.04 * 4;
     }
 

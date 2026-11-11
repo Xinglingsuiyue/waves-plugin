@@ -1,6 +1,12 @@
 ﻿import { calcSingleDamage, calcSingleHeal } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalAttack, calcFinalHp } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -54,23 +60,72 @@ function getPanelHealingBonus(attrMap) {
   return getPercentAttr(attrMap, '治疗效果加成') + getPercentAttr(attrMap, '治疗加成');
 }
 
-function getFinalAttack(panel, mergedBuff) {
-  return (panel.attack || 0) * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+function getFinalAttack(panel, mergedBuff, roleDetailData) {
+  return calcFinalAttack(panel, mergedBuff, roleDetailData);
 }
 
-function getFinalHp(panel, mergedBuff) {
-  return (panel.hp || 0) * (1 + (mergedBuff.hpPercent || 0)) + (mergedBuff.flatHp || 0);
+function getFinalHp(panel, mergedBuff, roleDetailData) {
+  return calcFinalHp(panel, mergedBuff, roleDetailData);
+}
+
+// 白芷自身增益（固有 + 共鸣链）：
+//   固有「泛音区间」拾取天籁的角色攻击提升 15%，持续 20 秒；
+//   S2「沉默的冰原」施放应急预案时若有 4 点念意，冷凝伤害加成 +15%、治疗效果加成 +15%，持续 12 秒；
+//   S3「真理的崇奉」施放覆雪流盈时生命上限 +12%，持续 10 秒；
+//   S4「被追溯的本源」频隙回响数量 +2（4→6，等效 ×1.5）、治疗倍率 +20%，
+//      并额外造成生命上限 1.2% 的冷凝伤害；
+//   S6「闻道者的觉悟」拾取天籁时队伍冷凝伤害加成 +12%，持续 12 秒。
+function getRoleSelfBuff({ skillKey, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    hpPercent: 0,
+    damageBonus: 0,
+    healingBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '白芷·自身'
+  };
+
+  // 固有「泛音区间」：拾取天籁的角色攻击提升 15%。
+  buff.attackPercent += 0.15;
+
+  // S2：冷凝伤害加成与治疗效果加成各提升 15%。
+  if (chainCount >= 2) {
+    buff.damageBonus += 0.15;
+    buff.healingBonus += 0.15;
+  }
+
+  // S3：生命上限提升 12%。
+  if (chainCount >= 3) buff.hpPercent += 0.12;
+
+  // S4：频隙回响数量 +2（4→6），治疗倍率 +20%。
+  if (chainCount >= 4) {
+    if (skillKey === 'echoDamage') buff.multiplierBonus += 0.50;
+    if (skillKey === 'echoHeal') buff.multiplierBonus += 0.20;
+  }
+
+  // S6：队伍冷凝伤害加成提升 12%。
+  if (chainCount >= 6) buff.damageBonus += 0.12;
+
+  return buff;
 }
 
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = BAIZHI_SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillKey, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const base = skill.base === 'hp' ? getFinalHp(panel, mergedBuff) : getFinalAttack(panel, mergedBuff);
-  const skillMultiplier = skill.levelMap[level] || skill.levelMap[10];
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const base = skill.base === 'hp' ? getFinalHp(panel, mergedBuff, roleDetailData) : getFinalAttack(panel, mergedBuff, roleDetailData);
+  // S4：频隙回响额外造成生命上限 1.2% 的冷凝伤害（6 段）。
+  const extraMultiplier = chainCount >= 4 && skillKey === 'echoDamage' ? 0.012 * 1.5 : 0;
+  const skillMultiplier = (skill.levelMap[level] || skill.levelMap[10]) + extraMultiplier;
   const flatHeal = skill.flatMap?.[level] || skill.flatMap?.[10] || 0;
 
   const result = skill.heal
@@ -89,12 +144,12 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
         multiplierBonus: mergedBuff.multiplierBonus || 0,
         damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
         deepen: mergedBuff.deepen || 0,
-        critRate: panel.critRate,
-        critDamage: panel.critDamage,
+        critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+        critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
         attackerLevel: panel.level || 90,
         enemyLevel: enemy?.level || 90,
         resistance: enemy?.resistance ?? 0.1,
-        ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+        ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
         sourceDetail: mergedBuff.sources
       });
 

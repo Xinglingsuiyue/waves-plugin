@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -236,10 +236,10 @@ function getRoleSelfBuff({ skillName, chainCount, opts }) {
     buff.damageBonus += 0.20;
   }
 
-  // S6「春风祝颂你的旅途」：目标受到爱弥斯共鸣解放伤害 +40%
+  // S6「春风祝颂你的旅途」：目标受到爱弥斯共鸣解放伤害 +40%（承伤提升走深化区）
   // 4 段全部按共鸣解放结算，全部吃
   if (chainCount >= 6) {
-    buff.damageBonus += 0.40;
+    buff.deepen += 0.40;
   }
 
   return buff;
@@ -282,10 +282,10 @@ function calcOneSkill({
                         + Number(phantomBuff.critRate || 0)
                         + Number(groupBuff.critRate || 0);
 
-  // 攻击力 = 面板攻击 × (1 + attackPercent) + flatAttack
+  // 攻击力 = 面板攻击 + 基础攻击 × attackPercent + flatAttack
   const attackPercent = mergedBuff.attackPercent || 0;
   const flatAttack = mergedBuff.flatAttack || 0;
-  const finalAttack = panel.attack * (1 + attackPercent) + flatAttack;
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
 
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skillType);

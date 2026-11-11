@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -102,25 +108,27 @@ const SKILLS = {
   },
   skill13: {
     name: "缭乱",
-    type: "skill",
+    // Wiki：缭乱造成湮灭伤害，此次伤害为重击伤害。
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.1, 2.2722, 2.4444, 2.6859, 2.8581, 3.0562, 3.3313, 3.6071, 3.8829, 4.1755)
   },
   skill14: {
     name: "纷落",
-    type: "skill",
+    // Wiki：纷落与缭乱同属重击伤害。
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(0.9, 0.9738, 1.0476, 1.151, 1.2248, 1.3096, 1.4277, 1.5458, 1.6639, 1.7893)
   },
   skill15: {
     name: "满能缭乱",
-    type: "skill",
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(5.04, 5.4537, 5.8667, 6.4456, 6.8586, 7.3339, 7.9954, 8.6562, 9.3177, 10.0205)
   },
   skill16: {
     name: "满能纷落",
-    type: "skill",
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(2.16, 2.3372, 2.5143, 2.7623, 2.9394, 3.1431, 3.4265, 3.7098, 3.9932, 4.2943)
   },
@@ -155,22 +163,60 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ chainCount, skillType }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    source: '丹瑾·自身'
+  };
+
+  // 固有「盈溢」：施放共鸣技能烬灭后，重击伤害提升 30%，持续 5 秒
+  //（缭乱/纷落均在烬灭后施放，默认生效）。
+  if (skillType === 'heavy') buff.damageBonus += 0.30;
+
+  // S1「丹心本如鉴」：攻击携带朱蚀之刻的目标时攻击 +5%，可叠 6 层，按满层计。
+  if (chainCount >= 1) buff.attackPercent += 0.05 * 6;
+
+  // S2「明镜却蒙尘」：造成的伤害额外提升 20%。
+  if (chainCount >= 2) buff.deepen += 0.20;
+
+  // S3「刹那芳华不长久」：共鸣解放伤害加成 +30%。
+  if (chainCount >= 3 && skillType === 'liberation') buff.damageBonus += 0.30;
+
+  // S4「孤艳难红」：彤华 60 点以上时暴击 +15%，缭乱/纷落按已生效处理。
+  if (chainCount >= 4) buff.critRate += 0.15;
+
+  // S5「剑扫春秋」：湮灭伤害加成 +15%（生命低于 60% 的额外 15% 不计）。
+  if (chainCount >= 5) buff.damageBonus += 0.15;
+
+  // S6「绯染碧玉岂堪留」：施放重击缭乱时队伍中角色攻击 +20%。
+  if (chainCount >= 6) buff.attackPercent += 0.20;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ chainCount, skillType: skill.type });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,

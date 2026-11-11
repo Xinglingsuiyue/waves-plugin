@@ -23,9 +23,9 @@ export default {
       source: '蜃影'
     };
 
-    if (skillType === 'skill') {
-      buff.damageBonus += pick(EFFECT.skillDamage, reson) * skillStacks;
-    }
+    // 施放共鸣技能后获得「自身衍射伤害加成」，持续 14 秒，
+    // 属于持续型属性加成，作用于后续所有技能，不能只加给共鸣技能。
+    buff.damageBonus += pick(EFFECT.skillDamage, reson) * skillStacks;
     if (skillType === 'heavy') {
       buff.deepen += pick(EFFECT.heavyDeepen, reson);
       buff.ignoreDefense += pick(EFFECT.heavyIgnoreDefense, reson);

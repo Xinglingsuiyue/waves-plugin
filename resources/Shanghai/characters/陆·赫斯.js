@@ -1,6 +1,12 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, getNumberAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
+}
 
 function getSkillLevel(roleDetailData, typeName) {
   const data = normalizeRoleDetailData(roleDetailData);
@@ -132,19 +138,22 @@ const SKILLS = {
   },
   skill18: {
     name: "普攻·流金贯行",
-    type: "skill",
+    // Wiki：此伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣技能",
     levelMap: levelMap(0.782, 0.8462, 0.9103, 1.0001, 1.0642, 1.1379, 1.2405, 1.3431, 1.4457, 1.5547)
   },
   skill19: {
     name: "日髓阵列",
-    type: "skill",
+    // Wiki：此伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣技能",
     levelMap: levelMap(0.7719, 0.8352, 0.8984, 0.9871, 1.0503, 1.1231, 1.2244, 1.3256, 1.4269, 1.5345)
   },
   skill20: {
     name: "判决大地裂响",
-    type: "skill",
+    // Wiki：空中攻击·判决大地裂响，此伤害为普攻伤害。
+    type: "normal",
     levelFrom: "共鸣回路",
     levelMap: levelMap(1.5437, 1.6703, 1.7968, 1.9741, 2.1006, 2.2462, 2.4487, 2.6512, 2.8538, 3.069)
   },
@@ -173,26 +182,99 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+const CRIMSON_SUN_SKILLS = new Set(['斩杀日冕·环', '斩杀日冕·破', '斩杀日冕·曜']);
+const GOLDEN_JUDGEMENT_EXTRA = new Set(['日髓阵列', '判决大地裂响']);
+const AIR_ATTACK_SKILLS = new Set([
+  '空中攻击第一段', '空中攻击第二段·镰刀·剖解', '空中攻击第三段·镰刀·剖解',
+  '空中攻击第二段·镰刀·裁断', '空中攻击第三段·镰刀·裁断', '空中攻击第四段', '判决大地裂响'
+]);
+
+// 陆·赫斯自身增益（共鸣回路 + 固有 + 共鸣链）：
+//   共鸣回路·黄金的裁量：所有形态斩杀日冕倍率 +110%，斩杀日冕·曜后日髓阵列/判决大地裂响倍率 +110%；
+//   共鸣回路·终局之释义：于永冻中释义倍率 +25%，可叠 3 层；
+//   固有「无因的医谕」：攻击 +25%；对有集谐·干涉的目标每 10 点谐度破坏增幅伤害加深 5%，上限 30%；
+//   S1「流金于灰白中灼烧」空中攻击伤害加成 +150%；
+//   S2「眼底尚有雪崩未止」于永冻中释义倍率 +60%，无因的医谕加深上限提升至 60%；
+//   S3「金雨浇筑你的脊骨」斩杀日冕倍率 +136%，曜后的日髓阵列/判决大地裂响倍率 +136%；
+//   S4「冻土之下，亦有新生」队伍造成谐度破坏后全队伤害 +20%，持续 20 秒；
+//   S5「穿过风雪构筑的静场」流金回潮倍率 +50%；
+//   S6「冰原之上，铺开无垠曦光」斩杀日冕/日髓阵列/判决大地裂响伤害 +30%，
+//      每层终局之释义使于永冻中释义伤害加成 +40%，上限 120%。
+function getRoleSelfBuff({ skillName, skillType, panel, chainCount }) {
+  const buff = {
+    attackPercent: 0,
+    damageBonus: 0,
+    critRate: 0,
+    critDamage: 0,
+    deepen: 0,
+    multiplierBonus: 0,
+    ignoreDefense: 0,
+    source: '陆·赫斯·自身'
+  };
+
+  const isCrimsonSun = CRIMSON_SUN_SKILLS.has(skillName);
+  const isGoldenExtra = GOLDEN_JUDGEMENT_EXTRA.has(skillName);
+
+  // 黄金的裁量：斩杀日冕全形态倍率 +110%，曜后的日髓阵列/判决大地裂响倍率 +110%。
+  if (isCrimsonSun || isGoldenExtra) buff.multiplierBonus += 1.10;
+
+  // 终局之释义：于永冻中释义倍率 +25%/层，最多 3 层。
+  if (skillName === '于永冻中释义') buff.multiplierBonus += 0.25 * 3;
+
+  // 固有「无因的医谕」：附近队伍附加集谐·偏移或造成谐度破坏后攻击 +25%。
+  buff.attackPercent += 0.25;
+
+  // 固有「无因的医谕」：对有集谐·干涉的目标，每 10 点谐度破坏增幅伤害加深 5%。
+  const harmonyBreak = getNumberAttr(panel?.attrMap || {}, '谐度破坏增幅');
+  const deepenCap = chainCount >= 2 ? 0.60 : 0.30;
+  buff.deepen += Math.min(deepenCap, Math.floor(harmonyBreak / 10) * 0.05);
+
+  // S1：空中攻击伤害加成 +150%。
+  if (chainCount >= 1 && AIR_ATTACK_SKILLS.has(skillName)) buff.damageBonus += 1.50;
+
+  // S2：于永冻中释义倍率 +60%。
+  if (chainCount >= 2 && skillName === '于永冻中释义') buff.multiplierBonus += 0.60;
+
+  // S3：斩杀日冕倍率 +136%；曜后的日髓阵列/判决大地裂响倍率 +136%。
+  if (chainCount >= 3 && (isCrimsonSun || isGoldenExtra)) buff.multiplierBonus += 1.36;
+
+  // S4：队伍造成谐度破坏后全队伤害 +20%，持续 20 秒。
+  if (chainCount >= 4) buff.damageBonus += 0.20;
+
+  // S5：流金回潮倍率 +50%。
+  if (chainCount >= 5 && skillName === '流金回潮') buff.multiplierBonus += 0.50;
+
+  // S6：斩杀日冕/日髓阵列/判决大地裂响伤害 +30%。
+  if (chainCount >= 6 && (isCrimsonSun || isGoldenExtra)) buff.damageBonus += 0.30;
+
+  // S6：每层终局之释义使于永冻中释义伤害加成 +40%，上限 120%。
+  if (chainCount >= 6 && skillType === 'liberation') buff.damageBonus += 0.40 * 3;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, panel, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
     attack: finalAttack,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

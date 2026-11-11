@@ -26,8 +26,8 @@ export default {
       source: '裁竹'
     };
 
-    // 默认 2 层【解竹】，作用于重击（normal-加重击）
-    if (skillType === 'normal') {
+    // 默认 2 层【解竹】，作用于重击
+    if (skillType === 'heavy') {
       buff.damageBonus += (heavyPerStackMap[reson] || heavyPerStackMap[1]) * 2;
     }
 

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack, calcFinalDefense  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -66,8 +72,10 @@ const SKILLS = {
   },
   skill7: {
     name: "后发制人",
-    type: "normal",
+    // Wiki：重击·后发制人，伤害为 39.59%~87% 防御力。
+    type: "heavy",
     levelFrom: "常态攻击",
+    defenseScaling: true,
     levelMap: levelMap(0.3959, 0.4284, 0.4608, 0.5063, 0.5387, 0.5761, 0.628, 0.6799, 0.7319, 0.787)
   },
   skill8: {
@@ -84,50 +92,61 @@ const SKILLS = {
   },
   skill10: {
     name: "固若金汤",
+    // Wiki：伤害为 67.86%~134.92% 防御力。
     type: "skill",
     levelFrom: "共鸣技能",
+    defenseScaling: true,
     levelMap: levelMap(0.6786, 0.7343, 0.7899, 0.8678, 0.9235, 0.9875, 1.0765, 1.1655, 1.2546, 1.3492)
   },
   skill11: {
     name: "御反之隙第一段",
-    type: "skill",
+    // Wiki：造成湮灭伤害，此次伤害为普攻伤害，倍率为防御力百分比。
+    type: "normal",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.4336, 0.4692, 0.5047, 0.5545, 0.59, 0.6309, 0.6878, 0.7447, 0.8016, 0.862)
   },
   skill12: {
     name: "御反之隙第二段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.558, 0.6038, 0.6495, 0.7136, 0.7593, 0.8119, 0.8851, 0.9583, 1.0316, 1.1093)
   },
   skill13: {
     name: "御反之隙第三段",
-    type: "skill",
+    type: "normal",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.7314, 0.7914, 0.8514, 0.9353, 0.9953, 1.0643, 1.1602, 1.2562, 1.3522, 1.4541)
   },
   skill14: {
     name: "御反之隙第一段护盾",
     type: "skill",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.1125, 0.117, 0.1215, 0.1282, 0.1372, 0.1462, 0.1631, 0.1822, 0.2025, 0.2362)
   },
   skill15: {
     name: "御反之隙第二段护盾",
     type: "skill",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.1687, 0.1755, 0.1822, 0.1923, 0.2058, 0.2193, 0.2446, 0.2733, 0.3037, 0.3543)
   },
   skill16: {
     name: "御反之隙第三段护盾",
     type: "skill",
     levelFrom: "共鸣回路",
+    defenseScaling: true,
     levelMap: levelMap(0.2812, 0.2925, 0.3037, 0.3206, 0.3431, 0.3656, 0.4078, 0.4556, 0.5062, 0.5906)
   },
   skill17: {
     name: "不动如山",
+    // Wiki：基于桃祈防御力的攻击，伤害为 226.20%~449.71% 防御力。
     type: "liberation",
     levelFrom: "共鸣解放",
+    defenseScaling: true,
     levelMap: levelMap(2.262, 2.4475, 2.633, 2.8927, 3.0782, 3.2915, 3.5883, 3.885, 4.1818, 4.4971)
   },
   skill18: {
@@ -149,26 +168,63 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0,
+    defensePercent: 0, flatDefense: 0, source: '桃祈·自身'
+  };
+
+  // 固有「护心」：共鸣技能·磐岩护壁持续期间，角色的防御提升 15%。
+  buff.defensePercent += 0.15;
+
+  // S2「假泯于众人」：共鸣解放·不动如山的暴击提升 20%，暴击伤害提升 20%。
+  if (chainCount >= 2 && skillName === '不动如山') {
+    buff.critRate += 0.20;
+    buff.critDamage += 0.20;
+  }
+
+  // S4「承负重之担」：成功触发重击·后发制人时，防御提升 50%，持续 5 秒。
+  if (chainCount >= 4) buff.defensePercent += 0.50;
+
+  // S5「解市井民忧」：共鸣回路·攻防转换（御反之隙）的伤害提升 50%。
+  if (chainCount >= 5 && skillName.startsWith('御反之隙') && !skillName.endsWith('护盾')) {
+    buff.multiplierBonus += 0.50;
+  }
+
+  // S6「护城邦安危」：共鸣技能·磐岩护壁护盾持续期间，桃祈普攻和重击伤害提升 40%。
+  if (chainCount >= 6 && (skillType === 'normal' || skillType === 'heavy')) {
+    buff.damageBonus += 0.40;
+  }
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  // 桃祈的固若金汤 / 御反之隙 / 后发制人 / 不动如山均为防御力倍率。
+  const baseStat = skill.defenseScaling
+    ? calcFinalDefense(panel, mergedBuff, roleDetailData)
+    : calcFinalAttack(panel, mergedBuff, roleDetailData);
   const result = calcSingleDamage({
-    attack: finalAttack,
+    attack: baseStat,
     skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

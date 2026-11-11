@@ -13,10 +13,11 @@ const EFFECT = {
   critDamage: null,
   liberation: null,
   skill: null,
-  normal: { 1: 0.06, 2: 0.067, 3: 0.075, 4: 0.08199999999999999, 5: 0.09 },
+  // 每层 6%/6.7%/7.5%/8.2%/9%，按满 4 层计。
+  normal: { 1: 0.24, 2: 0.268, 3: 0.3, 4: 0.328, 5: 0.36 },
   heavy: null,
   intro: null,
-  damage: { 1: 0.06, 2: 0.067, 3: 0.075, 4: 0.08199999999999999, 5: 0.09 }
+  damage: null
 };
 
 function pick(map, reson) {

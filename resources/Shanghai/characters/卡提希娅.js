@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import { getPercentAttr, normalizeRoleDetailData, calcFinalHp } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -51,7 +51,7 @@ const KATIXIYA_SKILLS = {
     name: '空中攻击·卡提希娅(回收三剑)',
     type: 'windErosion',
     form: 'katixiya',
-    levelFrom: '普攻',
+    levelFrom: '常态攻击',
     levelMap: {
       1: 0.0568 * 3,
       2: 0.0615 * 3,
@@ -245,9 +245,9 @@ function getRoleSelfBuff({ skill, chainCount, opts }) {
     buff.damageBonus += 0.20;
   }
 
-  // S6：目标受到芙露德莉斯伤害 +40%
+  // S6：目标受到芙露德莉斯伤害 +40%（承伤提升走深化区）
   if (chainCount >= 6 && isFuludelisi) {
-    buff.damageBonus += 0.40;
+    buff.deepen += 0.40;
   }
 
   // 看潮怒风哮之刃：每层风蚀加深 20%，最多 5 层
@@ -293,7 +293,7 @@ function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, option
                + Number(phantomBuff.flatHp || 0)
                + Number(groupBuff.flatHp || 0);
 
-  const finalHp = panel.hp * (1 + hpPercent) + flatHp;
+  const finalHp = calcFinalHp(panel, { hpPercent, flatHp }, roleDetailData);
   const attrMap = panel.attrMap || {};
   const panelBonus = getPanelDamageBonus(attrMap, skill.type);
 

@@ -1,5 +1,5 @@
 import { calcSingleDamage } from '../../../utils/damage/formula.js';
-import { getPercentAttr, normalizeRoleDetailData } from '../../../utils/damage/parser.js';
+import {  getPercentAttr, normalizeRoleDetailData, calcFinalAttack  } from '../../../utils/damage/parser.js';
 import { mergeBuff } from '../../../utils/damage/buff.js';
 
 function getSkillLevel(roleDetailData, typeName) {
@@ -7,6 +7,12 @@ function getSkillLevel(roleDetailData, typeName) {
   const skillList = data?.skillList || [];
   const target = skillList.find(s => s?.skill?.type === typeName);
   return target?.level || 10;
+}
+
+function getChainUnlockedCount(roleDetailData) {
+  const data = normalizeRoleDetailData(roleDetailData);
+  const chainList = data?.chainList || [];
+  return chainList.filter(c => c?.unlocked).length;
 }
 
 const levelMap = (...values) => values.reduce((map, value, index) => {
@@ -96,7 +102,8 @@ const SKILLS = {
   },
   skill12: {
     name: "四拍重奏",
-    type: "skill",
+    // Wiki：重击·四拍重奏，持 3 格【音律】时由重击替换而来，造成气动伤害。
+    type: "heavy",
     levelFrom: "共鸣回路",
     levelMap: levelMap(3.1595, 3.4191, 3.6776, 4.0399, 4.2994, 4.5974, 5.0116, 5.4258, 5.8411, 6.2813)
   },
@@ -131,26 +138,61 @@ function getPanelDamageBonus(attrMap, skillType) {
   return total;
 }
 
+function getRoleSelfBuff({ skillName, skillType, chainCount }) {
+  const buff = {
+    attackPercent: 0, damageBonus: 0, critRate: 0, critDamage: 0,
+    deepen: 0, multiplierBonus: 0, ignoreDefense: 0, source: '夏空·自身'
+  };
+
+  // 共鸣回路·音律独奏：夏空或合奏音影进入音律独奏状态时，附近队伍中所有角色的
+  // 气动伤害加成提升 24%，该效果不可叠加（夏空自身同样享受）。
+  buff.damageBonus += 0.24;
+
+  // 固有「黎那汐塔之风」：重击·四拍重奏造成的伤害提升 30%。
+  if (skillName === '四拍重奏') buff.deepen += 0.30;
+
+  // S1「故风的吟游序曲」：施放普攻时攻击提升 35%，持续 10 秒。
+  if (chainCount >= 1) buff.attackPercent += 0.35;
+
+  // S2「四季的连奏之音」：共鸣解放·歌者的三重华彩持续期间，队伍中的角色气动伤害加成提升 40%。
+  if (chainCount >= 2) buff.damageBonus += 0.40;
+
+  // S4「托卡塔与赋格」：重击·四拍重奏与共鸣解放伤害无视敌人 45% 的防御。
+  if (chainCount >= 4 && (skillName === '四拍重奏' || skillType === 'liberation')) {
+    buff.ignoreDefense += 0.45;
+  }
+
+  // S5「献予长夏的永恒叙诗」：共鸣解放伤害加成提升 40%。
+  if (chainCount >= 5 && skillType === 'liberation') buff.damageBonus += 0.40;
+
+  return buff;
+}
+
 function calcOneSkill({ roleDetailData, panel, equipment, enemy, modules, options, skillKey }) {
   const skill = SKILLS[skillKey];
   const level = getSkillLevel(roleDetailData, skill.levelFrom);
+  const chainCount = getChainUnlockedCount(roleDetailData);
+  const roleBuff = getRoleSelfBuff({ skillName: skill.name, skillType: skill.type, chainCount });
   const weaponBuff = modules.weapon?.apply ? modules.weapon.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const phantomBuff = modules.phantom?.apply ? modules.phantom.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
   const groupBuff = modules.group?.apply ? modules.group.apply({ roleDetailData, panel, equipment, enemy, skillType: skill.type, skillName: skill.name, options }) : {};
-  const mergedBuff = mergeBuff(weaponBuff, phantomBuff, groupBuff);
-  const finalAttack = panel.attack * (1 + (mergedBuff.attackPercent || 0)) + (mergedBuff.flatAttack || 0);
+  const mergedBuff = mergeBuff(roleBuff, weaponBuff, phantomBuff, groupBuff);
+  const finalAttack = calcFinalAttack(panel, mergedBuff, roleDetailData);
+  // S6「终曲未终」：夏空或合奏音影进入音律独奏状态时对周围目标造成 220% 气动伤害，
+  // 该伤害视为共鸣解放伤害，折算为共鸣解放技能的固定倍率。
+  const chainExtraMultiplier = chainCount >= 6 && skill.type === 'liberation' ? 2.20 : 0;
   const result = calcSingleDamage({
     attack: finalAttack,
-    skillMultiplier: skill.levelMap[level] || skill.levelMap[10],
+    skillMultiplier: (skill.levelMap[level] || skill.levelMap[10]) + chainExtraMultiplier,
     multiplierBonus: mergedBuff.multiplierBonus || 0,
     damageBonus: getPanelDamageBonus(panel.attrMap || {}, skill.type) + (mergedBuff.damageBonus || 0),
     deepen: mergedBuff.deepen || 0,
-    critRate: panel.critRate,
-    critDamage: panel.critDamage,
+    critRate: panel.critRate + Number(mergedBuff.critRate || 0),
+    critDamage: panel.critDamage + Number(mergedBuff.critDamage || 0),
     attackerLevel: panel.level || 90,
     enemyLevel: enemy?.level || 90,
     resistance: enemy?.resistance ?? 0.1,
-    ignoreDefense: mergedBuff.ignoreDefense || enemy?.ignoreDefense || 0,
+    ignoreDefense: Math.max(Number(mergedBuff.ignoreDefense || 0), Number(enemy?.ignoreDefense || 0)),
     sourceDetail: mergedBuff.sources
   });
   return { name: skill.name, ...result };

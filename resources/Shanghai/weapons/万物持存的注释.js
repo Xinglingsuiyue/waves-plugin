@@ -36,7 +36,13 @@ export default {
       critDamage: pick(EFFECT.critDamage, reson),
       source: "万物持存的注释"
     };
-    if (skillType === 'liberation') buff.damageBonus += pick(EFFECT.liberation, reson);
+    if (skillType === 'liberation') {
+      buff.damageBonus += pick(EFFECT.liberation, reson);
+      // 获得护盾时共鸣解放伤害无视目标 7.2%~12% 防御，可叠 5 层（满层 36%~60%）。
+      // 施放变奏技能时该效果视为满层，按满层计。
+      const perStack = { 1: 0.072, 2: 0.084, 3: 0.096, 4: 0.108, 5: 0.12 };
+      buff.ignoreDefense = (perStack[reson] || perStack[1]) * 5;
+    }
     if (skillType === 'skill') buff.damageBonus += pick(EFFECT.skill, reson);
     if (skillType === 'normal') buff.damageBonus += pick(EFFECT.normal, reson);
     if (skillType === 'heavy') buff.damageBonus += pick(EFFECT.heavy, reson);
