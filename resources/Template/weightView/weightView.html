@@ -73,6 +73,8 @@
             <div class="title-row">
                 {{if data.role.image}}
                 <img class="role-avatar" src="{{data.role.image}}" />
+                {{else}}
+                <div class="role-avatar role-avatar-placeholder">{{data.role.name.charAt(0)}}</div>
                 {{/if}}
                 <div class="title-text">
                     <div class="title">{{data.role.name}} 声骸权重</div>

@@ -59,6 +59,16 @@ body {
     border: 2px solid #e8e8e8;
 }
 
+.role-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    color: #999;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
 .title-text .title {
     font-size: 24px;
     margin-bottom: 4px;
