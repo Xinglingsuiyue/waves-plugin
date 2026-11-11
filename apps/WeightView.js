@@ -5,6 +5,8 @@ import { pluginResources } from '../model/path.js'
 import Wiki from '../components/Wiki.js'
 import Render from '../components/Render.js'
 
+const AVATAR_TIP = '发送「~更新抽卡资源」补充头像后查看'
+
 function getWeightClass(weight) {
     if (weight >= 1) return 'weight-1'
     if (weight >= 0.75) return 'weight-075'
@@ -75,10 +77,19 @@ export class WeightView extends plugin {
             .filter(f => /^\d{4}\.yaml$/.test(f))
             .sort()
 
-        const simulatorData = YAML.parse(fs.readFileSync(`${pluginResources}/Simulator.yaml`, 'utf-8'))
+        // Simulator.yaml 由「~更新抽卡资源」生成，缺失时不应影响权重表生成
+        let simulatorData = {}
+        const simulatorPath = `${pluginResources}/Simulator.yaml`
+        if (fs.existsSync(simulatorPath)) {
+            try {
+                simulatorData = YAML.parse(fs.readFileSync(simulatorPath, 'utf-8')) || {}
+            } catch (error) {
+                logger.error('[WAVES 查看权重] 读取 Simulator.yaml 失败:', error)
+            }
+        }
         const imageMap = {}
         for (const [key, val] of Object.entries(simulatorData)) {
-            if (val.star >= 4) {
+            if (val && val.star >= 4 && val.image) {
                 imageMap[key] = val.image
             }
         }
@@ -150,13 +161,13 @@ export class WeightView extends plugin {
         }
 
         const roles = Array.from(roleMap.values())
-        return { baseWeight, roles }
+        return { baseWeight, roles, missingAvatar: roles.some(role => !role.image) }
     }
 
     //查看所有角色权重
     async allWeights(e) {
         try {
-            const { baseWeight, roles } = this.loadAllWeights()
+            const { baseWeight, roles, missingAvatar } = this.loadAllWeights()
             if (roles.length === 0) {
                 return await e.reply('未找到任何角色权重数据')
             }
@@ -169,6 +180,7 @@ export class WeightView extends plugin {
             }, { e, retType: 'base64' })
             if (imageCard) {
                 await e.reply(imageCard)
+                if (missingAvatar) await e.reply(AVATAR_TIP)
             } else {
                 await e.reply('生成权重表失败，请检查模板配置')
             }
@@ -202,6 +214,7 @@ export class WeightView extends plugin {
             }, { e, retType: 'base64' })
             if (imageCard) {
                 await e.reply(imageCard)
+                if (!role.image) await e.reply(`【${role.name}】暂无头像资源，可发送「~更新抽卡资源」补充头像后再查看`)
             } else {
                 await e.reply('生成权重表失败，请检查模板配置')
             }

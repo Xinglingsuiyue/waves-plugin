@@ -7,6 +7,7 @@ import YAML from 'yaml';
 import Wiki from '../components/Wiki.js';
 
 const holdingRateApi = 'https://wh.loping151.site/api/waves/hold/rates';
+const AVATAR_TIP = '发送「~更新抽卡资源」补充头像后查看';
 
 export class HoldingRate extends plugin {
     constructor() {
@@ -61,7 +62,9 @@ export class HoldingRate extends plugin {
             retType: 'base64',
         });
 
-        return e.reply(image, false);
+        await e.reply(image, false);
+        if (data.missingAvatar) return e.reply(AVATAR_TIP, false);
+        return;
     }
 
     async holdingRate(e) {
@@ -105,7 +108,8 @@ export class HoldingRate extends plugin {
             retType: 'base64',
         });
 
-        return e.reply(image, false);
+        await e.reply(image, false);
+        if (data.missingAvatar) return e.reply(AVATAR_TIP, false);
     }
 
     async getGroupHoldingRateData(groupId, pickStar) {
@@ -193,6 +197,7 @@ export class HoldingRate extends plugin {
             sampleSize: `${dataSource} - 总玩家数: ${totalPlayers}`,
             charList: []
         };
+        let missingAvatar = false;
 
         
         for (const [charName, stats] of Object.entries(charStats)) {
@@ -237,6 +242,7 @@ export class HoldingRate extends plugin {
             
             const avatarUrl = localData[charName]?.image || 
                              `file://${path.join(pluginResources, 'Chiyoulv', 'default.png')}`;
+            if (!localData[charName]?.image) missingAvatar = true;
 
             renderData.charList.push({
                 charId: charInfo.id || charName,
@@ -260,6 +266,7 @@ export class HoldingRate extends plugin {
             data: renderData,
             headImg: this.getHeadImg(),
             updateTime: this.getCNTime(),
+            missingAvatar,
         };
     }
 
@@ -338,6 +345,7 @@ export class HoldingRate extends plugin {
             sampleSize: data.total_player_count || '没有数据, 都是我编的.',
             charList: []
         };
+        let missingAvatar = false;
 
         for (const item of data.char_hold_rate) {
             const itm = id2Name[item.char_id];
@@ -347,6 +355,7 @@ export class HoldingRate extends plugin {
             
             const avatarUrl = localData[charName]?.image || 
                              `file://${path.join(pluginResources, 'Chiyoulv', 'default.png')}`;
+            if (!localData[charName]?.image) missingAvatar = true;
 
             renderData.charList.push({
                 charId: item.char_id,
@@ -370,6 +379,7 @@ export class HoldingRate extends plugin {
             data: renderData,
             headImg: this.getHeadImg(),
             updateTime: this.getCNTime(),
+            missingAvatar,
         };
     }
 

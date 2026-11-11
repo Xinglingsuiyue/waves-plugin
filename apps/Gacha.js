@@ -12,6 +12,8 @@ import { createHash } from 'crypto';
 const resident = ["鉴心", "卡卡罗", "安可", "维里奈", "凌阳"];
 const residentSet = new Set(resident);
 
+const AVATAR_TIP = '发送「~更新抽卡资源」补充头像后查看';
+
 const isHeyboxExport = data => data?.info?.export_app === 'Waves-Plugin-Heybox';
 
 const sortGachaList = list => list.sort((a, b) =>
@@ -200,8 +202,13 @@ export class Gacha extends plugin {
                 worstLuck: worstLuck,
                 bestLuck: bestLuck,
             },
-            pool: pool
+            pool: pool,
+            missingAvatar: pool.some(item => !item.avatar)
         };
+    }
+
+    hasMissingAvatar(renderData) {
+        return Object.values(renderData).some(pool => pool && typeof pool === 'object' && pool.missingAvatar);
     }
 
     async convertData(dataArray, toWWGF) {
@@ -338,6 +345,7 @@ export class Gacha extends plugin {
             }, { e, retType: 'base64' });
 
             await e.reply(imageCard);
+            if (this.hasMissingAvatar(renderData)) await e.reply(AVATAR_TIP);
             return true;
         }
 
@@ -440,6 +448,7 @@ export class Gacha extends plugin {
         }, { e, retType: 'base64' });
 
         await e.reply(imageCard);
+        if (this.hasMissingAvatar(renderData)) await e.reply(AVATAR_TIP);
 
         await redis.set(`Yunzai:waves:gachaHistory:${e.user_id}`, jsonData.playerId);
 

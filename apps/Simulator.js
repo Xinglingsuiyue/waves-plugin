@@ -6,6 +6,8 @@ import YAML from 'yaml'
 import fs from 'fs'
 import common from '../../../lib/common/common.js'
 
+const AVATAR_TIP = '发送「~更新抽卡资源」补充头像后查看'
+
 export class Simulator extends plugin {
     constructor() {
         super({
@@ -205,10 +207,12 @@ export class Simulator extends plugin {
         // 执行10次十连抽卡
         const allResults = []
         const imgs = []
+        let missingAvatar = false
         for (let i = 0; i < 10; i++) {
-            const { results, image } = await this.doTenPull(e, type, i + 1)
-            allResults.push(results)
-            imgs.push(image)
+            const pull = await this.doTenPull(e, type, i + 1)
+            allResults.push(pull.results)
+            imgs.push(pull.image)
+            if (pull.missingAvatar) missingAvatar = true
             await new Promise(resolve => setTimeout(resolve, 300))
         }
         
@@ -241,13 +245,15 @@ export class Simulator extends plugin {
         }
         
         await e.reply(forwardMsg);
+        if (missingAvatar) await e.reply(AVATAR_TIP);
         return true;
     }
 
     async simulator(e) {
         const type = e.msg.includes('武器') ? 'weapon' : 'role'
-        const { image } = await this.doTenPull(e, type)
+        const { image, missingAvatar } = await this.doTenPull(e, type)
         await e.reply(image)
+        if (missingAvatar) await e.reply(AVATAR_TIP)
         return true
     }
 
@@ -366,7 +372,8 @@ export class Simulator extends plugin {
         
         return {
             results: gachaData,
-            image: imageCard
+            image: imageCard,
+            missingAvatar: gachaData.some(item => !item.role || item.role === item.name)
         }
     }
 
@@ -396,16 +403,26 @@ export class Simulator extends plugin {
             if (fs.existsSync(localPath)) {
                 localData = YAML.parse(fs.readFileSync(localPath, 'utf8')) || {}
             }
-            
-            let updatedCount = 0
+
+            // 收集需要头像的资源：卡池中的角色/武器 + 权重表中的角色
+            const targets = new Map()
             const files = fs.readdirSync(simulatorDir).filter(file => file.endsWith('.yaml'))
-            
+
             for (const file of files) {
                 const poolPath = simulatorDir + '/' + file
                 if (!fs.existsSync(poolPath)) continue
-                
+
                 try {
                     const poolData = YAML.parse(fs.readFileSync(poolPath, 'utf8'))
+                    const fiveStarNames = new Set([
+                        ...(poolData.five_star?.up_pool || []),
+                        ...(poolData.five_star?.other_pool || [])
+                    ].map(item => item.name))
+                    const fourStarNames = new Set([
+                        ...(poolData.four_star?.up_pool || []),
+                        ...(poolData.four_star?.other_pool || [])
+                    ].map(item => item.name))
+
                     const allItems = [
                         ...(poolData.five_star?.up_pool || []),
                         ...(poolData.five_star?.other_pool || []),
@@ -413,27 +430,59 @@ export class Simulator extends plugin {
                         ...(poolData.four_star?.other_pool || []),
                         ...(poolData.three_star?.other_pool || [])
                     ]
-                    
+
                     for (const item of allItems) {
-                        if (!localData[item.name]?.image) {
-                            const record = await wiki.getRecord(item.name)
-                            if (record.status) {
-                                localData[item.name] = {
-                                    name: item.name,
-                                    image: record.record.content.contentUrl,
-                                    star: item.star || (poolData.five_star?.up_pool?.concat(poolData.five_star?.other_pool || []).some(i => i.name === item.name) ? 5 : 
-                                        poolData.four_star?.up_pool?.concat(poolData.four_star?.other_pool || []).some(i => i.name === item.name) ? 4 : 3)
-                                }
-                                updatedCount++
-                                await new Promise(resolve => setTimeout(resolve, 500))
-                            }
+                        if (!targets.has(item.name)) {
+                            targets.set(item.name, item.star || (fiveStarNames.has(item.name) ? 5 : fourStarNames.has(item.name) ? 4 : 3))
                         }
                     }
                 } catch (error) {
                     logger.error(`处理卡池文件 ${file} 失败:`, error)
                 }
             }
-            
+
+            // 权重表中的角色可能不在当前卡池内，一并补齐头像
+            const weightDir = pluginResources + '/Weight'
+            const id2NamePath = pluginResources + '/Chiyoulv/id2Name.json'
+            if (fs.existsSync(weightDir) && fs.existsSync(id2NamePath)) {
+                try {
+                    const id2Name = JSON.parse(fs.readFileSync(id2NamePath, 'utf8')) || {}
+                    const weightFiles = fs.readdirSync(weightDir).filter(file => /^\d{4}\.yaml$/.test(file))
+                    for (const file of weightFiles) {
+                        const info = id2Name[file.replace('.yaml', '')]
+                        if (!info?.name) continue
+                        let name = info.name
+                        if (name.startsWith('漂泊者-')) {
+                            name = name.replace(/-(男|女)$/, '')
+                        }
+                        if (!targets.has(name)) {
+                            targets.set(name, info.star || 5)
+                        }
+                    }
+                } catch (error) {
+                    logger.error('读取权重角色列表失败:', error)
+                }
+            }
+
+            let updatedCount = 0
+            for (const [name, star] of targets) {
+                if (localData[name]?.image) continue
+                try {
+                    const record = await wiki.getRecord(name)
+                    if (record.status) {
+                        localData[name] = {
+                            name,
+                            image: record.record.content.contentUrl,
+                            star: localData[name]?.star || star
+                        }
+                        updatedCount++
+                        await new Promise(resolve => setTimeout(resolve, 500))
+                    }
+                } catch (error) {
+                    logger.error(`获取角色 ${name} 头像失败:`, error)
+                }
+            }
+
             fs.writeFileSync(localPath, YAML.stringify(localData))
             await e.reply(`抽卡资源更新完成，共更新 ${updatedCount} 项资源`)
         } catch (error) {
