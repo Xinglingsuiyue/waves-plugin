@@ -1,7 +1,7 @@
 pool_name: 「浮声沉兵」
 five_star:
   up_pool:
-    - name: 玉阙玄华
+    - name: 安魂
   other_pool: []
   basic: 0.008
   increase: 0.0902
@@ -9,9 +9,9 @@ five_star:
 four_star:
   up_pool:
     
-    - name: 不归孤军
-    - name: 核熔星盘
-    - name: 永夜长明
+    - name: 尘云旋臂
+    - name: 异度
+    - name: 华彩乐段
   other_pool:
     # 4星角色
     - name: 秧秧
