@@ -29,7 +29,7 @@ const CONSTANTS = {
     },
 };
 
-const wikiApi = axios.create();
+const wikiApi = axios.create({ timeout: 15000 });
 wikiApi.interceptors.request.use(
     async config => {
         const proxyUrl = Config.getConfig().proxy_url;

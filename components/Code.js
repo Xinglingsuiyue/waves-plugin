@@ -39,7 +39,26 @@ const CONSTANTS = {
 
 let sentPostIds = new Set();
 
-const wavesApi = axios.create();
+const REQUEST_TIMEOUT = 15000;
+const PUBLIC_IP_CACHE_TTL = 10 * 60 * 1000;
+const REFRESH_CACHE_TTL = 30000;
+const PUBLIC_IP_FALLBACK = '192.168.0.1';
+
+let publicIPCache = { value: '', time: 0, ttl: PUBLIC_IP_CACHE_TTL };
+let publicIPPromise = null;
+const refreshCache = new Map();
+
+async function fetchWithTimeout(url, timeout) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetch(url, { signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+const wavesApi = axios.create({ timeout: REQUEST_TIMEOUT });
 wavesApi.interceptors.request.use(
     async config => {
         const proxyUrl = Config.getConfig().proxy_url;
@@ -60,23 +79,42 @@ class Waves {
         this.bat = null;
     }
 
-    async getPublicIP(host = "192.168.0.1") {
+    async getPublicIP(host = PUBLIC_IP_FALLBACK) {
+        if (publicIPCache.value && Date.now() - publicIPCache.time < publicIPCache.ttl) {
+            return publicIPCache.value;
+        }
+        if (publicIPPromise) return publicIPPromise;
+
+        publicIPPromise = (async () => {
+            const sources = [
+                { url: 'https://event.kurobbs.com/event/ip', parse: res => res.text() },
+                { url: 'https://api.ipify.org/?format=json', parse: async res => (await res.json()).ip },
+                { url: 'https://httpbin.org/ip', parse: async res => (await res.json()).origin },
+            ];
+
+            for (const { url, parse } of sources) {
+                try {
+                    const res = await fetchWithTimeout(url, 4000);
+                    if (!res.ok) continue;
+                    const ip = await parse(res);
+                    if (ip) {
+                        publicIPCache = { value: ip, time: Date.now(), ttl: PUBLIC_IP_CACHE_TTL };
+                        return ip;
+                    }
+                } catch (e) {
+                }
+            }
+
+            const fallback = publicIPCache.value || host;
+            publicIPCache = { value: fallback, time: Date.now(), ttl: 60 * 1000 };
+            return fallback;
+        })();
+
         try {
-            const res1 = await fetch("https://event.kurobbs.com/event/ip", { timeout: 4000 });
-            if (res1.ok) return await res1.text();
-        } catch (e) {}
-    
-        try {
-            const res2 = await fetch("https://api.ipify.org/?format=json", { timeout: 4000 });
-            if (res2.ok) return (await res2.json()).ip;
-        } catch (e) {}
-    
-        try {
-            const res3 = await fetch("https://httpbin.org/ip", { timeout: 4000 });
-            if (res3.ok) return (await res3.json()).origin;
-        } catch (e) {}
-    
-        return host;
+            return await publicIPPromise;
+        } finally {
+            publicIPPromise = null;
+        }
     }
 
     async buildHeaders(platform = 'ios', token = null, did = null, needToken = false) {
@@ -255,22 +293,41 @@ class Waves {
     }
 
     async refreshData(serverId, roleId, token, did = null) {
-        const headers = await this.buildHeaders('ios', token, did);
-        const data = qs.stringify({ gameId: 3, serverId, roleId });
-
-        try {
-            const response = await wavesApi.post(CONSTANTS.REFRESH_URL, data, { headers });
-            if (response.data.code === 10902 || response.data.code === 200) {
-                if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`刷新资料成功`));
-                return { status: true, data: response.data.data };
-            } else {
-                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`刷新资料失败`), logger.red(response.data.msg));
-                return { status: false, msg: response.data.msg };
-            }
-        } catch (error) {
-            logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`刷新资料失败，疑似网络问题`), logger.red(error));
-            return { status: false, msg: '刷新资料失败，疑似网络问题，请检查控制台日志' };
+        const cacheKey = `${serverId}:${roleId}:${token}`;
+        const cached = refreshCache.get(cacheKey);
+        if (cached) {
+            if (cached.promise) return cached.promise;
+            if (Date.now() - cached.time < REFRESH_CACHE_TTL) return cached.result;
         }
+
+        const task = (async () => {
+            const headers = await this.buildHeaders('ios', token, did);
+            const data = qs.stringify({ gameId: 3, serverId, roleId });
+
+            try {
+                const response = await wavesApi.post(CONSTANTS.REFRESH_URL, data, { headers });
+                if (response.data.code === 10902 || response.data.code === 200) {
+                    if (Config.getConfig().enable_log) logger.mark(logger.blue('[WAVES PLUGIN]'), logger.green(`刷新资料成功`));
+                    return { status: true, data: response.data.data };
+                } else {
+                    logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`刷新资料失败`), logger.red(response.data.msg));
+                    return { status: false, msg: response.data.msg };
+                }
+            } catch (error) {
+                logger.mark(logger.blue('[WAVES PLUGIN]'), logger.cyan(`刷新资料失败，疑似网络问题`), logger.red(error));
+                return { status: false, msg: '刷新资料失败，疑似网络问题，请检查控制台日志' };
+            }
+        })();
+
+        refreshCache.set(cacheKey, { time: Date.now(), promise: task });
+
+        const result = await task;
+        refreshCache.set(cacheKey, { time: Date.now(), result });
+        if (refreshCache.size > 200) {
+            const oldestKey = refreshCache.keys().next().value;
+            if (oldestKey !== cacheKey) refreshCache.delete(oldestKey);
+        }
+        return result;
     }
 //体力
     async getGameData(token, did = null) {

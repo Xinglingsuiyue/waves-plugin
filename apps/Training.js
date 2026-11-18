@@ -5,6 +5,7 @@ import Config from '../components/Config.js';
 import Render from '../components/Render.js';
 import RankUtil from '../utils/RankUtil.js';
 import { CharacterRanking } from './Paiming.js';
+import pLimit from 'p-limit';
 
 import { WAVERIDER_ATTRIBUTES } from '../utils/damage/waveriderMap.js';
 
@@ -53,11 +54,12 @@ export class Training extends plugin {
 
             const baseDataResult = baseData.status ? baseData.data : { id: uid };
 
+            const limit = pLimit(Math.max(1, Number(Config.getConfig().limit) || 10));
             const detailPromises = roleData.data.roleList.map(role =>
-                waves.getRoleDetail(serverId, uid, role.roleId, token, did).then(detail => ({
+                limit(() => waves.getRoleDetail(serverId, uid, role.roleId, token, did).then(detail => ({
                     role,
                     detail
-                }))
+                })))
             );
 
             const detailResults = await Promise.all(detailPromises);
